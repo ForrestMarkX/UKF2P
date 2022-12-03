@@ -877,9 +877,9 @@ final reliable client function ClientForceWeaponSkin(KFWeapon KFW, int SkinID)
 	if( SkinID > 0 && class'KFWeaponSkinList'.static.SkinNeedsCodeUpdates(SkinID) )
 	{
 		KFW.Timer_UpdateWeaponSkin();
-        `TimerHelper.SetTimer(0.1f, true, 'Timer_UpdateWeaponSkin', KFW);
+        KFW.SetTimer(0.1f, true, 'Timer_UpdateWeaponSkin');
 	}
-    else `TimerHelper.ClearTimer('Timer_UpdateWeaponSkin', KFW);
+    else KFW.ClearTimer('Timer_UpdateWeaponSkin');
 
     ScopeWep = KFWeap_ScopedBase(KFW);
     if( ScopeWep != None && ScopeWep.ScopeLenseMIC != None )
