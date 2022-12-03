@@ -1,0 +1,3 @@
+class KFGFxMenu_StartGameOriginal extends Object;
+
+static function class<KFGFxSpecialeventObjectivesContainer> GetSpecialEventClass(int SpecialEventID);

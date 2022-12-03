@@ -1,0 +1,15 @@
+[Flags]
+AllowDownload=true
+ClientOptional=false
+ServerSideOnly=false
+
+[Load]
+Need=UKFP_1P_TommyGun_MESH
+Need=UKFP_3P_Centerfire_MESH
+Need=UKFP_3P_M14EBR_MESH
+Need=UKFP_3P_Mosin_MESH
+Need=UKFP_HUD
+Need=UKFP_SUMMER_ZED_Gorefast_PHYS
+Need=UKFP_SUMMER_ZED_Gorefast2_PHY
+Need=UKFP_TommyGun_ARCH
+Need=UKFP_TommyGun_EMIT

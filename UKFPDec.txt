@@ -1,0 +1,112 @@
+[h1]Configuration & Options[/h1]
+[url=https://steamcommunity.com/sharedfiles/filedetails/?id=2875577642][img]https://i.imgur.com/iuMQ8nK.png[/img][/url] 
+
+[h1]Install Instructions[/h1]
+[olist]
+[*]Subscribe to this Workshop
+[*]Open the console with ~ or F3
+[*]Type <MapName>?Mutator=UnofficialKFPatch.UKFPMutator
+[*]Add any options you wish to the command line (Listed in the guide)
+[/olist]
+
+[h1]Bug Fixes[/h1]
+[list]
+[*]Fixed bleed causing ZEDs to not be decapped
+[*]Weapons that fall out of bounds are teleported to the player or trader
+[*]Fixed AF2011 bullets going in odd directions at certain view angles
+[*]Fixed many points of entry for hackers
+[*]Fixed tickrate at lobby with players
+[*]Fixed Steamworkshop Downloader not being added automatically
+[*]Fixed ironsight on the Tommy Gun to be less annoying
+[*]Fixed particles on Tommy Gun being annoying
+[*]Fixed hitboxes on summer gorefasts/fiends
+[*]Fixed HUD updating very slow and providing incorrect info
+[*]Fixed certain projectiles not spawning when spectating a player
+[*]Disabled alot of useless logs
+[*]Fixed weapon asset loading to be less jank
+[*]Fixed lingering sound from clot grabs when leaving a game
+[*]Fixed screen shakes in ZED Time being extremely bad
+[*]Fixed PRIs replicating data slowly (Health and other variables are recieved much faster)
+[*]Fixed Gravity Imploder breaking dropped weapons and dosh
+[*]Fixed pickups not updating as fast as they needed to be
+[*]Fixed MOTD text being limited to 512 characters
+[*]Fixed players being able to crash the server by throwing huge amounts of dosh at once
+[*]Fixed changing gear attachments getting trapped on head camera
+[*]Fixed broken HX25/Kaboomstick Nukes for other players
+[*]Fixed QP spawn sound not being higher pitched
+[*]Fixed crawlers launching ZEDs by walking under them
+[*]Fixed exploits with certain weapons
+[*]Fixed ZEDs targeting the wrong players on spawn
+[*]Fixed horrifically bad custom perk support
+[*]Fixed custom gamemodes showing as ALL in the server browser
+[*]Fixed KFMutatorSummary not being generated for loaded mutators
+[*]Fixed two broken static meshes on KF-HellmarkStation that were blocking a entrance
+[*]Fixed most Descent maps being broken in Endless
+[*]Fixed crashing caused by a bad GC setting
+[/list]
+
+[h1]Additions[/h1]
+[list]
+[*]Summer Scrakes now walk like a regular Scrake
+[*]Allow attaching conflicting cosmetics in the gear menu
+[*]Allow changing to and from spectator using !spec and !join
+[*]Allow changing the max players allowed in the server
+[*]Allow changing how long a pickup will stay on the map
+[*]Added better workshop manager for Webadmin and logging
+[*]Allow loading Friendly HUD, Yet Another Scoreboard, Admin Auto Login, Controlled Vote Collector
+[*]Allow toggling the crosshair using !tfc and !tc
+[*]Much better logging for when a player leaves and joins
+[*]Allow changing gear midgame (Does not work in Solo)
+[*]Better loading screen that can be quit out of and show actual download progress
+[*]Ability to hide your servers from the master server
+[*]Enhanced the Medic buff statuses to be far superior
+[*]Added ZED Time and Parry Buff statuses
+[*]Print all chat messages to console for easy sorting
+[*]Allow forcing the normal ZEDs during an event
+[*]Added kill ticker for when someone kills a large ZED including the weapon that killed them
+[*]Allow turning off EDARs
+[*]Allow changing the max monsters (Can't be set lower than the defaults)
+[*]Allow setting faked players (Can't be set lower than the defaults)
+[*]Allow players to Ping locations/objects/ZEDs (Can be toggled and bound to a key from the bindings menu)
+[*]Display when the server connection has been lost ingame and in the lobby
+[*]Allow server owners to enable broadcasting when a player picks up someone elses drop
+[*]Allow players to disable other players ability to pickup their drops
+[*]Allow server owners to set a Dynamic MOTD that shows what settings they have set
+[*]Allow players to define how much dosh they can throw
+[*]Allow players to set HUD transparency
+[*]Added superior chat box that supports multi-line coloring and icons
+[*]Allow players to add the server to their favorites from ingame
+[*]When picking up dropped weapons, the weapon will get the drops skin instead of the players
+[*]Allow players to change the scale of their HUD
+[*]Allow players to go in and out of Thirdperson (Can be bound from the controls menu)
+[*]Allow seeing more than 6 players in both lobby and scoreboard
+[*]Added pause/unpause message and UI when a admin pauses the game
+[*]Allow players to get map achievements on the original workshop versions
+[*]Allow players to change between left/right/centered on weapon position
+[*]Allow the ability to change the weekly to whatever the server owner/player wants
+[*]Allow the ability to change the seasonal to whatever the server owner/player wants
+[*]Allow admins to setup multi-gamemode voting
+[*]Allow players to change what bob style to use for their weapon
+[*]Allow setting if a player will drop all weapons on death or not
+[/list]
+
+[h1]Mutator[/h1]
+[code]
+UnofficialKFPatch.UKFPMutator
+[/code]
+
+[h1]Source[/h1]
+[b]This source code can not be compiled by anyone but myself, this is simply here for those who wish to add the fixes themselves through other channels or as a means of learning how some fixes were performed.
+The hacker points of entry fixes have been removed and the whitelist bypass method has also been removed as per instruction[/b]
+https://www.dropbox.com/s/6k1mxigqgnzyo1x/UKFP_Src.7z?dl=0
+
+[h1]Credits[/h1]
+[code]
+[url=https://steamcommunity.com/id/GenZmeY/]GenZmeY[/url] - Yet Another Scoreboard, Admin Auto Login, Controlled Vote Collector
+[url=https://steamcommunity.com/id/peelz/]Peelz[/url] - Friendly HUD
+[url=https://steamcommunity.com/id/HazardousMonkey/]HazardousMonkey[/url] - Gorefast/Gorefiend model fixes, Weapon model fixes, Testing
+[url=https://steamcommunity.com/profiles/76561197975509070/]Marco[/url] - Workshop Manager, lots of base code, general help
+[url=https://steamcommunity.com/id/thewarzone]Fleet Killer[/url] - Idea for the lobby pages instead of the pain of adding a scrollbar
+[url=https://steamcommunity.com/id/the_cruzanator]Cruz Controlled[/url] - Same idea as above
+[url=https://steamcommunity.com/id/tamari92/]Tamari[/url] - Helping me test everything and get rid of bugs
+[/code]

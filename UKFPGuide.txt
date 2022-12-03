@@ -1,0 +1,167 @@
+[h1]Compatiblity[/h1]
+Confirmed to work with
+[code]
+Controlled Difficulty
+Zedternal
+[/code]
+
+[h1]Chatbox Instructions[/h1]
+You can now use HTML tags for formatting chat messages. The supported tags are [b]<font>, <b>, <i>, <u>[/b]
+
+[b]Examples are as follows[/b]
+[code]
+<font color="#FF0000">This is red text</font>
+<font color="#FFFF00">This is yellow text</font>
+<b>This is bold text</b>
+<i>This is italic text</i>
+<u>This is underlined text</u>
+[/code]
+
+[b]Using MIcons is much more complicated but it goes as follows[/b]
+[code]
+Download Font: https://www.dropbox.com/s/4d4hxfv4rkyrnla/material_design_icons_sr_edit.ttf?dl=0
+Install the font
+Open windows Character Map or use a good 3rd party app such as NexusFont
+Look for the font Material Design Icons SR Edit
+Open the font and look for the icon you want
+Get the hex code for the font an example would be 0024 or U+0024
+Strip away the leading 0's and add 0x to the front so you get 0x24
+Now download this txt and open it https://www.dropbox.com/s/lr92t67vhp8a7am/FontCodePoints.txt?dl=0
+Now hold CTRL+F to open the search window and look for your code in this case it will be 0x24
+When you find the code, look at the name and copy it. This example will be account
+Open console and type something like so without the quotes "say <font color='#FF0000' face='MIcon'>account</font>"
+Congrats you just posted a MIcon to chat
+[/code]
+
+[h1]Options[/h1]
+[code]
+?MaxPlayers=<Int> - Allows setting the max players
+?PickupLifespan=<Float> - Allows setting the pickup lifespan
+?LoadFHUD=(0/1) - Load Friendly HUD
+?LoadYAS=(0/1) - Load Yet Another Scoreboard
+?LoadAAL=(0/1) - Load Admin Auto Login
+?LoadCVC=(0/1) - Load Controlled Vote Collector
+?HideServer=(0/1) - Hide your server from the server list
+?NoEventSkins=(0/1) - Force normal ZEDs
+?NoEDARs=(0/1) - Turn EDAR spawns on or off
+?NoPings=(0/1) - Disables the players ability to ping
+?BroadcastPickups=(0/1) - Enable broadcasting when someone picks up other players weapons
+?UseDynamicMOTD=(0/1) - Enable showing dynamic settings in the MOTD
+?MaxMonsters=<Byte> - Sets the max monsters to this value (Can't go lower than 32)
+?FakePlayers=<Byte> - Sets faked players value (Can't go lower than the current living players)
+?NoThirdperson=(0/1) - Allow/Disallow players to enter thirdperson
+?NoHandChanges=(0/1) - Don't allow players to change their hand position
+?CurrentWeekly=(0 - 18) - Sets the current weekly outbreak
+?AllowGamemodeVotes=(0/1) - Allow voting for more than 1 gamemode (Can be configured from WebAdmin)
+?CurrentSeasonalEvent=(0 - 16) - Sets the current seasonal event
+?UseNormalSummerSCAnims=(0/1) - Disables the Summer Scrake change
+?EnforceVanilla=(0/1) - Enforces Vanilla Mode (Read what this changes in the Vanilla Mode section)
+?DropAllWepsOnDeath=(0/1) - Sets if players drop all weapons on death
+[/code]
+
+[h1]Chat Commands[/h1]
+[code]
+!tfc - Toggles force draw crosshair
+!tc - Toggles crosshair
+!join - Join the game from spectate
+!spec - Leave the game and go to spectator
+!tm - Same as doing ThrowMoney
+!fav - Adds the server to your favorites (Does not work on hidden servers)
+[/code]
+
+[h1]Console Commands[/h1]
+[code]
+SetZEDTimeEnabled (0/1) - Enables/Disables the ZED Time status UI
+SetPingsEnabled (0/1) - Enables/Disables Pings
+SetPingAlpha (0-255> - Sets the alpha of Pings (Default is 195)
+SetPingSize (Amount) - Sets the size of Pings (Default is 32)
+PingLocation - Pings a location you are looking at
+SetDropProtection (0/1) - Allows disabling/enabling the drop protection system
+SetDoshThrowAmount (Amount) - Sets how much each dosh you throw is worth (Default is 50)
+TossMoney (Amount) - Better version of the original command to allow throwing set amounts of dosh (Set no value or 0 to use the amount from SetDoshThrowAmount) (NOTE: This does not work with binds, to make it work with binds change the bind to "ThrowMoney (Amount)")
+ThrowMoney (Amount) - Bindable alias of the above command
+SetWaveInfoAlpha (0-100) - Sets the transparency of Wave Info elements (ZED Count, Trader Compass)
+SetPlayerStatusAlpha (0-100) - Sets the transparency of Player Status elements (Health, Armor, Perk, Status)
+SetPlayerBackpackAlpha (0-100) - Sets the transparency of Player Backpack elements (Dosh, Ammo, Grenades)
+SetBossHealthBarAlpha (0-100) - Sets the transparency of the Boss Healthbar element
+SetOtherHUDAlpha (0-100) - Sets the transparency of all other HUD elements
+SetHUDScale (0.1 - 2.0) - Sets the scale of the HUD
+ToggleCameraMode - Toggle between first/thirdperson
+SetWeaponHand (0/1/2 - l/r/c - left/right/center) - Changes between what weapon hand you want
+SetBobStyle (0/1/2/3/4/5/6/7) - Changes between what weapon hand you want
+SetLargeKillTicker (0/1) - Enable/Disable large ZED kill ticker
+SetNoHRG (0/1) - Allows changing if HRG weapons appear in the trader or not
+[/code]
+
+[h1]Vanilla Mode[/h1]
+[list]
+[*]Disallows players from changing hand position and weapon bob
+[*]Disallows max bodies from going below 4 and above 12
+[*]Disallows corpse gravity from being changed away from 1.0
+[*]Forces normal ZEDs at all times
+[*]Disables system that stops screenshakes when ZED Time starts
+[*]Disallow players from entering third person
+[*]Disallow players from dropping all weapons on death
+[/list]
+
+[h1]Original Map Locations[/h1]
+[list]
+[*][url=https://steamcommunity.com/sharedfiles/filedetails/?id=1503129313]Desolation[/url]
+[*][url=https://steamcommunity.com/sharedfiles/filedetails/?id=1262549720]Nuked[/url]
+[*][url=https://steamcommunity.com/sharedfiles/filedetails/?id=644068210]Shopping Spree[/url]
+[*][url=https://steamcommunity.com/sharedfiles/filedetails/?id=2112484462]Sanitarium[/url]
+[*][url=https://steamcommunity.com/sharedfiles/filedetails/?id=1872817762]Rig[/url]
+[*][url=https://steamcommunity.com/sharedfiles/filedetails/?id=859997535]Carillon Hamlet[/url]
+[/list]
+
+[h1]Weekly Outbreak List[/h1]
+0. Normal
+1. Boom
+2. Cranium Cracker
+3. Tiny Terror
+4. Bobble Zed
+5. Poundemonium
+6. Up, Up, and Decay
+7. Zed Time
+8. Beefcake
+9. Blood Thirst
+10. Coliseum
+11. Arachnophobia
+12. Scavenger
+13. Wild West London
+14. Abandon All Hope
+15. Boss Rush
+16. Shrunken Heads
+17. Arsenal Ascent
+18. Primary Target
+19. Perk Roulette
+
+[h1]Seasonal Event List[/h1]
+0. None
+1. Halloween Horrors (2018)
+2. Twisted Christmas (2018)
+3. Cyber Revolt (2019)
+4. Back & Kickin' Brass (2019)
+5. Grim Treatments (2019)
+6. Yuletide Horror (2019)
+7. Neon Nightmares (2020)
+8. Perilous Plunder (2020)
+9. Infernal Insurrection (2020)
+10. Christmas Crackdown (2020)
+11. Dystopian Devastation (2021)
+12. Interstellar Insanity (2021)
+13. Day of the Zed (2021)
+14. Chop 'Til You Drop (2021)
+15. Tidal Terror (2022)
+16. Blood & Bonfires (2022)
+17. Polar Distress (2022)
+
+[h1]Bob Style List[/h1]
+0. Normal
+1. Quake
+2. Doom
+3. Doom Inverse
+4. Doom Alpha
+5. Doom Alpha Inverse
+6. Half-Life 2
+7. No Bob

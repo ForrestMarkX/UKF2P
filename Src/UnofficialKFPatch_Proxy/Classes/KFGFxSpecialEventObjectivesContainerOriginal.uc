@@ -1,0 +1,3 @@
+class KFGFxSpecialEventObjectivesContainerOriginal extends Object;
+
+function bool HasObjectiveStatusChanged();

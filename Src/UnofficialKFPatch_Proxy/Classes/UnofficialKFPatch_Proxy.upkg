@@ -1,0 +1,7 @@
+[Flags]
+AllowDownload=true
+ClientOptional=false
+ServerSideOnly=false
+
+[Load]
+Need=UnofficialKFPatch
