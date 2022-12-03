@@ -98,7 +98,7 @@ UnofficialKFPatch.UKFPMutator
 [h1]Source[/h1]
 [b]This source code can not be compiled by anyone but myself, this is simply here for those who wish to add the fixes themselves through other channels or as a means of learning how some fixes were performed.
 The hacker points of entry fixes have been removed and the whitelist bypass method has also been removed as per instruction[/b]
-https://www.dropbox.com/s/6k1mxigqgnzyo1x/UKFP_Src.7z?dl=0
+https://github.com/ForrestMarkX/UKF2P
 
 [h1]Credits[/h1]
 [code]
