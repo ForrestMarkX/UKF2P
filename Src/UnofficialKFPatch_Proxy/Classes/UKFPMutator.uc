@@ -134,13 +134,13 @@ function InitMutator(string Options, out string ErrorMessage)
     {
 		foreach DynamicActors(class'Mutator', Mut)
 		{
-			if( !RepInfo.DynamicMOTD.bYASLoaded && Mut.GetPackageName() == 'YAS' )
+			if( !RepInfo.DynamicMOTD.bYASLoaded && Mut.Class.GetPackageName() == 'YAS' )
 				RepInfo.DynamicMOTD.bYASLoaded = Mut.IsA('YASMut');
-			if( !RepInfo.DynamicMOTD.bAALLoaded && Mut.GetPackageName() == 'AAL' )
+			if( !RepInfo.DynamicMOTD.bAALLoaded && Mut.Class.GetPackageName() == 'AAL' )
 				RepInfo.DynamicMOTD.bAALLoaded = Mut.IsA('AALMut');
-			if( !RepInfo.DynamicMOTD.bCVCLoaded  && Mut.GetPackageName() == 'CVC' )
+			if( !RepInfo.DynamicMOTD.bCVCLoaded  && Mut.Class.GetPackageName() == 'CVC' )
 				RepInfo.DynamicMOTD.bCVCLoaded = Mut.IsA('CVCMut');
-			if( !RepInfo.DynamicMOTD.bFHUDLoaded  && Mut.GetPackageName() == 'FriendlyHUD' )
+			if( !RepInfo.DynamicMOTD.bFHUDLoaded  && Mut.Class.GetPackageName() == 'FriendlyHUD' )
 				RepInfo.DynamicMOTD.bFHUDLoaded = Mut.IsA('FriendlyHUDMutator');
 		}
         RepInfo.DynamicMOTD.bNoEventSkins = RepInfo.bNoEventSkins;
