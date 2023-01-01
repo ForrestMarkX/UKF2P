@@ -6,5 +6,6 @@ function string GetFriendlyNameForCurrentGameMode();
 static function int GetGameModeNumFromClass( string GameModeClassString );
 static function string GetGameModeFriendlyNameFromClass( string GameModeClassString );
 function CreateOutbreakEvent();
-static function PreloadGlobalContentClasses();
 function UpdateGameSettings();
+protected function ScoreMonsterKill( Controller Killer, Controller Monster, KFPawn_Monster MonsterPawn );
+protected function DistributeMoneyAndXP(class<KFPawn_Monster> MonsterClass, const out array<DamageInfo> DamageHistory, Controller Killer);

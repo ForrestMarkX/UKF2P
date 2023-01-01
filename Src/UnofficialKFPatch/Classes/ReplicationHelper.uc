@@ -26,7 +26,8 @@ var array<FStripMessage> StripMessageCache, FormatMessageCache;
 var KFPlayerController KFPC;
 var PlayerReplicationInfo PRI;
 var UniqueNetId UniqueId;
-var transient float NextSpectateChange, PingTime, MoneyTossTime, LastExecuteTime, OldEyeHeight;
+var Texture2D DefaultKillIcon;
+var transient float NextSpectateChange, PingTime, MoneyTossTime, OldEyeHeight, PingFadeTime;
 var transient byte HealingSpeedBoost, HealingDamageBoost, HealingShield, ZedTimeExtensionsUsed, PingCount, MoneyTossCount;
 var transient int ServerDoshThrowAmt;
 var transient UKFPHUDInteraction UKFPInteraction;
@@ -39,6 +40,7 @@ var transient KFSkelControl_WeaponTilt WeaponTiltSkelControl;
 var transient rotator DefaultWeaponTiltRot, CurWeaponAngMod;
 var transient ESeasonalEventType SavedSeasonalEventDate;
 var transient ProxyInfo FunctionProxy;
+var transient array<Object> FlipHelpers;
 
 var string ServerMOTD;
 
@@ -60,12 +62,12 @@ var Texture2D ZedTimeTexture, SpeedBoostTexture, DamageBoostTexture, ShieldBoost
 var SeasonalObjectiveStats SeasonalObjectiveStats;
 
 var bool bBehindView, OldDrawCrosshair, bOnFirstPerson;
-var transient bool bForceObjectiveRefresh, bUndoWeaponFlip, bCustomizationView, bSentServerPing, bDropProtection, bMOTDReceived;
+var transient bool bDoNotSaveConsoleHistory, bForceObjectiveRefresh, bUndoWeaponFlip, bCustomizationView, bSentServerPing, bDropProtection, bMOTDReceived;
 
 replication
 {
     if( true )
-        MainRepInfo, SeasonalObjectiveStats, PRI;
+        MainRepInfo, SeasonalObjectiveStats, PRI, PingFadeTime;
 }
 
 simulated function PostBeginPlay()
@@ -295,7 +297,7 @@ final reliable client function ReceiveKillMessage( class<Pawn> Victim, optional 
     local string KilledName, KillerName, KilledIconPath, KillerIconPath, SkullIconPath, KillerTextColor, KilledTextColor;
 	local class<KFWeapon> WepClass;
     
-    if( !KFPC.bShowKillTicker || UKFPInteraction.bDisableLargeKillTicker )
+    if( !KFPC.bShowKillTicker || (bLargeZED && UKFPInteraction.bDisableLargeKillTicker) )
         return;
         
     if( Victim == None )
@@ -320,10 +322,10 @@ final reliable client function ReceiveKillMessage( class<Pawn> Victim, optional 
             WepClass = class<KFWeapon>(`SafeLoadObject(DT.default.WeaponDef.default.WeaponClassPath, class'Class'));
             if( WepClass != None )
                 SkullIconPath = "img://"$PathName(WepClass.default.WeaponSelectTexture);
-            else SkullIconPath = "img://UKFP_UI_Shared.AssetLib_I32";
+            else SkullIconPath = "img://"$PathName(DefaultKillIcon);
         }
-        else SkullIconPath = "img://UKFP_UI_Shared.AssetLib_I32";
-    
+        else SkullIconPath = "img://"$PathName(DefaultKillIcon);
+	
         KillerName = KFPRI.PlayerName;
         KilledIconPath = "img://" $ class'KFGame.KFPerk_Monster'.static.GetPerkIconPath();
         KillerTextColor = class'KFGFxMoviePlayer_HUD'.default.HumanTeamTextColor;
@@ -332,7 +334,7 @@ final reliable client function ReceiveKillMessage( class<Pawn> Victim, optional 
     }
     else 
     {
-        SkullIconPath = "img://UKFP_UI_Shared.AssetLib_I32";
+        SkullIconPath = "img://"$PathName(DefaultKillIcon);
         DataObject.SetBool("humanDeath", false);
     }
 
@@ -383,17 +385,20 @@ final unreliable client function ClientNotifyPing(Actor A, vector HitLocation, b
 
 final simulated function bool CheckPingSpam()
 {
+	if( PingFadeTime <= 0.f )
+		return false;
+		
 	if( PingTime>WorldInfo.TimeSeconds )
 	{
 		if( PingCount>=5 )
 			return true;
 		++PingCount;
-		PingTime = FMax(PingTime,WorldInfo.TimeSeconds+class'UKFPHUDInteraction'.default.PingFadeTime);
+		PingTime = FMax(PingTime,WorldInfo.TimeSeconds+PingFadeTime);
 	}
 	else
 	{
 		PingCount = 0;
-		PingTime = WorldInfo.TimeSeconds+class'UKFPHUDInteraction'.default.PingFadeTime;
+		PingTime = WorldInfo.TimeSeconds+PingFadeTime;
 	}
     
     return false;
@@ -505,18 +510,27 @@ final simulated exec function TossMoney(int Amount)
 	ServerThrowMoney(Amount == 0 ? UKFPInteraction.DoshThrowAmt : Amount);
 }
 
-final simulated function ExecuteCommand(string Command)
+final simulated function bool ExecuteCommand(string Command)
 {
 	local int i, j, k;
 	local string Cmd,S,FirstEntry,LastEntry;
-    local array<string> Args;
-    
-    if( LastExecuteTime == WorldInfo.RealTimeSeconds )
-        return;
-        
+    local array<string> Args, Commands;
+	local LocalPlayer LP;
+	
+	if( WorldInfo.NetMode == NM_DedicatedServer )
+		return false;
+	
+	LP = LocalPlayer(KFPC.Player);
     i = InStr(Command, "|");
     if( i != INDEX_NONE )
-        Command = Left(Command, i);
+	{
+		ParseStringIntoArray(Command, Commands, "|", true);
+		bDoNotSaveConsoleHistory = true;
+		for( i=0; i<Commands.Length; i++ )
+			LP.ViewportClient.ViewportConsole.ConsoleCommand(`Trim(Commands[i]));
+		bDoNotSaveConsoleHistory = false;
+		return true;
+	}
         
 	i = InStr(Command," ");
 	if( i==-1 )
@@ -555,9 +569,12 @@ final simulated function ExecuteCommand(string Command)
     }
     
     if( Cmd ~= "TossMoney" )
+	{
         TossMoney(Args.Length > 0 ? int(Args[0]) : 0);
-        
-    LastExecuteTime = WorldInfo.RealTimeSeconds;
+		return true;
+	}
+	
+	return false;
 }
 
 static final function string StripHTMLFromString(string S)
@@ -689,7 +706,7 @@ static final function string GetMIconChar(string IconName)
 static final function string FormatMIcon(string S)
 {
     local int Index, Index2, Index3, CodeIndex;
-    local string IconName, Str;
+    local string IconName, Str, IconString;
     local FStripMessage Info;
 
     Index = default.StaticReference.FormatMessageCache.Find('Text', S);
@@ -710,9 +727,13 @@ static final function string FormatMIcon(string S)
                 if( Index3 != INDEX_NONE )
                 {
                     IconName = Mid(S, Index2+1, Index3-(Index2+1));
+					
                     CodeIndex = default.IconCodePoints.Find('Name', IconName);
                     if( CodeIndex != INDEX_NONE )
-                        S = Left(S,Index2+1)$Chr(default.IconCodePoints[CodeIndex].Code)$Mid(S, Index3);
+						IconString = Chr(default.IconCodePoints[CodeIndex].Code);
+					else IconString = Chr(0x46);
+					
+					S = Left(S,Index2+1)$IconString$Mid(S, Index3);
                 }
             }
             Index = InStr(S, "<font", false, true, InStr(S, ">", false, true, Index)+1);
@@ -895,6 +916,7 @@ final function ForceFixCamera()
     if( KFPawn_Customization(KFPC.Pawn) != None )
         return;
     KFPC.ResetCameraMode();
+	KFPC.SetTimer(0.25f, false, 'ResetCameraMode');
 }
 
 final unreliable client function ForceCloseMenus(optional bool bIgnoreMenu)
@@ -1020,6 +1042,23 @@ final simulated function CalcViewRotation(KFPawn_Human P, out rotator Rot)
         UKFPInteraction.CurrentBobClass.CalcViewRotation(P, Rot);
 }
 
+final simulated function OnPlayerHandsChanged()
+{
+	local int i;
+	
+	for( i=0; i<FlipHelpers.Length; i++ )
+	{
+		if( FlipHelpers[i] == None )
+		{
+			FlipHelpers.Remove(i, 1);
+			i--;
+			continue;
+		}
+		
+		`TimerHelper.SetTimer(0.001f, false, 'CheckForFlip', FlipHelpers[i]);
+	}
+}
+
 defaultproperties
 {
     bOnlyRelevantToOwner=true
@@ -1032,6 +1071,7 @@ defaultproperties
     DamageBoostTexture=Texture2D'UKFP_HUD.HUD.UI_Talents_Medic_FocusInjection'
     ShieldBoostTexture=Texture2D'UKFP_HUD.HUD.UI_Talents_Medic_CoagulantBooster'
     ParryTexture=Texture2D'UKFP_HUD.HUD.UI_Talents_Berserker_Parry'
+	DefaultKillIcon=Texture2D'UKFP_UI_Shared.AssetLib_I32'
     
     ModBindList.Add((BindCommand="PingLocation",BindName="Ping"))
     ModBindList.Add((BindCommand="ToggleCameraMode",BindName="Third Person"))

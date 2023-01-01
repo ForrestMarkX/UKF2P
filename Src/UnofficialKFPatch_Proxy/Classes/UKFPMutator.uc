@@ -1,44 +1,42 @@
 class UKFPMutator extends KFMutator;
 
-var KFGameReplicationInfo KFGRI;
-var UKFPReplicationInfo RepInfo;
-var byte MaxPlayers;
+var transient KFGameInfo KFGI;
+var private transient UKFPReplicationInfo RepInfo;
+var private transient KFRealtimeTimerHelper TimerHelper;
 
 var const private string FHUDClassLocation, YASClassLocation, AALClassLocation, CVCClassLocation;
 var const private string FHUDCommandName, YASCommandName, AALCommandName, CVCCommandName, HideCommandName, NoEventCommandName, NoEDARCommandName, NoPingCommandName, BroadcastPickupsCommandName, UseDynamicMOTDCommandName, NoThirdPersonCommandName, HandCommandName, MapVoteCommandName;
 
 function PreBeginPlay()
 {
+	TimerHelper = Spawn(class'KFRealtimeTimerHelper');
+	
     GenerateMutatorEntry(Class.Name, PathName(Class));
     
+	ConsoleCommand("SUPPRESS Log");
     ConsoleCommand("SUPPRESS DevNet");
     ConsoleCommand("SUPPRESS DevOnline");
-    ConsoleCommand("SUPPRESS Log");
     
     Super(Info).PreBeginPlay();
-
-    MyKFGI = KFGameInfo(WorldInfo.Game);
-    KFGRI = KFGameReplicationInfo(WorldInfo.GRI);
+	
+    KFGI = KFGameInfo(WorldInfo.Game);
+	
 	RepInfo = Spawn(class'UKFPReplicationInfo', self);
-}
+	RepInfo.XPMultiplier = KFGI.XPMultiplier;
+	
+    KFGI.bLogReservations = false;
+    
+    if( KFGI.bEnableGameAnalytics || KFGI.bRecordGameStatsFile )
+    {
+        KFGI.bEnableGameAnalytics = false;
+        KFGI.bRecordGameStatsFile = false;
+    }
 
-function PostBeginPlay()
-{
-	local string Options;
-	
-	Options = Repl(WorldInfo.GetLocalURL(), WorldInfo.GetMapName(), "");
-	MaxPlayers = MyKFGI.GetIntOption(Options, "MaxPlayers", RepInfo.ForcedMaxPlayers);
-	
-    if( bool(MyKFGI.GetIntOption(Options, FHUDCommandName, int(RepInfo.bAttemptToLoadFHUD))) )
-		MyKFGI.AddMutator(FHUDClassLocation, true);
-    if( bool(MyKFGI.GetIntOption(Options, YASCommandName, int(RepInfo.bAttemptToLoadYAS))) || MaxPlayers > 6 )
-		MyKFGI.AddMutator(YASClassLocation, true);
-    if( bool(MyKFGI.GetIntOption(Options, AALCommandName, int(RepInfo.bAttemptToLoadAAL))) )
-		MyKFGI.AddMutator(AALClassLocation, true);
-    if( bool(MyKFGI.GetIntOption(Options, CVCCommandName, int(RepInfo.bAttemptToLoadCVC))) )
-		MyKFGI.AddMutator(CVCClassLocation, true);
-		
-	Super.PostBeginPlay();
+    if( KFGI.GameplayEventsWriter != None )
+    {
+        KFGI.GameplayEventsWriter.EndLogging();
+        KFGI.GameplayEventsWriter = None;
+    }
 }
 
 final function GenerateMutatorEntry(name ClassName, string ClassPath)
@@ -74,26 +72,42 @@ function InitMutator(string Options, out string ErrorMessage)
     local KFGameInfo_WeeklySurvival WeeklyGI;
     local int CurrentActiveEventIdx, ActiveEventIdx;
 	local Mutator Mut;
+	local byte MaxPlayers;
+	local string InOpt;
     
 	Super.InitMutator(Options, ErrorMessage);
     
     if( RepInfo == None )
         return;
-    
+		
     RepInfo.AddLoadPackage(SwfMovie'UKFP_UI_Shared.AssetLib');
     RepInfo.AddLoadPackage(SwfMovie'UKFP_UI_HUD.InGameHUD_SWF');
     
-    RepInfo.KFGRI = KFGameReplicationInfo(WorldInfo.GRI);
+    RepInfo.CurrentPickupLifespan = KFGI.GetFloatOption(Options, "PickupLifespan", RepInfo.PickupLifespan);
+	
+	MaxPlayers = KFGI.GetIntOption(Options, "MaxPlayers", RepInfo.ForcedMaxPlayers);
+	
     if( MaxPlayers > 0 )
     {
-        MyKFGI.MaxPlayers = MaxPlayers;
-        MyKFGI.MaxPlayersAllowed = MaxPlayers;
+        KFGI.MaxPlayers = MaxPlayers;
+        KFGI.MaxPlayersAllowed = MaxPlayers;
         RepInfo.RepMaxPlayers = MaxPlayers;
     }
-    
-    RepInfo.CurrentPickupLifespan = MyKFGI.GetFloatOption(Options, "PickupLifespan", RepInfo.PickupLifespan);
+	
+    if( bool(KFGI.GetIntOption(Options, FHUDCommandName, int(RepInfo.bAttemptToLoadFHUD))) )
+		KFGI.AddMutator(FHUDClassLocation, true);
+    if( bool(KFGI.GetIntOption(Options, YASCommandName, int(RepInfo.bAttemptToLoadYAS))) || MaxPlayers > 6 )
+		KFGI.AddMutator(YASClassLocation, true);
+    if( bool(KFGI.GetIntOption(Options, AALCommandName, int(RepInfo.bAttemptToLoadAAL))) )
+		KFGI.AddMutator(AALClassLocation, true);
+    if( bool(KFGI.GetIntOption(Options, CVCCommandName, int(RepInfo.bAttemptToLoadCVC))) )
+		KFGI.AddMutator(CVCClassLocation, true);
+		
+    InOpt = KFGI.ParseOption(Options, "ServerName");
+    if( InOpt != "" )
+        class'GameReplicationInfo'.default.ServerName = InOpt;
         
-    if( bool(MyKFGI.GetIntOption(Options, HideCommandName, int(RepInfo.bServerHidden))) )
+    if( bool(KFGI.GetIntOption(Options, HideCommandName, int(RepInfo.bServerHidden))) )
     {
         RepInfo.bServerIsHidden = true;
 
@@ -101,36 +115,36 @@ function InitMutator(string Options, out string ErrorMessage)
 		RepInfo.OnlineSub.GameInterface.AddUpdateOnlineGameCompleteDelegate(RepInfo.CheckPrivateGameWorkshop);
     }
         
-    if( bool(MyKFGI.GetIntOption(Options, NoEventCommandName, int(RepInfo.bNoEventZEDSkins))) )
-        RepInfo.bNoEventSkins = true;
-        
-    if( bool(MyKFGI.GetIntOption(Options, NoPingCommandName, int(RepInfo.bNoPingsAllowed))) )
-        RepInfo.bNoPings = true;
-        
-    if( bool(MyKFGI.GetIntOption(Options, NoThirdPersonCommandName, int(RepInfo.bDisableTP))) )
-        RepInfo.bServerDisableTP = true;
-        
-    if( bool(MyKFGI.GetIntOption(Options, BroadcastPickupsCommandName, int(RepInfo.bBroadcastPickups))) )
-        RepInfo.bToBroadcastPickups = true;
-        
-    if( bool(MyKFGI.GetIntOption(Options, NoEDARCommandName, int(RepInfo.bNoEDARSpawns))) )
-        RepInfo.bForceDisableEDARs = true;
-        
-    if( bool(MyKFGI.GetIntOption(Options, HandCommandName, int(RepInfo.bDisallowHandChanges))) )
-        RepInfo.bDisallowHandSwap = true;
-        
-    if( bool(MyKFGI.GetIntOption(Options, MapVoteCommandName, int(RepInfo.bAllowGamemodeVotes))) )
+    if( bool(KFGI.GetIntOption(Options, MapVoteCommandName, int(RepInfo.bAllowGamemodeVotes))) )
         RepInfo.VotingHandler = Spawn(class'xVotingHandler');
         
-    CurrentActiveEventIdx = MyKFGI.GetIntOption(Options, "CurrentWeekly", int(RepInfo.WeeklyIndex));
-    RepInfo.CurrentMaxMonsters = MyKFGI.GetIntOption(Options, "MaxMonsters", RepInfo.MaxMonsters);
-    RepInfo.CurrentFakePlayers = MyKFGI.GetIntOption(Options, "FakePlayers", RepInfo.FakePlayers);
-    RepInfo.CurrentForcedSeasonalEventDate = ESeasonalEventType(MyKFGI.GetIntOption(Options, "CurrentSeasonalEvent", RepInfo.ForcedSeasonalEventDate));
-    RepInfo.CurrentNormalSummerSCAnims = bool(MyKFGI.GetIntOption(Options, "UseNormalSummerSCAnims", int(RepInfo.bUseNormalSummerSCAnims)));
-    RepInfo.bServerEnforceVanilla = bool(MyKFGI.GetIntOption(Options, "EnforceVanilla", int(RepInfo.bEnforceVanilla)));
-    RepInfo.bServerDropAllWepsOnDeath = bool(MyKFGI.GetIntOption(Options, "DropAllWepsOnDeath", int(RepInfo.bDropAllWepsOnDeath)));
+    CurrentActiveEventIdx = KFGI.GetIntOption(Options, "CurrentWeekly", int(RepInfo.WeeklyIndex));
+    RepInfo.bToBroadcastPickups = bool(KFGI.GetIntOption(Options, BroadcastPickupsCommandName, int(RepInfo.bBroadcastPickups)));
+    RepInfo.bForceDisableEDARs = bool(KFGI.GetIntOption(Options, NoEDARCommandName, int(RepInfo.bNoEDARSpawns)));
+    RepInfo.bDisallowHandSwap = bool(KFGI.GetIntOption(Options, HandCommandName, int(RepInfo.bDisallowHandChanges)));
+    RepInfo.CurrentMaxMonsters = KFGI.GetIntOption(Options, "MaxMonsters", RepInfo.MaxMonsters);
+    RepInfo.CurrentFakePlayers = KFGI.GetIntOption(Options, "FakePlayers", RepInfo.FakePlayers);
+    RepInfo.CurrentForcedSeasonalEventDate = ESeasonalEventType(KFGI.GetIntOption(Options, "CurrentSeasonalEvent", RepInfo.ForcedSeasonalEventDate));
+    RepInfo.bServerEnforceVanilla = bool(KFGI.GetIntOption(Options, "EnforceVanilla", int(RepInfo.bEnforceVanilla)));
+	if( RepInfo.bServerEnforceVanilla )
+	{
+		RepInfo.bNoEventSkins = true;
+		RepInfo.bNoPings = true;
+		RepInfo.bServerDisableTP = true;
+		RepInfo.CurrentNormalSummerSCAnims = true;
+		RepInfo.bServerDropAllWepsOnDeath = false;
+	}
+	else
+	{
+		RepInfo.bNoEventSkins = bool(KFGI.GetIntOption(Options, NoEventCommandName, int(RepInfo.bNoEventZEDSkins)));
+		RepInfo.bNoPings = bool(KFGI.GetIntOption(Options, NoPingCommandName, int(RepInfo.bNoPingsAllowed)));
+		RepInfo.bServerDisableTP = bool(KFGI.GetIntOption(Options, NoThirdPersonCommandName, int(RepInfo.bDisableTP)));
+		RepInfo.CurrentNormalSummerSCAnims = bool(KFGI.GetIntOption(Options, "UseNormalSummerSCAnims", int(RepInfo.bUseNormalSummerSCAnims)));
+		RepInfo.bServerDropAllWepsOnDeath = bool(KFGI.GetIntOption(Options, "DropAllWepsOnDeath", int(RepInfo.bDropAllWepsOnDeath)));
+	}
+    RepInfo.PingSpamTime = KFGI.GetFloatOption(Options, "PingSpamTime", RepInfo.PingSpamTime);
 
-    if( bool(MyKFGI.GetIntOption(Options, UseDynamicMOTDCommandName, int(RepInfo.bUseDynamicMOTD))) )
+    if( bool(KFGI.GetIntOption(Options, UseDynamicMOTDCommandName, int(RepInfo.bUseDynamicMOTD))) )
     {
 		foreach DynamicActors(class'Mutator', Mut)
 		{
@@ -153,12 +167,14 @@ function InitMutator(string Options, out string ErrorMessage)
         RepInfo.DynamicMOTD.bDisableTP = RepInfo.bServerDisableTP;
         RepInfo.DynamicMOTD.bDisallowHandSwap = RepInfo.bDisallowHandSwap;
         RepInfo.DynamicMOTD.bUseNormalSummerSCAnims = RepInfo.bUseNormalSummerSCAnims;
+        RepInfo.DynamicMOTD.bDropAllWepsOnDeath = RepInfo.bServerDropAllWepsOnDeath;
+        RepInfo.DynamicMOTD.bNoEDARs = RepInfo.bForceDisableEDARs;
     }
-    
+
     RepInfo.CurrentMapName = RepInfo.ConvertMapName(WorldInfo.GetMapName(true));
     RepInfo.SetTimer(WorldInfo.DeltaSeconds*2.f, false, 'CheckForMapFixes');
 
-    WeeklyGI = KFGameInfo_WeeklySurvival(MyKFGI);
+    WeeklyGI = KFGameInfo_WeeklySurvival(KFGI);
     if( WeeklyGI != None )
     {
         if( WeeklyGI.OutbreakEvent == None )
@@ -184,7 +200,30 @@ function InitMutator(string Options, out string ErrorMessage)
         RepInfo.bForceNetUpdate = true;
     }
     
-    MyKFGI.UpdateGameSettings();
+    TimerHelper.SetTimer(0.01f, false, 'CheckCustomStatus', self);
+}
+
+final function bool IsStandardGame()
+{
+	local name GamePackage;
+	GamePackage = KFGI.GetPackageName();
+	return GamePackage == 'KFGame' || GamePackage == 'KFGameContent';
+}
+
+final function CheckCustomStatus()
+{
+	local KFGameEngine KFGE;
+
+	KFGI.XPMultiplier = RepInfo.XPMultiplier;
+    KFGI.bIsCustomGame = !IsStandardGame() || KFGI.bIsUnrankedGame || KFGI.MaxPlayers != KFGI.MaxPlayersAllowed || KFGI.FriendlyFireScale > 0.f;
+	
+	KFGE = KFGameEngine(class'Engine'.static.GetEngine());
+	KFGE.bUsedForTakeover = KFGI.bIsCustomGame ? false : KFGE.default.bUsedForTakeover;
+	KFGE.bAvailableForTakeover = !KFGI.bIsCustomGame;
+	
+	KFGI.UpdateGameSettings();
+	
+	TimerHelper.Destroy();
 }
 
 defaultproperties

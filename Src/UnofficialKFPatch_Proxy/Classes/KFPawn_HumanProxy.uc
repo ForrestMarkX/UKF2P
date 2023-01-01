@@ -146,3 +146,41 @@ stripped final function context(KFPawn_Human) ForceFixCamera()
         
     CRI.SetTimer(0.25f, false, 'ForceFixCamera');
 }
+
+stripped simulated event context(KFPawn_Human.Tick) Tick( float DeltaTime )
+{
+	local float NewSpeedPenalty;
+
+	Super.Tick( DeltaTime );
+
+	if( Role == ROLE_Authority )
+	{
+		if( Health < HealthMax )
+			NewSpeedPenalty = Lerp(0.15f, 0.f, FMin(float(Health) / 100, 1.f));
+		else NewSpeedPenalty = 0.f;
+
+		if( NewSpeedPenalty != LowHealthSpeedPenalty )
+		{
+			LowHealthSpeedPenalty = NewSpeedPenalty;
+			UpdateGroundSpeed();
+		}
+	}
+
+	if( WorldInfo.NetMode != NM_DedicatedServer )
+	{
+		if( DeathMaterialEffectTimeRemaining > 0 )
+			UpdateDeathMaterialEffect( DeltaTime );
+	}
+	
+	if( !IsA('KFPawn_Customization') )
+		ForceSpawnedIn();
+}
+
+stripped final simulated function context(KFPawn_Human) ForceSpawnedIn()
+{
+	local KFPlayerReplicationInfo KFPRI;
+	
+    KFPRI = KFPlayerReplicationInfo(PlayerReplicationInfo);
+    if( KFPRI != None && !KFPRI.bHasSpawnedIn )
+		KFPRI.bHasSpawnedIn = true;
+}

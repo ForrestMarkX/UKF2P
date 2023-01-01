@@ -1,26 +1,15 @@
-class KFGameDifficultyInfoProxy extends KFGameDifficultyInfo;
+class KFGameDifficultyInfoProxy extends Object;
 
-function float GetAIHiddenSpeedModifier( int NumLivingPlayers )
+stripped function context(KFGameDifficultyInfo.GetNumPlayersModifier) float GetNumPlayersModifier( const out NumPlayerMods PlayerSetting, byte NumLivingPlayers )
 {
-	return GetNumPlayersModifier( NumPlayers_AIHiddenSpeed, `GetURI().GetEffectivePlayerCount(NumLivingPlayers) );
-}
+	local float StartingLerp, LerpRate;
+	
+	NumLivingPlayers = Max(`GetURI().CurrentFakePlayers, NumLivingPlayers);
 
-function float GetPlayerNumMaxAIModifier( byte NumLivingPlayers )
-{
-	return GetNumPlayersModifier( NumPlayers_WaveSize, `GetURI().GetEffectivePlayerCount(NumLivingPlayers) );
-}
+	if( `KF_MAX_PLAYERS > NumLivingPlayers )
+	 	return PlayerSetting.PlayersMod[Max(NumLivingPlayers - 1, 0)];
 
-function float GetAmmoPickupInterval( byte NumLivingPlayers )
-{
-	return GetNumPlayersModifier( NumPlayers_AmmoPickupRespawnTime, `GetURI().GetEffectivePlayerCount(NumLivingPlayers) );
-}
-
-function float GetWeaponPickupInterval( byte NumLivingPlayers )
-{
-	return GetNumPlayersModifier( NumPlayers_WeaponPickupRespawnTime, `GetURI().GetEffectivePlayerCount(NumLivingPlayers) );
-}
-
-function float GetDamageResistanceModifier( byte NumLivingPlayers )
-{
-	return GetNumPlayersModifier( NumPlayers_ZedDamageResistance, `GetURI().GetEffectivePlayerCount(NumLivingPlayers) );
+    StartingLerp = PlayerSetting.PlayersMod[ `KF_MAX_PLAYERS - 1 ];
+	LerpRate = (NumLivingPlayers - `KF_MAX_PLAYERS) / (32.f - `KF_MAX_PLAYERS);
+	return Lerp( StartingLerp, PlayerSetting.ModCap, LerpRate );
 }

@@ -1015,6 +1015,7 @@ stripped final function context(UKFPHUDInteraction.SetWeaponHand) SetWeaponHand(
         WeaponHand = HAND_Centered;
     else WeaponHand = HAND_Right;
     
+	ChatRep.OnPlayerHandsChanged();
     SaveConfig();
 }
 
@@ -1022,7 +1023,7 @@ stripped final function context(UKFPHUDInteraction) ToggleCameraModeEx()
 {
     local bool bBehindView;
     
-    if( KFPlayerOwner.Pawn == None || KFPlayerOwner.IsBossCameraMode() || ChatRep.MainRepInfo.bServerDisableTP || ChatRep.MainRepInfo.GetEnforceVanilla() )
+    if( KFPlayerOwner.Pawn == None || KFPlayerOwner.IsBossCameraMode() || ChatRep.MainRepInfo.bServerDisableTP )
         return;
         
     bBehindView = KFPlayerOwner.PlayerCamera.CameraStyle!='FirstPerson';

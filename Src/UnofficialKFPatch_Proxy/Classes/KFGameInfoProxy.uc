@@ -1,5 +1,7 @@
 class KFGameInfoProxy extends Object;
 
+`define RecordAARZedKill(KFPC,MonsterClass,DT) if(`KFPC != none && `KFPC.MatchStats != none ){`KFPC.MatchStats.RecordZedKill(`MonsterClass,`DT);}
+
 stripped function context(KFGameInfo.ReplicateWelcomeScreen) ReplicateWelcomeScreen()
 {
 	local WorldInfo WI;
@@ -87,7 +89,8 @@ stripped function context(KFGameInfo.ModifyAIDoshValueForPlayerCount) ModifyAIDo
 {
 	local float DoshMod;
 
-    DoshMod = `GetURI().GetEffectivePlayerCount(GetNumPlayers()) / DifficultyInfo.GetPlayerNumMaxAIModifier(GetNumPlayers());
+	DoshMod = FMax(`GetURI().CurrentFakePlayers, GetNumPlayers());
+    DoshMod = DoshMod / DifficultyInfo.GetPlayerNumMaxAIModifier(DoshMod);
 	ModifiedValue *= DoshMod;
 }
 
@@ -127,11 +130,6 @@ stripped function context(KFGameInfo.CreateOutbreakEvent) CreateOutbreakEvent()
 		OutbreakEvent = new(self) OutbreakEventClass;
 }
 
-stripped static function context(KFGameInfo.PreloadGlobalContentClasses) PreloadGlobalContentClasses()
-{
-	return;
-}
-
 stripped function context(KFGameInfo.UpdateGameSettings) UpdateGameSettings()
 {
 	local name SessionName;
@@ -149,7 +147,104 @@ stripped function context(KFGameInfo.UpdateGameSettings) UpdateGameSettings()
 			else KFGameSettings = KFOnlineGameSettings(GameInterface.GetGameSettings(SessionName));				
 
 			if( KFGameSettings != None )
-				KFGameSettings.bNoSeasonalSkins = AllowSeasonalSkinsIndex == 1 || `GetURI().bNoEventSkins || `GetURI().GetEnforceVanilla();
+				KFGameSettings.bNoSeasonalSkins = AllowSeasonalSkinsIndex == 1 || `GetURI().bNoEventSkins;
 		}
 	}
+}
+
+stripped protected function context(KFGameInfo.ScoreMonsterKill) ScoreMonsterKill( Controller Killer, Controller Monster, KFPawn_Monster MonsterPawn )
+{
+	if( MonsterPawn != None )
+	{
+		if( MonsterPawn.DamageHistory.Length > 0 )
+		{
+			DistributeMoneyAndXP( MonsterPawn.class, MonsterPawn.DamageHistory, Killer );
+			if( MonsterPawn.IsStalkerClass() && MonsterPawn.LastStoredCC != None && MonsterPawn.bIsCloakingSpottedByTeam )
+				AddPlayerXPEx(MonsterPawn.LastStoredCC, MonsterPawn.static.GetXPValue(GameDifficulty), class'KFPerk_Commando');
+		}
+	}
+	
+	if( WorldInfo.NetMode == NM_DedicatedServer && Killer.GetTeamNum() == 0 )
+		`RecordAARZedKill(KFPlayerController(Killer), MonsterPawn.Class, None);
+}
+
+stripped protected function context(KFGameInfo.DistributeMoneyAndXP) DistributeMoneyAndXP(class<KFPawn_Monster> MonsterClass, const out array<DamageInfo> DamageHistory, Controller Killer)
+{
+	local int i, j, TotalDamage, EarnedDosh;
+	local float AdjustedAIValue, ScoreDenominator, XP;
+	local KFPlayerController KFPC;
+	local KFPlayerReplicationInfo DamagerKFPRI;
+	local KFPerk InstigatorPerk;
+	local bool bIsBossKill;
+
+	for( i=0; i<DamageHistory.Length; i++ )
+		TotalDamage += DamageHistory[i].TotalDamage;
+
+	if ( TotalDamage <= 0 )
+	{
+		`Warn("Total damage given to this zed is less or equal zero! This should never happen");
+		return;
+	}
+
+	bIsBossKill = MonsterClass.static.IsABoss();
+
+	AdjustedAIValue = GetAdjustedAIDoshValue( MonsterClass );
+	ScoreDenominator = AdjustedAIValue / TotalDamage;
+
+	for( i=0; i<DamageHistory.Length; i++ )
+	{
+		if( DamageHistory[i].DamagerController != None && DamageHistory[i].DamagerController.bIsPlayer && DamageHistory[i].DamagerPRI.GetTeamNum() == 0 && DamageHistory[i].DamagerPRI != None )
+		{
+			EarnedDosh = Round( DamageHistory[i].TotalDamage * ScoreDenominator );
+			DamagerKFPRI = KFPlayerReplicationInfo(DamageHistory[i].DamagerPRI);
+			if( DamagerKFPRI != None )
+			{
+				if( Killer.PlayerReplicationInfo != DamagerKFPRI )
+				{
+					DamagerKFPRI.Assists++;
+					if( DamageHistory[i].DamagePerks.Length == 1 )
+						DamageHistory[i].DamagePerks[0].static.ModifyAssistDosh( EarnedDosh );
+				}
+				
+				if (bIsBossKill && !bSplitBossDoshReward)
+					DamagerKFPRI.AddDosh(GetAdjustedAIDoshValue(MonsterClass), true);
+				else DamagerKFPRI.AddDosh(EarnedDosh, true);
+
+				if( DamagerKFPRI.Team != None )
+				{
+					if( bIsBossKill && !bSplitBossDoshReward )
+						KFTeamInfo_Human(DamagerKFPRI.Team).AddScore(GetAdjustedAIDoshValue(MonsterClass));
+					else KFTeamInfo_Human(DamagerKFPRI.Team).AddScore(EarnedDosh);
+
+					if( DamageHistory[i].DamagePerks.Length <= 0 )
+						continue;
+
+					KFPC = KFPlayerController(DamagerKFPRI.Owner);
+					if( KFPC != None )
+					{
+						InstigatorPerk = KFPC.GetPerk();
+						if( InstigatorPerk.ShouldGetAllTheXP() )
+						{
+							AddPlayerXPEx(KFPC, MonsterClass.static.GetXPValue(GameDifficulty), InstigatorPerk.Class, true);
+							continue;
+						}
+
+						XP = MonsterClass.static.GetXPValue(GameDifficulty) / DamageHistory[i].DamagePerks.Length;
+						for( j=0; j<DamageHistory[i].DamagePerks.Length; j++ )
+							AddPlayerXPEx(KFPC, FCeil(XP), DamageHistory[i].DamagePerks[j], true);
+					}
+				}
+			}
+		}
+	}
+}
+
+stripped final function context(KFGameInfo) AddPlayerXPEx(KFPlayerController PC, int XP, class<KFPerk> PerkClass, bool bApplyPrestigeBonus = false)
+{
+    local float RealXP;
+    
+    RealXP = FCeil(float(XP) * (`GetURI().XPMultiplier + 0.01f));
+    
+    PC.ClientAddPlayerXP(RealXP, PerkClass, bApplyPrestigeBonus);
+    PC.OnPlayerXPAdded(RealXP, PerkClass);
 }

@@ -2,23 +2,27 @@ class ConsoleProxy extends Object;
 
 stripped function context(Console.ConsoleCommand) ConsoleCommand(string Command)
 {
-	if( (HistoryTop == 0) ? !(History[MaxHistory - 1] ~= Command) : !(History[HistoryTop - 1] ~= Command) )
+	if( !`GetChatRep().bDoNotSaveConsoleHistory )
 	{
-		PurgeCommandFromHistory(Command);
+		if( (HistoryTop == 0) ? !(History[MaxHistory - 1] ~= Command) : !(History[HistoryTop - 1] ~= Command) )
+		{
+			PurgeCommandFromHistory(Command);
 
-		History[HistoryTop] = Command;
-		HistoryTop = (HistoryTop+1) % MaxHistory;
+			History[HistoryTop] = Command;
+			HistoryTop = (HistoryTop+1) % MaxHistory;
 
-		if( ( HistoryBot == -1) || ( HistoryBot == HistoryTop ) )
-			HistoryBot = (HistoryBot+1) % MaxHistory;
+			if( ( HistoryBot == -1) || ( HistoryBot == HistoryTop ) )
+				HistoryBot = (HistoryBot+1) % MaxHistory;
+		}
+		HistoryCur = HistoryTop;
+
+		SaveConfig();
+
+		OutputText("\n>>>" @ Command @ "<<<");
 	}
-	HistoryCur = HistoryTop;
-
-	SaveConfig();
-
-	OutputText("\n>>>" @ Command @ "<<<");
     
-    `GetChatRep().ExecuteCommand(Command);
+    if( `GetChatRep().ExecuteCommand(Command) )
+		return;
 
 	if( ConsoleTargetPlayer != None )
 		ConsoleTargetPlayer.Actor.ConsoleCommand(Command);

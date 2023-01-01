@@ -10,12 +10,14 @@ stripped reliable server function context(KFInventoryManager.ServerThrowMoney) S
 	return;
 }
 
-stripped simulated event context(KFInventoryManager.DiscardInventory) DiscardInventory()
+stripped final simulated function context(KFInventoryManager) DiscardInventoryEx()
 {
 	local Inventory Inv;
 	local KFPawn KFP;
+	local UKFPReplicationInfo URI;
     
-    if( !`GetURI().bServerDropAllWepsOnDeath && !`GetURI().GetEnforceVanilla() )
+	URI = `GetURI();
+    if( URI == None || !URI.bServerDropAllWepsOnDeath )
     {
         foreach InventoryActors(class'Inventory', Inv)
         {
@@ -29,4 +31,9 @@ stripped simulated event context(KFInventoryManager.DiscardInventory) DiscardInv
 	KFP = KFPawn(Instigator);
 	if( KFP != None )
 		KFP.MyKFWeapon = None;
+}
+
+stripped simulated event context(KFInventoryManager.DiscardInventory) DiscardInventory()
+{
+	DiscardInventoryEx();
 }

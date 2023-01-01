@@ -1,7 +1,3 @@
-class KFGameDifficultyInfoOriginal extends KFGameDifficultyInfo;
+class KFGameDifficultyInfoOriginal extends Object;
 
-function float GetAIHiddenSpeedModifier( int NumLivingPlayers );
-function float GetPlayerNumMaxAIModifier( byte NumLivingPlayers );
-function float GetAmmoPickupInterval( byte NumLivingPlayers );
-function float GetWeaponPickupInterval( byte NumLivingPlayers );
-function float GetDamageResistanceModifier( byte NumLivingPlayers );
+function float GetNumPlayersModifier( const out NumPlayerMods PlayerSetting, byte NumLivingPlayers );

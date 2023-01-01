@@ -4,11 +4,11 @@ Class xVotingHandler extends xVotingHandlerBase
 
 struct FGameModeOption
 {
-	var config string GameName,GameShortName,GameClass,Mutators,Options,Prefix;
+	var string GameName,GameShortName,GameClass,Mutators,Options,Prefix;
 };
 var config array<FGameModeOption> GameModes;
 var config int LastVotedGameInfo,MaxMapsOnList;
-var config float MidGameVotePct,MapWinPct,MapChangeDelay;
+var config float MidGameVotePct,MapChangeDelay;
 
 var array<FMapEntry> Maps;
 var array<FVotedMaps> ActiveVotes;
@@ -39,7 +39,6 @@ function PostBeginPlay()
 		GameModes[0].Mutators = "";
 		GameModes[0].Prefix = "";
 		MidGameVotePct = 0.51;
-		MapWinPct = 0.75;
 		SaveConfig();
 	}
 
@@ -108,6 +107,10 @@ function SetupBroadcast()
         else `Log("X-VoteWebAdmin ERROR: No valid WebAdmin application found!");
     }
     else `Log("X-VoteWebAdmin ERROR: No WebServer object found!");
+}
+final function int MapVoteSort(FVotedMaps A, FVotedMaps B)
+{
+	return A.NumVotes == B.NumVotes ? 0 : (A.NumVotes > B.NumVotes ? 1 : -1);
 }
 final function AddVote( int Count, int MapIndex, int GameIndex )
 {
@@ -267,33 +270,28 @@ final function TallyVotes( optional bool bForce )
 
 	if( bMapvoteHasEnded )
 		return;
-
+		
     for( i=0; i<ActiveVoters.Length; i++ )
     {
         if( ActiveVoters[i] == None || ActiveVoters[i].PlayerOwner == None || ActiveVoters[i].PlayerOwner.PlayerReplicationInfo == None || ActiveVoters[i].PlayerOwner.PlayerReplicationInfo.bOnlySpectator )
             continue;
         NumVotees++;
     }
-    
-    // Check for insta-win vote.
-    for( i=(ActiveVotes.Length-1); i>=0; --i )
-    {
+
+	ActiveVotes.Sort(MapVoteSort);
+	for( i=0; i<ActiveVotes.Length; i++ )
         c+=ActiveVotes[i].NumVotes;
-        if( GetPctOf(ActiveVotes[i].NumVotes,NumVotees)>=MapWinPct )
-        {
-            if( WorldInfo.GRI.RemainingTime > 5 )
-            {
-                WorldInfo.GRI.RemainingTime = 5;
-                WorldInfo.GRI.RemainingMinute = 5;
-            }
-            iWonIndex = i;
-        }
-    }
+		
+	if( c >= NumVotees && WorldInfo.GRI.RemainingTime > 5 )
+	{
+		WorldInfo.GRI.RemainingTime = 5;
+		WorldInfo.GRI.RemainingMinute = 5;
+	}
 
     if( bForce )
     {
         if( ActiveVotes.Length > 0 )
-            SwitchToLevel(ActiveVotes[iWonIndex].GameIndex,ActiveVotes[iWonIndex].MapIndex,false);
+            SwitchToLevel(ActiveVotes[0].GameIndex,ActiveVotes[0].MapIndex,false);
         else SwitchToLevel(0,Rand(Maps.Length),false);
     }
     

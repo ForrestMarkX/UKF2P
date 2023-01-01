@@ -10,7 +10,7 @@ function Init()
 
     if( default.bInitSuccess )
         return;
-        
+		
     UKFPHUDInteraction.Initialized = ExtendedHUD.Initialized;
     UKFPHUDInteraction.SetupBobStyle = ExtendedHUD.SetupBobStyle;
     UKFPHUDInteraction.PostRender = ExtendedHUD.PostRender;
@@ -72,20 +72,22 @@ function Init()
         KFGameInfo.GetGameModeFriendlyNameFromClass = KFGameInfoProxy.GetGameModeFriendlyNameFromClass;
         KFGameInfoOriginal.CreateOutbreakEvent = KFGameInfo.CreateOutbreakEvent;
         KFGameInfo.CreateOutbreakEvent = KFGameInfoProxy.CreateOutbreakEvent;
-        KFGameInfoOriginal.PreloadGlobalContentClasses = KFGameInfo.PreloadGlobalContentClasses;
-        KFGameInfo.PreloadGlobalContentClasses = KFGameInfoProxy.PreloadGlobalContentClasses;
         KFGameInfoOriginal.UpdateGameSettings = KFGameInfo.UpdateGameSettings;
         KFGameInfo.UpdateGameSettings = KFGameInfoProxy.UpdateGameSettings;
+        KFGameInfoOriginal.ScoreMonsterKill = KFGameInfo.ScoreMonsterKill;
+        KFGameInfo.ScoreMonsterKill = KFGameInfoProxy.ScoreMonsterKill;
+        KFGameInfoOriginal.DistributeMoneyAndXP = KFGameInfo.DistributeMoneyAndXP;
+        KFGameInfo.DistributeMoneyAndXP = KFGameInfoProxy.DistributeMoneyAndXP;
         KFGameInfo_SurvivalOriginal.StartMatch = KFGameInfo_Survival.StartMatch;
         KFGameInfo_Survival.StartMatch = KFGameInfo_SurvivalProxy.StartMatch;
-        KFGameInfo_SurvivalOriginal.StartWave = KFGameInfo_Survival.StartWave;
-        KFGameInfo_Survival.StartWave = KFGameInfo_SurvivalProxy.StartWave;
+        KFGameInfo_SurvivalOriginal.NotifyTraderOpened = KFGameInfo_Survival.NotifyTraderOpened;
+        KFGameInfo_Survival.NotifyTraderOpened = KFGameInfo_SurvivalProxy.NotifyTraderOpened;
+        KFGameInfo_SurvivalOriginal.NotifyTraderClosed = KFGameInfo_Survival.NotifyTraderClosed;
+        KFGameInfo_Survival.NotifyTraderClosed = KFGameInfo_SurvivalProxy.NotifyTraderClosed;
         KFGameInfo_SurvivalOriginal.TryRestartGame = KFGameInfo_Survival.TryRestartGame;
         KFGameInfo_Survival.TryRestartGame = KFGameInfo_SurvivalProxy.TryRestartGame;
         KFGameInfo_SurvivalOriginal.ForceChangeLevel = KFGameInfo_Survival.ForceChangeLevel;
         KFGameInfo_Survival.ForceChangeLevel = KFGameInfo_SurvivalProxy.ForceChangeLevel;
-        KFGameInfo_SurvivalOriginal.TraderOpen.BeginState = KFGameInfo_Survival.TraderOpen.BeginState;
-        KFGameInfo_Survival.TraderOpen.BeginState = KFGameInfo_SurvivalProxy.TraderOpen.BeginState;
         KFPlayerControllerOriginal.EnterZedTime = KFPlayerController.EnterZedTime;
         KFPlayerController.EnterZedTime = KFPlayerControllerProxy.EnterZedTime;
         KFPlayerControllerOriginal.CompleteZedTime = KFPlayerController.CompleteZedTime;
@@ -112,6 +114,8 @@ function Init()
         KFPawn_Human.UpdateHealingShield = KFPawn_HumanProxy.UpdateHealingShield;
         KFPawn_HumanOriginal.PossessedBy = KFPawn_Human.PossessedBy;
         KFPawn_Human.PossessedBy = KFPawn_HumanProxy.PossessedBy;
+        KFPawn_HumanOriginal.Tick = KFPawn_Human.Tick;
+        KFPawn_Human.Tick = KFPawn_HumanProxy.Tick;
         DroppedPickupOriginal.Landed = DroppedPickup.Landed;  
         DroppedPickup.Landed = DroppedPickupProxy.Landed;
         BasicWebAdminUserOriginal.linkPlayerController = BasicWebAdminUser.linkPlayerController;  
@@ -124,16 +128,8 @@ function Init()
         KFInventoryManager.DiscardInventory = KFInventoryManagerProxy.DiscardInventory;
         KFInventory_MoneyOriginal.DropFrom = KFInventory_Money.DropFrom;  
         KFInventory_Money.DropFrom = KFInventory_MoneyProxy.DropFrom;
-        KFGameDifficultyInfoOriginal.GetAIHiddenSpeedModifier = KFGameDifficultyInfo.GetAIHiddenSpeedModifier;
-        KFGameDifficultyInfoOriginal.GetPlayerNumMaxAIModifier = KFGameDifficultyInfo.GetPlayerNumMaxAIModifier;
-        KFGameDifficultyInfoOriginal.GetAmmoPickupInterval = KFGameDifficultyInfo.GetAmmoPickupInterval;
-        KFGameDifficultyInfoOriginal.GetWeaponPickupInterval = KFGameDifficultyInfo.GetWeaponPickupInterval;
-        KFGameDifficultyInfoOriginal.GetDamageResistanceModifier = KFGameDifficultyInfo.GetDamageResistanceModifier;
-        KFGameDifficultyInfo.GetAIHiddenSpeedModifier = KFGameDifficultyInfoProxy.GetAIHiddenSpeedModifier;
-        KFGameDifficultyInfo.GetPlayerNumMaxAIModifier = KFGameDifficultyInfoProxy.GetPlayerNumMaxAIModifier;
-        KFGameDifficultyInfo.GetAmmoPickupInterval = KFGameDifficultyInfoProxy.GetAmmoPickupInterval;
-        KFGameDifficultyInfo.GetWeaponPickupInterval = KFGameDifficultyInfoProxy.GetWeaponPickupInterval;
-        KFGameDifficultyInfo.GetDamageResistanceModifier = KFGameDifficultyInfoProxy.GetDamageResistanceModifier;
+        KFGameDifficultyInfoOriginal.GetNumPlayersModifier = KFGameDifficultyInfo.GetNumPlayersModifier;
+        KFGameDifficultyInfo.GetNumPlayersModifier = KFGameDifficultyInfoProxy.GetNumPlayersModifier;
         KFAIControllerOriginal.FindNewEnemy = KFAIController.FindNewEnemy;
         KFAIController.FindNewEnemy = KFAIControllerProxy.FindNewEnemy;
         KFPawn_MonsterOriginal.GetAIPawnClassToSpawn = KFPawn_Monster.GetAIPawnClassToSpawn;
@@ -455,13 +451,14 @@ function Cleanup()
         KFGameInfo.GetGameModeNumFromClass = KFGameInfoOriginal.GetGameModeNumFromClass;
         KFGameInfo.GetGameModeFriendlyNameFromClass = KFGameInfoOriginal.GetGameModeFriendlyNameFromClass;
         KFGameInfo.CreateOutbreakEvent = KFGameInfoOriginal.CreateOutbreakEvent;
-        KFGameInfo.PreloadGlobalContentClasses = KFGameInfoOriginal.PreloadGlobalContentClasses;
         KFGameInfo.UpdateGameSettings = KFGameInfoOriginal.UpdateGameSettings;
+        KFGameInfo.ScoreMonsterKill = KFGameInfoOriginal.ScoreMonsterKill;
+        KFGameInfo.DistributeMoneyAndXP = KFGameInfoOriginal.DistributeMoneyAndXP;
         KFGameInfo_Survival.StartMatch = KFGameInfo_SurvivalOriginal.StartMatch;
-        KFGameInfo_Survival.StartWave = KFGameInfo_SurvivalOriginal.StartWave;
+        KFGameInfo_Survival.NotifyTraderOpened = KFGameInfo_SurvivalOriginal.NotifyTraderOpened;
+        KFGameInfo_Survival.NotifyTraderClosed = KFGameInfo_SurvivalOriginal.NotifyTraderClosed;
         KFGameInfo_Survival.TryRestartGame = KFGameInfo_SurvivalOriginal.TryRestartGame;
         KFGameInfo_Survival.ForceChangeLevel = KFGameInfo_SurvivalOriginal.ForceChangeLevel;
-        KFGameInfo_Survival.TraderOpen.BeginState = KFGameInfo_SurvivalOriginal.TraderOpen.BeginState;
         KFPlayerController.EnterZedTime = KFPlayerControllerOriginal.EnterZedTime;
         KFPlayerController.CompleteZedTime = KFPlayerControllerOriginal.CompleteZedTime;
         KFPlayerController.ServerPause = KFPlayerControllerOriginal.ServerPause;
@@ -475,17 +472,14 @@ function Cleanup()
         KFPawn_Human.UpdateHealingDamageBoost = KFPawn_HumanOriginal.UpdateHealingDamageBoost;
         KFPawn_Human.UpdateHealingShield = KFPawn_HumanOriginal.UpdateHealingShield;
         KFPawn_Human.PossessedBy = KFPawn_HumanOriginal.PossessedBy;
+        KFPawn_Human.Tick = KFPawn_HumanOriginal.Tick;
         DroppedPickup.Landed = DroppedPickupOriginal.Landed;
         BasicWebAdminUser.linkPlayerController = BasicWebAdminUserOriginal.linkPlayerController;
         KFAISpawnManager.GetMaxMonsters = KFAISpawnManagerOriginal.GetMaxMonsters; 
         KFInventoryManager.ServerThrowMoney = KFInventoryManagerOriginal.ServerThrowMoney;
         KFInventoryManager.DiscardInventory = KFInventoryManagerOriginal.DiscardInventory;
         KFInventory_Money.DropFrom = KFInventory_MoneyOriginal.DropFrom;
-        KFGameDifficultyInfo.GetAIHiddenSpeedModifier = KFGameDifficultyInfoOriginal.GetAIHiddenSpeedModifier;
-        KFGameDifficultyInfo.GetPlayerNumMaxAIModifier = KFGameDifficultyInfoOriginal.GetPlayerNumMaxAIModifier;
-        KFGameDifficultyInfo.GetAmmoPickupInterval = KFGameDifficultyInfoOriginal.GetAmmoPickupInterval;
-        KFGameDifficultyInfo.GetWeaponPickupInterval = KFGameDifficultyInfoOriginal.GetWeaponPickupInterval;
-        KFGameDifficultyInfo.GetDamageResistanceModifier = KFGameDifficultyInfoOriginal.GetDamageResistanceModifier;
+        KFGameDifficultyInfo.GetNumPlayersModifier = KFGameDifficultyInfoOriginal.GetNumPlayersModifier;
         KFAIController.FindNewEnemy = KFAIControllerOriginal.FindNewEnemy;
         KFPawn_Monster.GetAIPawnClassToSpawn = KFPawn_MonsterOriginal.GetAIPawnClassToSpawn;
     }

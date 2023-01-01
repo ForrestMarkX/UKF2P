@@ -51,12 +51,14 @@ Congrats you just posted a MIcon to chat
 ?FakePlayers=<Byte> - Sets faked players value (Can't go lower than the current living players)
 ?NoThirdperson=(0/1) - Allow/Disallow players to enter thirdperson
 ?NoHandChanges=(0/1) - Don't allow players to change their hand position
-?CurrentWeekly=(0 - 18) - Sets the current weekly outbreak
+?CurrentWeekly=(0 - 19) - Sets the current weekly outbreak
 ?AllowGamemodeVotes=(0/1) - Allow voting for more than 1 gamemode (Can be configured from WebAdmin)
-?CurrentSeasonalEvent=(0 - 16) - Sets the current seasonal event
+?CurrentSeasonalEvent=(0 - 17) - Sets the current seasonal event
 ?UseNormalSummerSCAnims=(0/1) - Disables the Summer Scrake change
 ?EnforceVanilla=(0/1) - Enforces Vanilla Mode (Read what this changes in the Vanilla Mode section)
 ?DropAllWepsOnDeath=(0/1) - Sets if players drop all weapons on death
+?ServerName=<String> - Allows setting the server name from the commandline
+?PingSpamTime=<Float> - Sets how long a player is banned from pings when spamming (Set to -1 to disable the system)
 [/code]
 
 [h1]Chat Commands[/h1]
@@ -102,6 +104,7 @@ SetNoHRG (0/1) - Allows changing if HRG weapons appear in the trader or not
 [*]Disables system that stops screenshakes when ZED Time starts
 [*]Disallow players from entering third person
 [*]Disallow players from dropping all weapons on death
+[*]Disallow players from using Pings
 [/list]
 
 [h1]Original Map Locations[/h1]
@@ -112,6 +115,7 @@ SetNoHRG (0/1) - Allows changing if HRG weapons appear in the trader or not
 [*][url=https://steamcommunity.com/sharedfiles/filedetails/?id=2112484462]Sanitarium[/url]
 [*][url=https://steamcommunity.com/sharedfiles/filedetails/?id=1872817762]Rig[/url]
 [*][url=https://steamcommunity.com/sharedfiles/filedetails/?id=859997535]Carillon Hamlet[/url]
+[*][url=https://steamcommunity.com/sharedfiles/filedetails/?id=1861419982]Crash[/url]
 [/list]
 
 [h1]Weekly Outbreak List[/h1]

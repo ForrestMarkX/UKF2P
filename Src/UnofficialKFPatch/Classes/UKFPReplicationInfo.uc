@@ -62,13 +62,14 @@ var transient KFGameReplicationInfo KFGRI;
 var transient OnlineSubsystemSteamworks OnlineSub;
 var transient array<ReplicationHelper> ChatArray;
 var transient float CurrentPickupLifespan;
+var const private transient float XPMultiplier;
 var transient byte CurrentMaxMonsters, CurrentFakePlayers, SavedWaveNum, CurrentSeasonalIndex;
 var transient string TravelMapName, CurrentMapName;
 var transient TcpNetDriver NetDriver;
 var transient WorkshopTool WorkshopTool;
 var transient array<KFPlayerController> PlayersDiedThisWave, PlayersDiedThisWaveOld;
 var transient xVotingHandler VotingHandler;
-var transient repnotify private bool bServerEnforceVanilla;
+var transient repnotify bool bServerEnforceVanilla;
 
 var array<string> IgnoreDecentMaps;
 
@@ -122,9 +123,9 @@ var array<FPlayerPickups> PlayerPickups;
 var array< class<KFWeapon> > LoadedWeaponClasses;
 var array<Object> ExternalObjs;
 
-var config int CurrentNetDriverIndex;
+var config int CurrentNetDriverIndex, iConfigVersion;
 var config byte ForcedMaxPlayers, MaxMonsters, FakePlayers;
-var config float PickupLifespan;
+var config float PickupLifespan, PingSpamTime;
 
 var config bool bEnforceVanilla, bUseNormalSummerSCAnims, bAllowGamemodeVotes, bAttemptToLoadFHUD, bAttemptToLoadYAS, bAttemptToLoadAAL, bAttemptToLoadCVC, bServerHidden, bNoEventZEDSkins, bNoEDARSpawns, bNoPingsAllowed, bBroadcastPickups, bUseDynamicMOTD, bDisableTP, bDisallowHandChanges, bDropAllWepsOnDeath;
 var transient bool CurrentNormalSummerSCAnims, bForceResetInterpActors, bDisallowHandSwap, bPlayingEmote, bHandledTravel, bServerIsHidden, bNoPings, bToBroadcastPickups, bServerDisableTP, bForceDisableEDARs, bServerDropAllWepsOnDeath;
@@ -135,7 +136,7 @@ var array< class<KFWeapon> > WeaponExploitFix;
 
 struct FDynamicMOTDInfo
 {
-    var bool bYASLoaded, bAALLoaded, bCVCLoaded, bFHUDLoaded, bNoEventSkins, bNoPings, bToBroadcastPickups, bDisableTP, bDisallowHandSwap, bUseNormalSummerSCAnims, bEnforceVanilla;
+    var bool bYASLoaded, bAALLoaded, bCVCLoaded, bFHUDLoaded, bNoEventSkins, bNoPings, bToBroadcastPickups, bDisableTP, bDisallowHandSwap, bUseNormalSummerSCAnims, bEnforceVanilla, bDropAllWepsOnDeath, bNoEDARs;
     var byte CurrentMaxPlayers, CurrentMaxMonsters, CurrentFakePlayers;
     var float CurrentPickupLifespan;
 };
@@ -145,7 +146,7 @@ var string DynamicMOTDString;
 replication
 {
     if( bNetInitial && Role==ROLE_Authority )
-        InitialWeeklyIndex, InitialSeasonalEventDate, CurrentForcedSeasonalEventDate, bServerEnforceVanilla;
+        InitialWeeklyIndex, InitialSeasonalEventDate, CurrentForcedSeasonalEventDate, bServerEnforceVanilla, bServerDropAllWepsOnDeath;
     if( Role==ROLE_Authority )
         KFGRI, bServerIsHidden, bNoEventSkins, bNoPings, DynamicMOTD, bServerDisableTP, CurrentMapName, bDisallowHandSwap;
 }
@@ -206,10 +207,12 @@ simulated function ReplicatedEvent(name VarName)
             S $= "Hand Swapping is "$(DynamicMOTD.bDisallowHandSwap ? "Disabled" : "Enabled")$"!\n";
             S $= "Summer Scrake animation fix is "$(DynamicMOTD.bUseNormalSummerSCAnims ? "Disabled" : "Enabled")$"!\n";
             S $= "Pickup Lifespan is set to "$(DynamicMOTD.CurrentPickupLifespan > 0 ? string(DynamicMOTD.CurrentPickupLifespan) : Chr(0x221E))$"!\n";
-            
+            S $= "Drop All Weapons on Death is "$(DynamicMOTD.bDropAllWepsOnDeath ? "Enabled" : "Disabled")$"!\n";
+            S $= "EDARs are "$(DynamicMOTD.bNoEDARs ? "Disabled" : "Enabled")$"!\n";
+
             if( DynamicMOTD.bEnforceVanilla )
                 S $= "<b>Vanilla Mode is Enforced!</b>\n";
-            
+
             CRI = `GetChatRep();
             if( CRI != None && CRI.bMOTDReceived )
             {
@@ -217,19 +220,12 @@ simulated function ReplicatedEvent(name VarName)
                 CRI.ShowMOTD();
             }
             else DynamicMOTDString = S;
-                
+
             break;
         default:
             Super.ReplicatedEvent(VarName);
             break;
     }
-}
-
-simulated function PostBeginPlay()
-{
-    Super.PostBeginPlay();
-    RemoveCustomStatus();
-    SetTimer(0.01f, false, 'RemoveCustomStatus');
 }
 
 simulated function PreBeginPlay()
@@ -238,6 +234,14 @@ simulated function PreBeginPlay()
 	local bool bEntryFound;
     local FAchCollectibleOverride AchID;
     local KFGameInfo_WeeklySurvival WeeklyGI;
+	
+    if( iConfigVersion <= 0 )
+    {
+		PingSpamTime = 10;
+        iConfigVersion++;
+    }
+	
+	SaveConfig();
     
     WeeklyGI = KFGameInfo_WeeklySurvival(WorldInfo.Game);
     if( WeeklyGI != None )
@@ -684,7 +688,7 @@ final function PlayerChangeSpec( KFPlayerController PC, bool bSpectator )
 	}
 }
 
-function NotifyLogin(Controller NewPlayer)
+final function NotifyLogin(Controller NewPlayer)
 {
     local ReplicationHelper CRI;
     local KFPlayerController PC;
@@ -698,10 +702,11 @@ function NotifyLogin(Controller NewPlayer)
             VotingHandler.NotifyLogin(PC);
         
         CRI = Spawn(class'ReplicationHelper', PC);
-        CRI.ClientSpawnFunctionProxy();
+		CRI.PingFadeTime = PingSpamTime;
         CRI.ClientSetMaxPlayers(RepMaxPlayers);
         if( KFGameInfo_WeeklySurvival(MyKFGI) != None )
             CRI.ClientSetWeeklyIndex(KFGameInfo_WeeklySurvival(MyKFGI).ActiveEventIdx);
+		CRI.ClientSpawnFunctionProxy();
         CRI.KFPC = PC;
         CRI.PRI = PC.PlayerReplicationInfo;
         CRI.MainRepInfo = self;
@@ -731,7 +736,7 @@ function NotifyLogin(Controller NewPlayer)
 		NetDriver.NetServerLobbyTickRate = NetDriver.default.NetServerMaxTickRate;
 }
 
-function NotifyLogout(Controller Exiting)
+final function NotifyLogout(Controller Exiting)
 {
     local KFPlayerController PC;
     local ReplicationHelper CRI;
@@ -1055,12 +1060,14 @@ final simulated function KFCharacterInfoBase GetSeasonalCharacterArch(class<KFPa
     local KFCharacterInfoBase LoadedInfo;
     local PrecachedArch PrecacheInfo;
     local int Index;
-    
+	
     foreach default.ZEDArchList(ZEDArch)
     {
         if( ClassIsChildOf(Monster, ZEDArch.MonsterClass) )
         {
-            if( bNoEventSkins || bServerEnforceVanilla )
+			if( Caps(Monster.default.MonsterArchPath) != Caps(ZEDArch.Regular)  )
+				ToLoad = Monster.default.MonsterArchPath;
+            else if( bNoEventSkins || bServerEnforceVanilla )
                 ToLoad = ZEDArch.Regular;
             else
             {
@@ -1090,7 +1097,7 @@ final simulated function KFCharacterInfoBase GetSeasonalCharacterArch(class<KFPa
             break;
         }
     }
-    
+	
     Index = PrecachedArchs.Find('ArchPath', ToLoad);
     if( Index != INDEX_NONE )
         return PrecachedArchs[Index].Arch;
@@ -1123,11 +1130,6 @@ final function ScoreKill(Controller Killer, Controller Killed, Pawn KilledPawn, 
                 CRI.ReceiveKillMessage(P.Class,true,Killer.PlayerReplicationInfo,class<KFDamageType>(damageType));
         }
     }
-}
-
-final function int GetEffectivePlayerCount(byte NumLivingPlayers)
-{
-    return 0 < CurrentFakePlayers ? byte(Max(CurrentFakePlayers, NumLivingPlayers)) : NumLivingPlayers;
 }
 
 final function PlayerReplicationInfo FindPRIFromDrop(KFDroppedPickup Drop, out int Index)
@@ -1654,12 +1656,6 @@ final simulated function bool GetEnforceVanilla()
     return bServerEnforceVanilla;
 }
 
-final function RemoveCustomStatus()
-{
-    MyKFGI.bIsCustomGame = false;
-    MyKFGI.UpdateGameSettings();
-}
-
 defaultproperties
 {
 	bAlwaysTick=true
@@ -1675,7 +1671,10 @@ defaultproperties
     MapNameOverrides.Add((Original="KF-Sanitarium-classic",New="KF-Sanitarium"))
     MapNameOverrides.Add((Original="KF-Rig_zfix",New="KF-Rig"))
     MapNameOverrides.Add((Original="KF-CarillonHamletB1",New="KF-CarillonHamlet"))
-    
+    MapNameOverrides.Add((Original="KF-Crash_Original",New="KF-Crash"))
+    MapNameOverrides.Add((Original="KF-Crash_Night",New="KF-Crash"))
+    MapNameOverrides.Add((Original="KF-Crash_Final",New="KF-Crash"))
+  
     ZEDArchList.Add((MonsterClass=class'KFPawn_ZedBloatKingSubSpawn', Regular="ZED_ARCH.ZED_KingBloatSubSpawn_Archetype"))
     ZEDArchList.Add((MonsterClass=class'KFPawn_ZedClot_AlphaKing', Regular="ZED_ARCH.ZED_Clot_AlphaKing_Archetype", Summer="SUMMER_ZED_ARCH.ZED_Clot_AlphaKing_Archetype", Winter="XMAS_ZED_ARCH.ZED_Clot_AlphaKing_Archetype", Fall="HALLOWEEN_ZED_ARCH.ZED_Clot_AlphaKing_Archetype"))
     ZEDArchList.Add((MonsterClass=class'KFPawn_ZedCrawlerKing', Regular="ZED_ARCH.ZED_CrawlerKing_Archetype", Summer="SUMMER_ZED_ARCH.ZED_CrawlerKing_Archetype", Winter="XMAS_ZED_ARCH.ZED_CrawlerKing_Archetype", Fall="HALLOWEEN_ZED_ARCH.ZED_CrawlerKing_Archetype"))

@@ -12,7 +12,7 @@ stripped private event context(KFOnlineStatsWrite.AddToKills) AddToKills( class<
 	IncrementIntStat( STATID_Kills, 1 );
 	Kills++;
 
-	if( !MonsterClass.default.bVersusZed && !MonsterClass.default.bLargeZed && !MonsterClass.static.IsABoss() )
+	if( (`GetChatRep().UKFPInteraction.bDisableLargeKillTicker || (!MonsterClass.default.bLargeZed && !MonsterClass.static.IsABoss())) && !MonsterClass.default.bVersusZed )
         `GetChatRep().ReceiveKillMessage(MonsterClass,, MyKFPC.PlayerReplicationInfo, class<KFDamageType>(DT));
 
 	if( IsStalkerKill( MonsterClass, DT ) )

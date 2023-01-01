@@ -98,7 +98,6 @@ function handleMapVotes(WebAdminQuery q)
 	{
 		class'KFGameInfo'.Default.MapVoteDuration = int(q.request.getVariable("VT",string(class'KFGameInfo'.Default.MapVoteDuration)));
 		class'xVotingHandler'.Default.MidGameVotePct = float(q.request.getVariable("MV",string(class'xVotingHandler'.Default.MidGameVotePct)));
-		class'xVotingHandler'.Default.MapWinPct = float(q.request.getVariable("VP",string(class'xVotingHandler'.Default.MapWinPct)));
 		class'xVotingHandler'.Default.MapChangeDelay = float(q.request.getVariable("SD",string(class'xVotingHandler'.Default.MapChangeDelay)));
 		class'xVotingHandler'.Default.MaxMapsOnList = int(q.request.getVariable("MXP",string(class'xVotingHandler'.Default.MaxMapsOnList)));
 		class'xVotingHandler'.Static.StaticSaveConfig();
@@ -155,7 +154,6 @@ function handleMapVotes(WebAdminQuery q)
 	q.response.SendText("<thead><tr><th colspan=2>Mapvote settings</th></tr></thead><tbody>");
 	AddConfigEditbox(q,"Mapvote time",string(class'KFGameInfo'.Default.MapVoteDuration),8,"VT","Time in seconds people have to cast mapvote");
 	AddConfigEditbox(q,"Mid-Game vote pct",string(class'xVotingHandler'.Default.MidGameVotePct),12,"MV","Number of people in percent needs to vote to make game initiate mid-game mapvote");
-	AddConfigEditbox(q,"Map win vote pct",string(class'xVotingHandler'.Default.MapWinPct),12,"VP","Number of people in percent needs to vote for same map for mapvote instantly switch to it");
 	AddConfigEditbox(q,"Map switch delay",string(class'xVotingHandler'.Default.MapChangeDelay),12,"SD","Time in seconds delay after a mapvote has passed, when server actually switches map");
 	AddConfigEditbox(q,"Max Maps On List",string(class'xVotingHandler'.Default.MaxMapsOnList),8,"MXP","Maximum maps that should show on mapvote GUI before starting to remove random ones (0 = no limit)");
 	q.response.SendText("<tr><td></td><td><input class=\"button\" type=\"submit\" name=\"edit\" value=\"Submit\"></td></tr>");

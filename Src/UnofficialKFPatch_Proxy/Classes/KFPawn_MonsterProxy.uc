@@ -79,7 +79,7 @@ stripped static event context(KFPawn_Monster.GetAIPawnClassToSpawn) class<KFPawn
 {
 	local WorldInfo WI;
     
-    if( `GetURI() != None && `GetURI().bForceDisableEDARs && (ClassIsChildOf(default.Class, class'KFPawn_ZedHusk') || ClassIsChildOf(default.Class, class'KFPawn_ZedStalker')) )
+	if( `GetURI() != None && `GetURI().bForceDisableEDARs && (ClassIsChildOf(default.Class, class'KFPawn_ZedHusk') || ClassIsChildOf(default.Class, class'KFPawn_ZedStalker')) )
         return default.Class;
 
 	WI = class'WorldInfo'.static.GetWorldInfo();
