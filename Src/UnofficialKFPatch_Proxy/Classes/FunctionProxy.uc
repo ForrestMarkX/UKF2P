@@ -230,6 +230,14 @@ function Init()
     KFPerk.IsAutoTurret = KFPerkProxy.IsAutoTurret;
     KFPerkOriginal.IsHRGBallisticBouncer = KFPerk.IsHRGBallisticBouncer;
     KFPerk.IsHRGBallisticBouncer = KFPerkProxy.IsHRGBallisticBouncer;
+    KFPerk_FirebugOriginal.ModifyMagSizeAndNumber = KFPerk_Firebug.ModifyMagSizeAndNumber;
+    KFPerk_Firebug.ModifyMagSizeAndNumber = KFPerk_FirebugProxy.ModifyMagSizeAndNumber;
+    KFPerk_FieldMedicOriginal.CouldBeZedToxicCloud = KFPerk_FieldMedic.CouldBeZedToxicCloud;
+    KFPerk_FieldMedic.CouldBeZedToxicCloud = KFPerk_FieldMedicProxy.CouldBeZedToxicCloud;
+    KFPerk_FieldMedicOriginal.ModifyMagSizeAndNumber = KFPerk_FieldMedic.ModifyMagSizeAndNumber;
+    KFPerk_FieldMedic.ModifyMagSizeAndNumber = KFPerk_FieldMedicProxy.ModifyMagSizeAndNumber;
+    KFPerk_CommandoOriginal.ModifyMagSizeAndNumber = KFPerk_Commando.ModifyMagSizeAndNumber;
+    KFPerk_Commando.ModifyMagSizeAndNumber = KFPerk_CommandoProxy.ModifyMagSizeAndNumber;
     MutatorOriginal.PreBeginPlay = Mutator.PreBeginPlay;
     Mutator.PreBeginPlay = MutatorProxy.PreBeginPlay;
     
@@ -531,6 +539,10 @@ function Cleanup()
     KFPerk.IsHRGCrossboom = KFPerkOriginal.IsHRGCrossboom;
     KFPerk.IsAutoTurret = KFPerkOriginal.IsAutoTurret;
     KFPerk.IsHRGBallisticBouncer = KFPerkOriginal.IsHRGBallisticBouncer;
+    KFPerk_Firebug.ModifyMagSizeAndNumber = KFPerk_FirebugOriginal.ModifyMagSizeAndNumber;
+    KFPerk_FieldMedic.CouldBeZedToxicCloud = KFPerk_FieldMedicOriginal.CouldBeZedToxicCloud;
+    KFPerk_FieldMedic.ModifyMagSizeAndNumber = KFPerk_FieldMedicOriginal.ModifyMagSizeAndNumber;
+    KFPerk_Commando.ModifyMagSizeAndNumber = KFPerk_CommandoOriginal.ModifyMagSizeAndNumber;
     Mutator.PreBeginPlay = MutatorOriginal.PreBeginPlay;
     
 	if( WorldInfo.NetMode != NM_DedicatedServer )
@@ -624,7 +636,6 @@ function Cleanup()
     }
      
     default.bFunctionsRestored = true;
-    WorldInfo.ForceGarbageCollection();
 }
 
 function ForceUpdateWeeklyIndex(int WeeklyIndex)
