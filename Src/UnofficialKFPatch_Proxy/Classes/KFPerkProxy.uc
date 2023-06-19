@@ -13,10 +13,18 @@ stripped final simulated static function context(KFPerk) bool IsWeaponOnActualPe
         return W.static.AllowedForAllPerks() || ClassIsChildOf(default.Class, W.static.GetWeaponPerkClass( InstigatorPerkClass ));
 	else if( WeaponPerkClass.Length > 0 )
     {
-        for( i=0; i<WeaponPerkClass.Length; i++ )
+        if( `GetURI().bShouldDisableCrossPerk )
         {
-            if( ClassIsChildOf(default.Class, WeaponPerkClass[i]) )
+            if( ClassIsChildOf(default.Class, WeaponPerkClass[0]) )
                 return true;
+        }
+        else
+        {
+            for( i=0; i<WeaponPerkClass.Length; i++ )
+            {
+                if( ClassIsChildOf(default.Class, WeaponPerkClass[i]) )
+                    return true;
+            }
         }
     }
 
@@ -37,10 +45,18 @@ stripped final simulated static function context(KFPerk) bool IsDamageTypeOnActu
         if( KFDT.default.ModifierPerkList.Length <= 0 )
             return false;
 
-        for( i=0; i<KFDT.default.ModifierPerkList.Length; i++ )
+        if( `GetURI().bShouldDisableCrossPerk )
         {
-            if( ClassIsChildOf(default.Class, KFDT.default.ModifierPerkList[i]) )
+            if( ClassIsChildOf(default.Class, KFDT.default.ModifierPerkList[0]) )
                 return true;
+        }
+        else
+        {
+            for( i=0; i<KFDT.default.ModifierPerkList.Length; i++ )
+            {
+                if( ClassIsChildOf(default.Class, KFDT.default.ModifierPerkList[i]) )
+                    return true;
+            }
         }
 	}
 
@@ -58,10 +74,21 @@ stripped final simulated static function context(KFPerk) bool IsDamageTypeOnThis
     
 	if( KFDT != None )
 	{
-        for( i=0; i<KFDT.default.ModifierPerkList.Length; i++ )
+        if( KFDT.default.ModifierPerkList.Length <= 0 )
+            return false;
+            
+        if( `GetURI().bShouldDisableCrossPerk )
         {
-            if( ClassIsChildOf(PerkClass, KFDT.default.ModifierPerkList[i]) )
+            if( ClassIsChildOf(PerkClass, KFDT.default.ModifierPerkList[0]) )
                 return true;
+        }
+        else
+        {
+            for( i=0; i<KFDT.default.ModifierPerkList.Length; i++ )
+            {
+                if( ClassIsChildOf(PerkClass, KFDT.default.ModifierPerkList[i]) )
+                    return true;
+            }
         }
 	}
 

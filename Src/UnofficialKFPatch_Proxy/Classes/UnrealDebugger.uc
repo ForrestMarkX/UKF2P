@@ -6,6 +6,7 @@ var UnrealDebugger StaticReference;
 function PostBeginPlay()
 {
     default.StaticReference = self;
+    UnrealDebugger(`FindDefaultObject(class'UnrealDebugger')).StaticReference = self;
     
     `if(`isdefined(DEBUGLOGS))
     FileWriter = Spawn(class'FileWriter', self);

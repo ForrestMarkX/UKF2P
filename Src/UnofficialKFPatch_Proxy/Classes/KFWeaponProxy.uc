@@ -5,18 +5,18 @@ stripped simulated event context(KFWeapon.PreBeginPlay) PreBeginPlay()
     if( IsA('KFWeap_AssaultRifle_Thompson') )
     {
         if( AttachmentArchetypeName ~= "WEP_TommyGun_ARCH.Wep_TommyGun_3P" )
-            AttachmentArchetypeName = "UKFP_TommyGun_ARCH.Wep_TommyGun_3P";
+            AttachmentArchetypeName = PathName(class'UKFPReplicationInfo'.default.TommyGun3PAttachment);
         if( MuzzleFlashTemplateName ~= "WEP_TommyGun_ARCH.Wep_TommyGun_MuzzleFlash" )
-            MuzzleFlashTemplateName = "UKFP_TommyGun_ARCH.Wep_TommyGun_MuzzleFlash";
-        if( FirstPersonMeshName ~= "WEP_TommyGun_ARCH.Wep_1stP_TommyGun_Rig" )
-            FirstPersonMeshName = "UKFP_1P_TommyGun_MESH.Wep_1stP_TommyGun_Rig";
+            MuzzleFlashTemplateName = PathName(class'UKFPReplicationInfo'.default.TommyGunMuzzleFlash);
+        if( FirstPersonMeshName ~= "WEP_1P_TommyGun_MESH.Wep_1stP_TommyGun_Rig" )
+            FirstPersonMeshName = PathName(class'UKFPReplicationInfo'.default.TommyGunFPMesh);
     }
-    else if( IsA('KFWeap_Rifle_CenterfireMB464') && PickupMeshName ~= "WEP_3P_Centerfire_MESH.Wep_TommyGun_3P" )
-        PickupMeshName = "UKFP_3P_Centerfire_MESH.Wep_TommyGun_3P";
-    else if( IsA('KFWeap_Rifle_M14EBR') && PickupMeshName ~= "WEP_3P_Centerfire_MESH.Wep_TommyGun_3P" )
-        PickupMeshName = "UKFP_3P_M14EBR_MESH.Wep_M14EBR_Pickup";
+    else if( IsA('KFWeap_Rifle_CenterfireMB464') && PickupMeshName ~= "WEP_3P_Centerfire_MESH.Wep_3rdP_Centerfire_Pickup" )
+        PickupMeshName = PathName(class'UKFPReplicationInfo'.default.WeaponPickupMeshes[0]);
+    else if( IsA('KFWeap_Rifle_M14EBR') && PickupMeshName ~= "WEP_3P_Centerfire_MESH.Wep_M14EBR_Pickup" )
+        PickupMeshName = PathName(class'UKFPReplicationInfo'.default.WeaponPickupMeshes[1]);
     else if( IsA('KFWeap_Rifle_MosinNagant') && PickupMeshName ~= "WEP_3P_Mosin_MESH.WEP_3rdP_Mosin_Pickup" )
-        PickupMeshName = "UKFP_3P_Mosin_MESH.WEP_3rdP_Mosin_Pickup";
+        PickupMeshName = PathName(class'UKFPReplicationInfo'.default.WeaponPickupMeshes[2]);
    
 	Super.PreBeginPlay();
 
@@ -348,10 +348,12 @@ stripped simulated event context(KFWeapon.SetPosition) SetPosition(KFPawn Holder
 stripped final simulated function context(KFWeapon) CalcViewModelView( KFWeapon W, float BobDamping, out vector Pos, out rotator Ang )
 {
     local KFPawn_Human P;
-    
+	local ReplicationHelper RepInfo;
+	
     P = KFPawn_Human(Instigator);
-    if( P != None )
-        `GetChatRep().CalcViewModelView(P, W, BobDamping, Pos, Ang);
+	RepInfo = `GetChatRep();
+    if( P != None && RepInfo != None )
+		RepInfo.CalcViewModelView(P, W, BobDamping, Pos, Ang);
 }
 
 stripped simulated event context(KFWeapon.HandleRecoil) HandleRecoil()
@@ -578,9 +580,12 @@ stripped final simulated function context(KFWeapon) float CalcWeaponTiltWeight(K
     local vector PlayerVel;
     local float NormX, NormY, NormZ, Adjuster;
     local ReplicationHelper RHI;
+	
+	if( P == None || WorldInfo.NetMode == NM_DedicatedServer )
+		return 0.f;
     
     RHI = `GetURI().GetPlayerChat(P.PlayerReplicationInfo);
-    if( RHI == None )
+    if( RHI == None || RHI.WeaponTiltSkelControl == None )
         return 0.f;
 
     ViewMatrix = MakeRotationMatrix(P.GetViewRotation());
@@ -604,6 +609,9 @@ stripped final simulated function context(KFWeapon) SetupViewRoll(KFPawn Holder,
 {
     local rotator Target;
     local ReplicationHelper RHI;
+	
+	if( Holder == None )
+		return;
     
     RHI = `GetURI().GetPlayerChat(Holder.PlayerReplicationInfo);
     if( RHI == None )

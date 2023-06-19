@@ -1,26 +1,40 @@
 class KFGFxMoviePlayer_ManagerProxy extends Object;
 
-stripped final function context(KFGFxMoviePlayer_Manager) PreInitMenus()
+stripped final function context(KFGFxMoviePlayer_Manager) bool PreInitMenus()
 {
     local int i;
     
+    if( GetPC().WorldInfo.NetMode != NM_ListenServer && (`GetChatRep() == None || !`GetChatRep().bImportantDataRecieved) )
+        return false;
+
     for( i=0; i<WidgetPaths.Length; i++ )
     {
         if( WidgetPaths[i] ~= "../UI_Widgets/PartyWidget_SWF.swf" )
         {
             if( `GetChatRep().RepMaxPlayers > 6 )
-                WidgetPaths[i] = "../UKFP_UI_HUD/UKFP_VersusLobbyWidget_SWF.swf";
-            else WidgetPaths[i] = "../UKFP_UI_HUD/UKFP_PartyWidget_SWF.swf";
+                WidgetPaths[i] = GetSWFPath(SwfMovie'UKFP_UI_HUD.UKFP_VersusLobbyWidget_SWF');
+            else WidgetPaths[i] = GetSWFPath(SwfMovie'UKFP_UI_HUD.UKFP_PartyWidget_SWF');
         }
         else if( WidgetPaths[i] ~= "../UI_Widgets/VersusLobbyWidget_SWF.swf" )
-            WidgetPaths[i] = "../UKFP_UI_HUD/UKFP_VersusLobbyWidget_SWF.swf";
+            WidgetPaths[i] = GetSWFPath(SwfMovie'UKFP_UI_HUD.UKFP_VersusLobbyWidget_SWF');
         else if( WidgetPaths[i] ~= "../ZedternalReborn_Menus/ZedternalLobby/LobbyGUI.swf" )
-            WidgetPaths[i] = "../UKFP_UI_HUD/UKFP_ZedternalLobbyWidget_SWF.swf";
+            WidgetPaths[i] = GetSWFPath(SwfMovie'UKFP_UI_HUD.UKFP_ZedternalLobbyWidget_SWF');
         else if( WidgetPaths[i] ~= "../UI_Widgets/MenuBarWidget_SWF.swf" )
-            WidgetPaths[i] = "../UKFP_UI_HUD/MenuBarWidget_SWF.swf";
+            WidgetPaths[i] = GetSWFPath(SwfMovie'UKFP_UI_HUD.MenuBarWidget_SWF');
     }
     
-    MenuSWFPaths[UI_PostGame].BaseSWFPath = "../UKFP_UI_HUD/PostGameMenu_SWF.swf";
+    MenuSWFPaths[UI_PostGame].BaseSWFPath = GetSWFPath(SwfMovie'UKFP_UI_HUD.PostGameMenu_SWF');
+    MenuSWFPaths[UI_Perks].BaseSWFPath = GetSWFPath(SwfMovie'UKFP_UI_HUD.PerksMenu_SWF');
+    if( `GetChatRep().bUseEnhancedTraderMenu )
+        MenuSWFPaths[UI_Trader].BaseSWFPath = GetSWFPath(SwfMovie'UKFP_UI_HUD.UKFP_TraderMenuV2_SWF');
+    else MenuSWFPaths[UI_Trader].BaseSWFPath = GetSWFPath(SwfMovie'UKFP_UI_HUD.TraderMenu_SWF');
+    
+    return true;
+}
+
+stripped static final function context(KFGFxMoviePlayer_Manager) string GetSWFPath( SwfMovie Movie )
+{
+    return "../"$Repl(PathName(Movie), ".", "/")$".swf";
 }
 
 stripped function context(KFGFxMoviePlayer_Manager.LaunchMenus) LaunchMenus( optional bool bForceSkipLobby )
@@ -33,7 +47,11 @@ stripped function context(KFGFxMoviePlayer_Manager.LaunchMenus) LaunchMenus( opt
 	local TextureMovie BGTexture;
 	local OnlineSubsystem MyOnlineSub;
     
-    PreInitMenus();
+    if( !PreInitMenus() )
+    {
+        `TimerHelper.SetTimer(GetPC().WorldInfo.DeltaSeconds, false, 'LaunchMenus', self);
+        return;
+    }
 
 	GVC = KFGameViewportClient(GetGameViewportClient());
 	KFPC = KFPlayerController(GetPC());
@@ -153,7 +171,7 @@ stripped function context(KFGFxMoviePlayer_Manager.Init) Init(optional LocalPlay
 
 	PlayfabInter = class'GameEngine'.static.GetPlayfabInterface();
 
-	`TimerHelper.SetTimer(0.1, true, 'OneSecondLoop', self);
+	`TimerHelper.SetTimer(class'WorldInfo'.static.IsConsoleBuild() ? 1.f : 0.25f, true, 'OneSecondLoop', self);
 	SetTimingMode(TM_Real);
 
 	GVC = GetGameViewportClient();
@@ -170,7 +188,7 @@ stripped function context(KFGFxMoviePlayer_Manager.Init) Init(optional LocalPlay
 stripped function context(KFGFxMoviePlayer_Manager.OnForceUpdate) OnForceUpdate()
 {
 	OneSecondLoop();
-	`TimerHelper.SetTimer(0.1, true, 'OneSecondLoop', self);
+	`TimerHelper.SetTimer(class'WorldInfo'.static.IsConsoleBuild() ? 1.f : 0.25f, true, 'OneSecondLoop', self);
 }
 
 stripped event context(KFGFxMoviePlayer_Manager.OnCleanup) OnCleanup()

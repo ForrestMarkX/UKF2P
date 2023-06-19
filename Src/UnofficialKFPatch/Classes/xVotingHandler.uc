@@ -1,4 +1,4 @@
-Class xVotingHandler extends xVotingHandlerBase
+Class xVotingHandler extends Info
 	config(xMapVote)
     dependson(xVotingReplication);
 
@@ -108,11 +108,11 @@ function SetupBroadcast()
     }
     else `Log("X-VoteWebAdmin ERROR: No WebServer object found!");
 }
-final function int MapVoteSort(FVotedMaps A, FVotedMaps B)
+function int MapVoteSort(FVotedMaps A, FVotedMaps B)
 {
 	return A.NumVotes == B.NumVotes ? 0 : (A.NumVotes > B.NumVotes ? 1 : -1);
 }
-final function AddVote( int Count, int MapIndex, int GameIndex )
+function AddVote( int Count, int MapIndex, int GameIndex )
 {
 	local int i,j;
 
@@ -142,7 +142,7 @@ final function AddVote( int Count, int MapIndex, int GameIndex )
 	for( j=(ActiveVoters.Length-1); j>=0; --j )
 		ActiveVoters[j].ClientReceiveVote(GameIndex,MapIndex,Count);
 }
-final function LogoutPlayer( PlayerController PC )
+function LogoutPlayer( PlayerController PC )
 {
 	local int i;
 	
@@ -153,7 +153,7 @@ final function LogoutPlayer( PlayerController PC )
 			break;
 		}
 }
-final function LoginPlayer( PlayerController PC )
+function LoginPlayer( PlayerController PC )
 {
 	local xVotingReplication R;
 	local int i;
@@ -190,7 +190,7 @@ function ClientDownloadInfo( xVotingReplication V )
 	case 0: // Game modes.
 		if( V.DownloadIndex>=GameModes.Length )
 			break;
-		V.ClientReceiveGame(V.DownloadIndex,GameModes[V.DownloadIndex].GameName,GameModes[V.DownloadIndex].GameShortName,GameModes[V.DownloadIndex].Prefix);
+        V.ClientReceiveGame(V.DownloadIndex,GameModes[V.DownloadIndex].GameName,GameModes[V.DownloadIndex].GameShortName,GameModes[V.DownloadIndex].Prefix,"?CurrentWeekly="$WorldInfo.Game.GetIntOption(GameModes[V.DownloadIndex].Options, "CurrentWeekly", KFGameEngine(class'Engine'.static.GetEngine()).GetWeeklyEventIndex())$"?Game="$WorldInfo.Game.ParseOption(GameModes[V.DownloadIndex].Options, "Game"));
 		++V.DownloadIndex;
 		return;
 	case 1: // Maplist.
@@ -215,7 +215,7 @@ function ClientDownloadInfo( xVotingReplication V )
 	++V.DownloadStage;
 	V.DownloadIndex = 0;
 }
-static final function bool BelongsToPrefix( string MN, string Prefix )
+static function bool BelongsToPrefix( string MN, string Prefix )
 {
 	return (Prefix=="" || Left(MN,Len(Prefix))~=Prefix);
 }
@@ -257,14 +257,14 @@ function ClientDisconnect( xVotingReplication V )
 	TallyVotes();
 }
 
-final function float GetPctOf( int Nom, int Denom )
+function float GetPctOf( int Nom, int Denom )
 {
 	local float R;
 	
 	R = float(Nom) / float(Denom);
 	return R;
 }
-final function TallyVotes( optional bool bForce )
+function TallyVotes( optional bool bForce )
 {
 	local int i,c,NumVotees;
 
@@ -299,7 +299,7 @@ final function TallyVotes( optional bool bForce )
 	if( !bMapVoteTimer && NumVotees>0 && GetPctOf(c,NumVotees)>=MidGameVotePct )
 		StartMidGameVote(true);
 }
-final function StartMidGameVote( bool bMidGame )
+function StartMidGameVote( bool bMidGame )
 {
 	local int i;
     local KFGameReplicationInfo KFGRI;
@@ -380,7 +380,7 @@ function Timer()
 			ActiveVoters[i].ClientOpenMapvote(true);
 	}
 }
-final function SwitchToLevel( int GameIndex, int MapIndex, bool bAdminForce )
+function SwitchToLevel( int GameIndex, int MapIndex, bool bAdminForce )
 {
 	local int i;
 	local string S;
@@ -427,7 +427,7 @@ function PendingSwitch()
 	SetTimer(1,true);
 }
 
-final function ParseCommand( string Cmd, PlayerController PC )
+function ParseCommand( string Cmd, PlayerController PC )
 {
     local ReplicationHelper CRI;
     
@@ -470,14 +470,14 @@ function ShowMapVote( PlayerController PC )
 			return;
 		}
 }
-final function AddMap( string M )
+function AddMap( string M )
 {
 	if( Class'KFGameInfo'.Default.GameMapCycles.Length==0 )
 		Class'KFGameInfo'.Default.GameMapCycles.Length = 1;
 	Class'KFGameInfo'.Default.GameMapCycles[0].Maps.AddItem(M);
 	Class'KFGameInfo'.Static.StaticSaveConfig();
 }
-final function bool RemoveMap( string M )
+function bool RemoveMap( string M )
 {
 	local int i,j;
 

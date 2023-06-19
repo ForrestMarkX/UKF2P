@@ -10,31 +10,6 @@ function Init()
 
     if( default.bInitSuccess )
         return;
-		
-    UKFPHUDInteraction.Initialized = ExtendedHUD.Initialized;
-    UKFPHUDInteraction.SetupBobStyle = ExtendedHUD.SetupBobStyle;
-    UKFPHUDInteraction.PostRender = ExtendedHUD.PostRender;
-    UKFPHUDInteraction.AddStatusEffect = ExtendedHUD.AddStatusEffect;
-    UKFPHUDInteraction.AddActorPing = ExtendedHUD.AddActorPing;
-    UKFPHUDInteraction.SetNoHRG = ExtendedHUD.SetNoHRG;
-    UKFPHUDInteraction.SetBobStyle = ExtendedHUD.SetBobStyle;
-    UKFPHUDInteraction.SetWeaponHand = ExtendedHUD.SetWeaponHand;
-    UKFPHUDInteraction.ToggleCameraMode = ExtendedHUD.ToggleCameraMode;
-    UKFPHUDInteraction.SetHUDScale = ExtendedHUD.SetHUDScale;
-    UKFPHUDInteraction.SetOtherHUDAlpha = ExtendedHUD.SetOtherHUDAlpha;
-    UKFPHUDInteraction.SetWaveInfoAlpha = ExtendedHUD.SetWaveInfoAlpha;
-    UKFPHUDInteraction.SetPlayerStatusAlpha = ExtendedHUD.SetPlayerStatusAlpha;
-    UKFPHUDInteraction.SetPlayerBackpackAlpha = ExtendedHUD.SetPlayerBackpackAlpha;
-    UKFPHUDInteraction.SetBossHealthBarAlpha = ExtendedHUD.SetBossHealthBarAlpha;
-    UKFPHUDInteraction.ThrowMoney = ExtendedHUD.ThrowMoney;
-    UKFPHUDInteraction.SetDoshThrowAmount = ExtendedHUD.SetDoshThrowAmount;
-    UKFPHUDInteraction.SetDropProtection = ExtendedHUD.SetDropProtection;
-    UKFPHUDInteraction.SetLargeKillTicker = ExtendedHUD.SetLargeKillTicker;
-    UKFPHUDInteraction.SetZEDTimeEnabled = ExtendedHUD.SetZEDTimeEnabled;
-    UKFPHUDInteraction.SetPingsEnabled = ExtendedHUD.SetPingsEnabled;
-    UKFPHUDInteraction.SetPingAlpha = ExtendedHUD.SetPingAlpha;
-    UKFPHUDInteraction.SetPingSize = ExtendedHUD.SetPingSize;
-    UKFPHUDInteraction.PingLocation = ExtendedHUD.PingLocation;
     
     if( WorldInfo.NetMode != NM_Client )
     {
@@ -60,6 +35,8 @@ function Init()
         GameInfo.PreLogin = GameInfoProxy.PreLogin;
         GameInfoOriginal.Killed = GameInfo.Killed;
         GameInfo.Killed = GameInfoProxy.Killed;
+        GameInfoOriginal.ReduceDamage = GameInfo.ReduceDamage;
+        GameInfo.ReduceDamage = GameInfoProxy.ReduceDamage;
         KFGameInfoOriginal.ReplicateWelcomeScreen = KFGameInfo.ReplicateWelcomeScreen;
         KFGameInfo.ReplicateWelcomeScreen = KFGameInfoProxy.ReplicateWelcomeScreen;
         KFGameInfoOriginal.ModifyAIDoshValueForPlayerCount = KFGameInfo.ModifyAIDoshValueForPlayerCount;
@@ -78,16 +55,30 @@ function Init()
         KFGameInfo.ScoreMonsterKill = KFGameInfoProxy.ScoreMonsterKill;
         KFGameInfoOriginal.DistributeMoneyAndXP = KFGameInfo.DistributeMoneyAndXP;
         KFGameInfo.DistributeMoneyAndXP = KFGameInfoProxy.DistributeMoneyAndXP;
+        KFGameInfoOriginal.GetSpecificBossClass = KFGameInfo.GetSpecificBossClass;
+        KFGameInfo.GetSpecificBossClass = KFGameInfoProxy.GetSpecificBossClass;
+        KFGameInfoOriginal.GetAdjustedAIDoshValue = KFGameInfo.GetAdjustedAIDoshValue;
+        KFGameInfo.GetAdjustedAIDoshValue = KFGameInfoProxy.GetAdjustedAIDoshValue;
+        KFGameInfoOriginal.GetGameInfoSpawnRateMod = KFGameInfo.GetGameInfoSpawnRateMod;
+        KFGameInfo.GetGameInfoSpawnRateMod = KFGameInfoProxy.GetGameInfoSpawnRateMod;
+        KFGameInfoOriginal.GetTotalWaveCountScale = KFGameInfo.GetTotalWaveCountScale;
+        KFGameInfo.GetTotalWaveCountScale = KFGameInfoProxy.GetTotalWaveCountScale;
         KFGameInfo_SurvivalOriginal.StartMatch = KFGameInfo_Survival.StartMatch;
         KFGameInfo_Survival.StartMatch = KFGameInfo_SurvivalProxy.StartMatch;
         KFGameInfo_SurvivalOriginal.NotifyTraderOpened = KFGameInfo_Survival.NotifyTraderOpened;
         KFGameInfo_Survival.NotifyTraderOpened = KFGameInfo_SurvivalProxy.NotifyTraderOpened;
         KFGameInfo_SurvivalOriginal.NotifyTraderClosed = KFGameInfo_Survival.NotifyTraderClosed;
         KFGameInfo_Survival.NotifyTraderClosed = KFGameInfo_SurvivalProxy.NotifyTraderClosed;
+        KFGameInfo_SurvivalOriginal.Timer = KFGameInfo_Survival.Timer;
+        KFGameInfo_Survival.Timer = KFGameInfo_SurvivalProxy.Timer;
         KFGameInfo_SurvivalOriginal.TryRestartGame = KFGameInfo_Survival.TryRestartGame;
         KFGameInfo_Survival.TryRestartGame = KFGameInfo_SurvivalProxy.TryRestartGame;
         KFGameInfo_SurvivalOriginal.ForceChangeLevel = KFGameInfo_Survival.ForceChangeLevel;
         KFGameInfo_Survival.ForceChangeLevel = KFGameInfo_SurvivalProxy.ForceChangeLevel;
+        KFGameInfo_WeeklySurvivalOriginal.UsesModifiedDifficulty = KFGameInfo_WeeklySurvival.UsesModifiedDifficulty;
+        KFGameInfo_WeeklySurvival.UsesModifiedDifficulty = KFGameInfo_WeeklySurvivalProxy.UsesModifiedDifficulty;
+        KFGameReplicationInfoOriginal.PostBeginPlay = KFGameReplicationInfo.PostBeginPlay;
+        KFGameReplicationInfo.PostBeginPlay = KFGameReplicationInfoProxy.PostBeginPlay;
         KFPlayerControllerOriginal.EnterZedTime = KFPlayerController.EnterZedTime;
         KFPlayerController.EnterZedTime = KFPlayerControllerProxy.EnterZedTime;
         KFPlayerControllerOriginal.CompleteZedTime = KFPlayerController.CompleteZedTime;
@@ -132,8 +123,14 @@ function Init()
         KFGameDifficultyInfo.GetNumPlayersModifier = KFGameDifficultyInfoProxy.GetNumPlayersModifier;
         KFAIControllerOriginal.FindNewEnemy = KFAIController.FindNewEnemy;
         KFAIController.FindNewEnemy = KFAIControllerProxy.FindNewEnemy;
+        KFMonsterDifficultyInfoOriginal.GetSpecialSpawnChance = KFMonsterDifficultyInfo.GetSpecialSpawnChance;
+        KFMonsterDifficultyInfo.GetSpecialSpawnChance = KFMonsterDifficultyInfoProxy.GetSpecialSpawnChance;
+        KFAIController_ZedFleshpoundOriginal.SpawnEnraged = KFAIController_ZedFleshpound.SpawnEnraged;
+        KFAIController_ZedFleshpound.SpawnEnraged = KFAIController_ZedFleshpoundProxy.SpawnEnraged;
         KFPawn_MonsterOriginal.GetAIPawnClassToSpawn = KFPawn_Monster.GetAIPawnClassToSpawn;
         KFPawn_Monster.GetAIPawnClassToSpawn = KFPawn_MonsterProxy.GetAIPawnClassToSpawn;
+        KFOutbreakEventOriginal.UpdateGRI = KFOutbreakEvent.UpdateGRI;
+        KFOutbreakEvent.UpdateGRI = KFOutbreakEventProxy.UpdateGRI;
     }
     
     KFPawn_HumanOriginal.UpdateActiveSkillsPath = KFPawn_Human.UpdateActiveSkillsPath;  
@@ -150,8 +147,8 @@ function Init()
     KFPlayerController.ClientTriggerWeaponContentLoad = KFPlayerControllerProxy.ClientTriggerWeaponContentLoad;
     KFPlayerControllerOriginal.PreClientTravel = KFPlayerController.PreClientTravel;
     KFPlayerController.PreClientTravel = KFPlayerControllerProxy.PreClientTravel;
-    KFPlayerControllerOriginal.GetSeasonalStateName = KFPlayerController.GetSeasonalStateName;
-    KFPlayerController.GetSeasonalStateName = KFPlayerControllerProxy.GetSeasonalStateName;
+    KFPlayerControllerOriginal.GetAllowSeasonalSkins = KFPlayerController.GetAllowSeasonalSkins;
+    KFPlayerController.GetAllowSeasonalSkins = KFPlayerControllerProxy.GetAllowSeasonalSkins;
     KFWeaponOriginal.PreBeginPlay = KFWeapon.PreBeginPlay;
     KFWeapon.PreBeginPlay = KFWeaponProxy.PreBeginPlay;
     KFWeaponOriginal.GivenTo = KFWeapon.GivenTo;
@@ -162,8 +159,6 @@ function Init()
     KFWeapon.AttachWeaponTo = KFWeaponProxy.AttachWeaponTo;
     KFWeaponOriginal.GetWeaponAttachmentTemplate = KFWeapon.GetWeaponAttachmentTemplate;  
     KFWeapon.GetWeaponAttachmentTemplate = KFWeaponProxy.GetWeaponAttachmentTemplate;
-    KFWeaponOriginal.SetPosition = KFWeapon.SetPosition;  
-    KFWeapon.SetPosition = KFWeaponProxy.SetPosition;
     KFWeaponOriginal.HandleRecoil = KFWeapon.HandleRecoil;  
     KFWeapon.HandleRecoil = KFWeaponProxy.HandleRecoil;
     KFWeaponOriginal.GetWeaponPerkClass = KFWeapon.GetWeaponPerkClass;  
@@ -240,9 +235,13 @@ function Init()
     KFPerk_Commando.ModifyMagSizeAndNumber = KFPerk_CommandoProxy.ModifyMagSizeAndNumber;
     MutatorOriginal.PreBeginPlay = Mutator.PreBeginPlay;
     Mutator.PreBeginPlay = MutatorProxy.PreBeginPlay;
+    KFAutoPurchaseHelperOriginal.CanUpgrade = KFAutoPurchaseHelper.CanUpgrade;
+    KFAutoPurchaseHelper.CanUpgrade = KFAutoPurchaseHelperProxy.CanUpgrade;
     
 	if( WorldInfo.NetMode != NM_DedicatedServer )
 	{
+		KFWeaponOriginal.SetPosition = KFWeapon.SetPosition;  
+		KFWeapon.SetPosition = KFWeaponProxy.SetPosition;
         KFCharacterInfo_HumanOriginal.DetachConflictingAttachments = KFCharacterInfo_Human.DetachConflictingAttachments;
         KFCharacterInfo_Human.DetachConflictingAttachments = KFCharacterInfo_HumanProxy.DetachConflictingAttachments;
         KFGFxMoviePlayer_ManagerOriginal.LaunchMenus = KFGFxMoviePlayer_Manager.LaunchMenus;
@@ -273,12 +272,18 @@ function Init()
         KFPlayerController.ClientWonGame = KFPlayerControllerProxy.ClientWonGame;
         KFPlayerControllerOriginal.ClientGameOver = KFPlayerController.ClientGameOver;
         KFPlayerController.ClientGameOver = KFPlayerControllerProxy.ClientGameOver;
+        KFPlayerControllerOriginal.OnWaveComplete = KFPlayerController.OnWaveComplete;
+        KFPlayerController.OnWaveComplete = KFPlayerControllerProxy.OnWaveComplete;
+        KFPlayerControllerOriginal.IsEventObjectiveComplete = KFPlayerController.IsEventObjectiveComplete;
+        KFPlayerController.IsEventObjectiveComplete = KFPlayerControllerProxy.IsEventObjectiveComplete;
         KFPlayerControllerOriginal.OnAllMapCollectiblesFound = KFPlayerController.OnAllMapCollectiblesFound;
         KFPlayerController.OnAllMapCollectiblesFound = KFPlayerControllerProxy.OnAllMapCollectiblesFound;
         KFPlayerControllerOriginal.SeasonalEventIsValid = KFPlayerController.SeasonalEventIsValid;
         KFPlayerController.SeasonalEventIsValid = KFPlayerControllerProxy.SeasonalEventIsValid;
         KFPlayerControllerOriginal.GetSeasonalEventStatInfo = KFPlayerController.GetSeasonalEventStatInfo;
         KFPlayerController.GetSeasonalEventStatInfo = KFPlayerControllerProxy.GetSeasonalEventStatInfo;
+        KFGFxPerksContainer_SelectionOriginal.UpdatePerkSelection = KFGFxPerksContainer_Selection.UpdatePerkSelection;
+        KFGFxPerksContainer_Selection.UpdatePerkSelection = KFGFxPerksContainer_SelectionProxy.UpdatePerkSelection;
         PlayerControllerOriginal.Say = PlayerController.Say;
         PlayerController.Say = PlayerControllerProxy.Say;
         PlayerControllerOriginal.TeamSay = PlayerController.TeamSay;
@@ -371,6 +376,8 @@ function Init()
         KFWeap_ScopedBase.ZoomOut = KFWeap_ScopedBaseProxy.ZoomOut;
         KFGFxPostGameContainer_MapVoteOriginal.Initialize = KFGFxPostGameContainer_MapVote.Initialize;
         KFGFxPostGameContainer_MapVote.Initialize = KFGFxPostGameContainer_MapVoteProxy.Initialize;
+        KFGFxPostGameContainer_MapVoteOriginal.LocalizeText = KFGFxPostGameContainer_MapVote.LocalizeText;
+        KFGFxPostGameContainer_MapVote.LocalizeText = KFGFxPostGameContainer_MapVoteProxy.LocalizeText;
         KFGFxPostGameContainer_MapVoteOriginal.SetMapOptions = KFGFxPostGameContainer_MapVote.SetMapOptions;
         KFGFxPostGameContainer_MapVote.SetMapOptions = KFGFxPostGameContainer_MapVoteProxy.SetMapOptions;
         KFGFxPostGameContainer_MapVoteOriginal.RecieveTopMaps = KFGFxPostGameContainer_MapVote.RecieveTopMaps;
@@ -397,7 +404,23 @@ function Init()
         KFGoreManager.AddCorpse = KFGoreManagerProxy.AddCorpse;
         KFGFxTraderContainer_StoreOriginal.IsItemFiltered = KFGFxTraderContainer_Store.IsItemFiltered;
         KFGFxTraderContainer_Store.IsItemFiltered = KFGFxTraderContainer_StoreProxy.IsItemFiltered;
-        
+        KFGFxTraderContainer_StoreOriginal.SetItemInfo = KFGFxTraderContainer_Store.SetItemInfo;
+        KFGFxTraderContainer_Store.SetItemInfo = KFGFxTraderContainer_StoreProxy.SetItemInfo;
+        KFGFxMenu_TraderOriginal.RefreshShopItemList = KFGFxMenu_Trader.RefreshShopItemList;
+        KFGFxMenu_Trader.RefreshShopItemList = KFGFxMenu_TraderProxy.RefreshShopItemList;
+        KFGFxMenu_TraderOriginal.SetTraderItemDetails = KFGFxMenu_Trader.SetTraderItemDetails;
+        KFGFxMenu_Trader.SetTraderItemDetails = KFGFxMenu_TraderProxy.SetTraderItemDetails;
+        KFGFxMenu_TraderOriginal.Callback_FavoriteItem = KFGFxMenu_Trader.Callback_FavoriteItem;
+        KFGFxMenu_Trader.Callback_FavoriteItem = KFGFxMenu_TraderProxy.Callback_FavoriteItem;
+        KFGFxMenu_TraderOriginal.Callback_BuyOrSellItem = KFGFxMenu_Trader.Callback_BuyOrSellItem;
+        KFGFxMenu_Trader.Callback_BuyOrSellItem = KFGFxMenu_TraderProxy.Callback_BuyOrSellItem;
+        KFGFxTraderContainer_ItemDetailsOriginal.SetPlayerItemDetails = KFGFxTraderContainer_ItemDetails.SetPlayerItemDetails;
+        KFGFxTraderContainer_ItemDetails.SetPlayerItemDetails = KFGFxTraderContainer_ItemDetailsProxy.SetPlayerItemDetails;
+        KFGFxTraderContainer_ItemDetailsOriginal.SetGenericItemDetails = KFGFxTraderContainer_ItemDetails.SetGenericItemDetails;
+        KFGFxTraderContainer_ItemDetails.SetGenericItemDetails = KFGFxTraderContainer_ItemDetailsProxy.SetGenericItemDetails;
+        KFGFxTraderContainer_ItemDetailsOriginal.SetDetailsText = KFGFxTraderContainer_ItemDetails.SetDetailsText;
+        KFGFxTraderContainer_ItemDetails.SetDetailsText = KFGFxTraderContainer_ItemDetailsProxy.SetDetailsText;
+
         KFOnlineStatsWriteOriginal.SeasonalEventStats_OnMapObjectiveDeactivated = KFOnlineStatsWrite.SeasonalEventStats_OnMapObjectiveDeactivated;
         KFOnlineStatsWriteOriginal.SeasonalEventStats_OnMapCollectibleFound = KFOnlineStatsWrite.SeasonalEventStats_OnMapCollectibleFound;
         KFOnlineStatsWriteOriginal.SeasonalEventStats_OnHitTaken = KFOnlineStatsWrite.SeasonalEventStats_OnHitTaken;
@@ -453,6 +476,7 @@ function Cleanup()
         GameInfo.ProcessServerTravel = GameInfoOriginal.ProcessServerTravel;
         GameInfo.PreLogin = GameInfoOriginal.PreLogin;
         GameInfo.Killed = GameInfoOriginal.Killed;
+        GameInfo.ReduceDamage = GameInfoOriginal.ReduceDamage;
         KFGameInfo.ReplicateWelcomeScreen = KFGameInfoOriginal.ReplicateWelcomeScreen;
         KFGameInfo.ModifyAIDoshValueForPlayerCount = KFGameInfoOriginal.ModifyAIDoshValueForPlayerCount;
         KFGameInfo.GetFriendlyNameForCurrentGameMode = KFGameInfoOriginal.GetFriendlyNameForCurrentGameMode;
@@ -462,11 +486,18 @@ function Cleanup()
         KFGameInfo.UpdateGameSettings = KFGameInfoOriginal.UpdateGameSettings;
         KFGameInfo.ScoreMonsterKill = KFGameInfoOriginal.ScoreMonsterKill;
         KFGameInfo.DistributeMoneyAndXP = KFGameInfoOriginal.DistributeMoneyAndXP;
+        KFGameInfo.GetSpecificBossClass = KFGameInfoOriginal.GetSpecificBossClass;
+        KFGameInfo.GetAdjustedAIDoshValue = KFGameInfoOriginal.GetAdjustedAIDoshValue;
+        KFGameInfo.GetGameInfoSpawnRateMod = KFGameInfoOriginal.GetGameInfoSpawnRateMod;
+        KFGameInfo.GetTotalWaveCountScale = KFGameInfoOriginal.GetTotalWaveCountScale;
         KFGameInfo_Survival.StartMatch = KFGameInfo_SurvivalOriginal.StartMatch;
         KFGameInfo_Survival.NotifyTraderOpened = KFGameInfo_SurvivalOriginal.NotifyTraderOpened;
         KFGameInfo_Survival.NotifyTraderClosed = KFGameInfo_SurvivalOriginal.NotifyTraderClosed;
+        KFGameInfo_Survival.Timer = KFGameInfo_SurvivalOriginal.Timer;
         KFGameInfo_Survival.TryRestartGame = KFGameInfo_SurvivalOriginal.TryRestartGame;
         KFGameInfo_Survival.ForceChangeLevel = KFGameInfo_SurvivalOriginal.ForceChangeLevel;
+        KFGameInfo_WeeklySurvival.UsesModifiedDifficulty = KFGameInfo_WeeklySurvivalOriginal.UsesModifiedDifficulty;
+        KFGameReplicationInfo.PostBeginPlay = KFGameReplicationInfoOriginal.PostBeginPlay;
         KFPlayerController.EnterZedTime = KFPlayerControllerOriginal.EnterZedTime;
         KFPlayerController.CompleteZedTime = KFPlayerControllerOriginal.CompleteZedTime;
         KFPlayerController.ServerPause = KFPlayerControllerOriginal.ServerPause;
@@ -482,14 +513,17 @@ function Cleanup()
         KFPawn_Human.PossessedBy = KFPawn_HumanOriginal.PossessedBy;
         KFPawn_Human.Tick = KFPawn_HumanOriginal.Tick;
         DroppedPickup.Landed = DroppedPickupOriginal.Landed;
-        BasicWebAdminUser.linkPlayerController = BasicWebAdminUserOriginal.linkPlayerController;
+        BasicWebAdminUser.linkPlayerController = BasicWebAdminUserOriginal.linkPlayerController;  
         KFAISpawnManager.GetMaxMonsters = KFAISpawnManagerOriginal.GetMaxMonsters; 
         KFInventoryManager.ServerThrowMoney = KFInventoryManagerOriginal.ServerThrowMoney;
         KFInventoryManager.DiscardInventory = KFInventoryManagerOriginal.DiscardInventory;
         KFInventory_Money.DropFrom = KFInventory_MoneyOriginal.DropFrom;
         KFGameDifficultyInfo.GetNumPlayersModifier = KFGameDifficultyInfoOriginal.GetNumPlayersModifier;
         KFAIController.FindNewEnemy = KFAIControllerOriginal.FindNewEnemy;
+        KFMonsterDifficultyInfo.GetSpecialSpawnChance = KFMonsterDifficultyInfoOriginal.GetSpecialSpawnChance;
+        KFAIController_ZedFleshpound.SpawnEnraged = KFAIController_ZedFleshpoundOriginal.SpawnEnraged;
         KFPawn_Monster.GetAIPawnClassToSpawn = KFPawn_MonsterOriginal.GetAIPawnClassToSpawn;
+        KFOutbreakEvent.UpdateGRI = KFOutbreakEventOriginal.UpdateGRI;
     }
     
     KFPawn_Human.UpdateActiveSkillsPath = KFPawn_HumanOriginal.UpdateActiveSkillsPath;
@@ -499,14 +533,13 @@ function Cleanup()
     KFPawn.SetWeaponAttachmentFromWeaponClass = KFPawnOriginal.SetWeaponAttachmentFromWeaponClass;
     KFPlayerController.ClientTriggerWeaponContentLoad = KFPlayerControllerOriginal.ClientTriggerWeaponContentLoad;
     KFPlayerController.PreClientTravel = KFPlayerControllerOriginal.PreClientTravel;
-    KFPlayerController.GetSeasonalStateName = KFPlayerControllerOriginal.GetSeasonalStateName;
+    KFPlayerController.GetAllowSeasonalSkins = KFPlayerControllerOriginal.GetAllowSeasonalSkins;
     KFWeapon.PreBeginPlay = KFWeaponOriginal.PreBeginPlay;
     KFWeapon.GivenTo = KFWeaponOriginal.GivenTo;
     KFWeapon.ClientGivenTo = KFWeaponOriginal.ClientGivenTo;
     KFWeapon.AttachWeaponTo = KFWeaponOriginal.AttachWeaponTo;
     KFWeapon.GetWeaponAttachmentTemplate = KFWeaponOriginal.GetWeaponAttachmentTemplate;
-    KFWeapon.SetPosition = KFWeaponOriginal.SetPosition;
-    KFWeapon.HandleRecoil = KFWeaponOriginal.HandleRecoil;
+    KFWeapon.HandleRecoil = KFWeaponOriginal.HandleRecoil;  
     KFWeapon.GetWeaponPerkClass = KFWeaponOriginal.GetWeaponPerkClass;
     KFSprayActor.BeginSpray = KFSprayActorOriginal.BeginSpray;
     KFWeap_FlameBase.WeaponEquipping.BeginState = KFWeap_FlameBaseOriginal.WeaponEquipping.BeginState;
@@ -544,9 +577,11 @@ function Cleanup()
     KFPerk_FieldMedic.ModifyMagSizeAndNumber = KFPerk_FieldMedicOriginal.ModifyMagSizeAndNumber;
     KFPerk_Commando.ModifyMagSizeAndNumber = KFPerk_CommandoOriginal.ModifyMagSizeAndNumber;
     Mutator.PreBeginPlay = MutatorOriginal.PreBeginPlay;
+    KFAutoPurchaseHelper.CanUpgrade = KFAutoPurchaseHelperOriginal.CanUpgrade;
     
 	if( WorldInfo.NetMode != NM_DedicatedServer )
 	{
+		KFWeapon.SetPosition = KFWeaponOriginal.SetPosition;
         KFCharacterInfo_Human.DetachConflictingAttachments = KFCharacterInfo_HumanOriginal.DetachConflictingAttachments;
         KFGFxMoviePlayer_Manager.LaunchMenus = KFGFxMoviePlayer_ManagerOriginal.LaunchMenus;
         KFGFxMoviePlayer_Manager.Init = KFGFxMoviePlayer_ManagerOriginal.Init;
@@ -562,9 +597,12 @@ function Cleanup()
         KFPlayerController.ReceiveLocalizedMessage = KFPlayerControllerOriginal.ReceiveLocalizedMessage;
         KFPlayerController.ClientWonGame = KFPlayerControllerOriginal.ClientWonGame;
         KFPlayerController.ClientGameOver = KFPlayerControllerOriginal.ClientGameOver;
+        KFPlayerController.OnWaveComplete = KFPlayerControllerOriginal.OnWaveComplete;
+        KFPlayerController.IsEventObjectiveComplete = KFPlayerControllerOriginal.IsEventObjectiveComplete;
         KFPlayerController.OnAllMapCollectiblesFound = KFPlayerControllerOriginal.OnAllMapCollectiblesFound;
         KFPlayerController.SeasonalEventIsValid = KFPlayerControllerOriginal.SeasonalEventIsValid;
         KFPlayerController.GetSeasonalEventStatInfo = KFPlayerControllerOriginal.GetSeasonalEventStatInfo;
+        KFGFxPerksContainer_Selection.UpdatePerkSelection = KFGFxPerksContainer_SelectionOriginal.UpdatePerkSelection;
         PlayerController.Say = PlayerControllerOriginal.Say;
         PlayerController.TeamSay = PlayerControllerOriginal.TeamSay;
         KFGFxHUD_PlayerStatus.TickHud = KFGFxHUD_PlayerStatusOriginal.TickHud;
@@ -600,7 +638,6 @@ function Cleanup()
         KFCharacterInfo_Human.SetAttachmentMeshAndSkin = KFCharacterInfo_HumanOriginal.SetAttachmentMeshAndSkin;
         KFCharacterInfo_Human.SetArmsMeshAndSkin = KFCharacterInfo_HumanOriginal.SetArmsMeshAndSkin;
         KFGFxHUD_ScoreboardWidget.InitializeHUD = KFGFxHUD_ScoreboardWidgetOriginal.InitializeHUD;
-        KFGFxMoviePlayer_Manager.OnCleanup = KFGFxMoviePlayer_ManagerOriginal.OnCleanup;
         KFGFxPerksContainer_Details.UpdateAndGetCurrentWeaponIndexes = KFGFxPerksContainer_DetailsOriginal.UpdateAndGetCurrentWeaponIndexes;
         KFGFxHUD_ChatBoxWidget.AddChatMessage = KFGFxHUD_ChatBoxWidgetOriginal.AddChatMessage;
         KFGFxHUD_ChatBoxWidget.SetDataObjects = KFGFxHUD_ChatBoxWidgetOriginal.SetDataObjects;
@@ -612,6 +649,7 @@ function Cleanup()
         KFWeap_ScopedBase.OnZoomInFinished = KFWeap_ScopedBaseOriginal.OnZoomInFinished;
         KFWeap_ScopedBase.ZoomOut = KFWeap_ScopedBaseOriginal.ZoomOut;
         KFGFxPostGameContainer_MapVote.Initialize = KFGFxPostGameContainer_MapVoteOriginal.Initialize;
+        KFGFxPostGameContainer_MapVote.LocalizeText = KFGFxPostGameContainer_MapVoteOriginal.LocalizeText;
         KFGFxPostGameContainer_MapVote.SetMapOptions = KFGFxPostGameContainer_MapVoteOriginal.SetMapOptions;
         KFGFxPostGameContainer_MapVote.RecieveTopMaps = KFGFxPostGameContainer_MapVoteOriginal.RecieveTopMaps;
         KFGFxMenu_PostGameReport.Callback_MapVote = KFGFxMenu_PostGameReportOriginal.Callback_MapVote;
@@ -625,7 +663,29 @@ function Cleanup()
         KFPawn.DoJump = KFPawnOriginal.DoJump;
         KFGoreManager.AddCorpse = KFGoreManagerOriginal.AddCorpse;
         KFGFxTraderContainer_Store.IsItemFiltered = KFGFxTraderContainer_StoreOriginal.IsItemFiltered;
-        
+        KFGFxTraderContainer_Store.SetItemInfo = KFGFxTraderContainer_StoreOriginal.SetItemInfo;
+        KFGFxMenu_Trader.RefreshShopItemList = KFGFxMenu_TraderOriginal.RefreshShopItemList;
+        KFGFxMenu_Trader.SetTraderItemDetails = KFGFxMenu_TraderOriginal.SetTraderItemDetails;
+        KFGFxMenu_Trader.Callback_FavoriteItem = KFGFxMenu_TraderOriginal.Callback_FavoriteItem;
+        KFGFxMenu_Trader.Callback_BuyOrSellItem = KFGFxMenu_TraderOriginal.Callback_BuyOrSellItem;
+        KFGFxTraderContainer_ItemDetails.SetPlayerItemDetails = KFGFxTraderContainer_ItemDetailsOriginal.SetPlayerItemDetails;
+        KFGFxTraderContainer_ItemDetails.SetGenericItemDetails = KFGFxTraderContainer_ItemDetailsOriginal.SetGenericItemDetails;
+        KFGFxTraderContainer_ItemDetails.SetDetailsText = KFGFxTraderContainer_ItemDetailsOriginal.SetDetailsText;
+
+        KFOnlineStatsWrite.SeasonalEventStats_OnMapObjectiveDeactivated = KFOnlineStatsWriteOriginal.SeasonalEventStats_OnMapObjectiveDeactivated;
+        KFOnlineStatsWrite.SeasonalEventStats_OnMapCollectibleFound = KFOnlineStatsWriteOriginal.SeasonalEventStats_OnMapCollectibleFound;
+        KFOnlineStatsWrite.SeasonalEventStats_OnHitTaken = KFOnlineStatsWriteOriginal.SeasonalEventStats_OnHitTaken;
+        KFOnlineStatsWrite.SeasonalEventStats_OnHitGiven = KFOnlineStatsWriteOriginal.SeasonalEventStats_OnHitGiven;
+        KFOnlineStatsWrite.SeasonalEventStats_OnZedKilled = KFOnlineStatsWriteOriginal.SeasonalEventStats_OnZedKilled;
+        KFOnlineStatsWrite.SeasonalEventStats_OnZedKilledByHeadshot = KFOnlineStatsWriteOriginal.SeasonalEventStats_OnZedKilledByHeadshot;
+        KFOnlineStatsWrite.SeasonalEventStats_OnBossDied = KFOnlineStatsWriteOriginal.SeasonalEventStats_OnBossDied;
+        KFOnlineStatsWrite.SeasonalEventStats_OnTriggerUsed = KFOnlineStatsWriteOriginal.SeasonalEventStats_OnTriggerUsed;
+        KFOnlineStatsWrite.SeasonalEventStats_OnTryCompleteObjective = KFOnlineStatsWriteOriginal.SeasonalEventStats_OnTryCompleteObjective;
+        KFOnlineStatsWrite.SeasonalEventStats_OnWeaponPurchased = KFOnlineStatsWriteOriginal.SeasonalEventStats_OnWeaponPurchased;
+        KFOnlineStatsWrite.SeasonalEventStats_OnAfflictionCaused = KFOnlineStatsWriteOriginal.SeasonalEventStats_OnAfflictionCaused;
+
+        KFGFxMoviePlayer_Manager.OnCleanup = KFGFxMoviePlayer_ManagerOriginal.OnCleanup;
+
         ForceSeasonalEvent(SET_None);
     }
     
@@ -653,6 +713,9 @@ function ForceUpdateWeeklyIndex(int WeeklyIndex)
     if( WorldInfo.NetMode != NM_DedicatedServer )
     {
         KFPC = KFPlayerController(WorldInfo.GetALocalPlayerController());
+        if( KFPC == None )
+            return;
+
         if( KFPC.MyGFxManager != None && KFPC.MyGFxManager.GearMenu != None )
             KFPC.MyGFxManager.GearMenu.ForceWeeklyCowboyHat();
         if( KFEngine.default.WeeklyEventIndex > 0 && KFPC.StatsWrite != None && KFPC.StatsWrite.CanCacheWeeklyEvent() )
@@ -662,7 +725,7 @@ function ForceUpdateWeeklyIndex(int WeeklyIndex)
 
 function bool IsReadSuccessful(KFPlayerController PC)
 {
-	if( PC.StatsWrite != None )
+	if( PC != None && PC.StatsWrite != None )
 		return PC.StatsWrite.bReadSuccessful;
 	return false;
 }
@@ -726,7 +789,7 @@ function ForceSeasonalEvent(ESeasonalEventType Type)
         
         KFEngine.default.SeasonalEventId = `GetURI().InitialSeasonalEventDate;
         KFEngine.default.LoadedSeasonalEventId = KFEngine.default.SeasonalEventId;
-        
+
         KFOnlineStatsWrite.SeasonalEventStats_OnMapObjectiveDeactivated = KFOnlineStatsWriteOriginal.SeasonalEventStats_OnMapObjectiveDeactivated;
         KFOnlineStatsWrite.SeasonalEventStats_OnMapCollectibleFound = KFOnlineStatsWriteOriginal.SeasonalEventStats_OnMapCollectibleFound;
         KFOnlineStatsWrite.SeasonalEventStats_OnHitTaken = KFOnlineStatsWriteOriginal.SeasonalEventStats_OnHitTaken;
@@ -773,6 +836,8 @@ function ForceSeasonalEvent(ESeasonalEventType Type)
         case SET_Summer2019:
         case SET_Summer2020:
         case SET_Summer2021:
+        case SET_Summer2022:
+        case SET_Summer2023:
             KFEngine.default.SeasonalEventId = int(SEI_Summer);
             KFEngine.default.LoadedSeasonalEventId = KFEngine.default.SeasonalEventId;
             break;
@@ -815,6 +880,8 @@ final function CheckSeasonalUpdate()
             case SET_Summer2019:
             case SET_Summer2020:
             case SET_Summer2021:
+            case SET_Summer2022:
+            case SET_Summer2023:
                 KFEngine.default.SeasonalEventId = int(SEI_Summer);
                 KFEngine.default.LoadedSeasonalEventId = KFEngine.default.SeasonalEventId;
                 break;
@@ -926,10 +993,13 @@ final function UpdateSpecialEventState(KFPlayerController PC, int Year, int Mont
                 case 10:
                     PC.StatsWrite.SeasonalEvent = new(PC.StatsWrite) class'UKFPSeasonalEventStats_Fall2022';
                     break;
+                case 12:
+                    PC.StatsWrite.SeasonalEvent = new(PC.StatsWrite) class'UKFPSeasonalEventStats_Xmas2022';
+                    break;
             }
             break;
     }
-    
+
     FSE = UKFPSeasonalEventStats(PC.StatsWrite.SeasonalEvent);
     if( FSE != None )
     {

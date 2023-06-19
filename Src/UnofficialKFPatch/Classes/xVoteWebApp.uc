@@ -27,7 +27,7 @@ function bool handleQuery(WebAdminQuery q)
 	return false;
 }
 
-final function IncludeFile( WebAdminQuery q, string file )
+function IncludeFile( WebAdminQuery q, string file )
 {
 	local string S;
 	
@@ -42,7 +42,7 @@ final function IncludeFile( WebAdminQuery q, string file )
 	}
 	q.response.IncludeUHTM(webadmin.Path $ "/" $ file);
 }
-final function SendHeader( WebAdminQuery q, string Title )
+function SendHeader( WebAdminQuery q, string Title )
 {
 	local IQueryHandler handler;
 	
@@ -60,14 +60,14 @@ final function SendHeader( WebAdminQuery q, string Title )
 	IncludeFile(q,"header.inc");
 	q.response.SendText("<div id=\"content\"><h2>"$Title$"</h2></div><div class=\"section\">");
 }
-final function SendFooter( WebAdminQuery q )
+function SendFooter( WebAdminQuery q )
 {
 	IncludeFile(q,"navigation.inc");
 	IncludeFile(q,"footer.inc");
 	q.response.ClearSubst();
 }
 
-final function AddConfigEditbox( WebAdminQuery q, string InfoStr, coerce string CurVal, int MaxLen, string ResponseVar, string Tooltip, optional bool bSkipTrail, optional float Increments, optional bool bInt, optional float MinValue=0.f, optional float MaxValue=1000.f )
+function AddConfigEditbox( WebAdminQuery q, string InfoStr, coerce string CurVal, int MaxLen, string ResponseVar, string Tooltip, optional bool bSkipTrail, optional float Increments, optional bool bInt, optional float MinValue=0.f, optional float MaxValue=1000.f )
 {
     local string S;
     
@@ -84,7 +84,7 @@ final function AddConfigEditbox( WebAdminQuery q, string InfoStr, coerce string 
         
     q.response.SendText(S);
 }
-final function AddInLineEditbox( WebAdminQuery q, coerce string CurVal, int MaxLen, string ResponseVar, string Tooltip )
+function AddInLineEditbox( WebAdminQuery q, coerce string CurVal, int MaxLen, string ResponseVar, string Tooltip )
 {
     q.response.SendText("<abbr title=\""$Tooltip$"\"><TD><input class=\"textbox\" class=\"text\" style=\"border: 1px solid #181818; background-color: #0a0a0a;\" name=\""$ResponseVar$"\" size=\""$Min(38,MaxLen)$"\" value=\""$CurVal$"\" maxLength=\""$MaxLen$"\"></TD></abbr>");
 }

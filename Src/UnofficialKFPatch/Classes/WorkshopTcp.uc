@@ -10,7 +10,7 @@ function PostBeginPlay()
 {
 	CRLF = Chr(13)$Chr(10);
 }
-final function BeginRequest( WorkshopTool T )
+function BeginRequest( WorkshopTool T )
 {
     local int Index;
     
@@ -82,7 +82,7 @@ function ReceivedText( string Text )
 		Close();
 	}
 }
-final function bool VerifyHeader( string S )
+function bool VerifyHeader( string S )
 {
 	local int i;
 	
@@ -104,7 +104,7 @@ final function bool VerifyHeader( string S )
 	++CurrentStage;
 	return true;
 }
-final function EncounteredError( string S )
+function EncounteredError( string S )
 {
 	if( bBadHeader )
 		return;
@@ -118,7 +118,7 @@ final function EncounteredError( string S )
 	else LifeSpan = 5.f;
 }
 
-final function AbortConnection()
+function AbortConnection()
 {
 	bBadHeader = true;
 	Close();

@@ -18,6 +18,8 @@ stripped static function context(KFGFxMenu_StartGame.GetSpecialEventClass) class
             return class'KFGFxSpecialEventObjectivesContainer_Summer2021';
         case SET_Summer2022:
             return class'KFGFxSpecialEventObjectivesContainer_Summer2022';
+        case SET_Summer2023:
+            return class'KFGFxSpecialEventObjectivesContainer_Summer2023';
         case SET_Fall2018:
             return class'KFGFxFallObjectivesContainer';
         case SET_Fall2019:
@@ -45,7 +47,7 @@ stripped static function context(KFGFxMenu_StartGame.GetSpecialEventClass) class
 		case SEI_Spring:
 			return class'KFGFxSpecialEventObjectivesContainer_Spring2021';
 		case SEI_Summer:
-			return class'KFGFxSpecialEventObjectivesContainer_Summer2022';
+			return class'KFGFxSpecialEventObjectivesContainer_Summer2023';
 		case SEI_Fall:
 			return class'KFGFxSpecialEventObjectivesContainer_Fall2022';
 		case SEI_Winter:

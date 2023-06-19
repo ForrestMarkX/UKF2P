@@ -18,9 +18,10 @@ stripped simulated function context(KFDroppedPickup.SetPickupMesh) SetPickupMesh
 			bUpgradedPickup = KFWeapon(Inventory).CurrentWeaponUpgradeIndex > 0;
 		}
 
-        Lifespan = `GetURI().CurrentPickupLifespan;
+        Lifespan = FMax(`GetURI().CurrentPickupLifespan, 0);
         if( Lifespan > 0.f )
             SetTimer(Lifespan, false, 'TryFadeOut');
+        else Lifespan = MaxInt;
             
         AddPickupToList();
 	}

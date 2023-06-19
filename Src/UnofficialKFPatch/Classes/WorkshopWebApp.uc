@@ -40,7 +40,7 @@ function bool handleQuery(WebAdminQuery q)
 	return false;
 }
 
-final function IncludeFile( WebAdminQuery q, string file )
+function IncludeFile( WebAdminQuery q, string file )
 {
 	local string S;
 	
@@ -55,7 +55,7 @@ final function IncludeFile( WebAdminQuery q, string file )
 	}
 	q.response.IncludeUHTM(webadmin.Path $ "/" $ file);
 }
-final function SendHeader( WebAdminQuery q, string Title )
+function SendHeader( WebAdminQuery q, string Title )
 {
 	local IQueryHandler handler;
 	
@@ -73,7 +73,7 @@ final function SendHeader( WebAdminQuery q, string Title )
 	IncludeFile(q,"header.inc");
 	q.response.SendText("<div id=\"content\"><h2>"$Title$"</h2></div><div class=\"section\">");
 }
-final function SendFooter( WebAdminQuery q )
+function SendFooter( WebAdminQuery q )
 {
 	IncludeFile(q,"navigation.inc");
 	IncludeFile(q,"footer.inc");

@@ -1,6 +1,6 @@
 class UKFPSeasonalEventStats_Fall2022 extends UKFPSeasonalEventStats;
 
-var transient int BossKillsRequired, ZedsInBonfiresRequired, EndlessWaveRequired;
+var int BossKillsRequired, ZedsInBonfiresRequired, EndlessWaveRequired;
 
 function Init(string MapName)
 {

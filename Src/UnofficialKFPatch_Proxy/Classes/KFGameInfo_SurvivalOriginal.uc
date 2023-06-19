@@ -5,3 +5,4 @@ function TryRestartGame();
 final function ForceChangeLevel();
 function NotifyTraderOpened();
 function NotifyTraderClosed();
+event Timer();

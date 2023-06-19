@@ -2,8 +2,13 @@ class KFPawn_MonsterProxy extends Object;
 
 stripped simulated event context(KFPawn_Monster.PreBeginPlay) PreBeginPlay()
 {
-	local KFPawn_Monster KFPM;
-	local bool bArchAlreadyLoaded;
+	PreBeginPlayEx();
+}
+
+stripped final simulated event context(KFPawn_Monster) PreBeginPlayEx()
+{
+    local PhysicsAsset PhysAsset;
+    local int i, Index;
     
 	CheckShouldAlwaysBeRelevant();
 	DefaultCollisionRadius = CylinderComponent.default.CollisionRadius;
@@ -15,14 +20,26 @@ stripped simulated event context(KFPawn_Monster.PreBeginPlay) PreBeginPlay()
         CharacterMonsterArch = KFCharacterInfo_Monster(`SafeLoadObject(MonsterArchPath, class'KFCharacterInfo_Monster'));
 	if( CharacterMonsterArch == None )
 		LastChanceLoad();
-    
+        
 	if( IsA('KFPawn_ZedScrake') && !`GetURI().CurrentNormalSummerSCAnims && CharacterMonsterArch != None && CharacterMonsterArch.GetPackageName() == 'SUMMER_ZED_ARCH' && CharacterMonsterArch.AnimSets.Length > 3 )
 		CharacterMonsterArch.AnimSets.Remove(3, 2);
-	else if( IsA('KFPawn_ZedGorefast') && CharacterMonsterArch != None && CharacterMonsterArch.GetPackageName() == 'SUMMER_ZED_ARCH' )
-		CharacterMonsterArch.PhysAsset = PhysicsAsset'UKFP_SUMMER_ZED_Gorefast_PHYS.SUMMER_Gorefast_Rig_Optimized_Physics';
-	else if( IsA('KFPawn_ZedGorefastDualBlade') && CharacterMonsterArch != None && CharacterMonsterArch.GetPackageName() == 'SUMMER_ZED_ARCH' )
-		CharacterMonsterArch.PhysAsset = PhysicsAsset'UKFP_SUMMER_ZED_Gorefast2_PHY.SUMMER_Gorefast2_Rig_Master_Physics';
-    
+	else if( (IsA('KFPawn_ZedGorefast') || IsA('KFPawn_ZedGorefastDualBlade')) && CharacterMonsterArch != None && CharacterMonsterArch.GetPackageName() == 'SUMMER_ZED_ARCH' )
+    {
+        PhysAsset = CharacterMonsterArch.PhysAsset;
+        for( i=0; i<PhysAsset.BodySetup.Length; i++ )
+        {
+            if( PhysAsset.BodySetup[i].BoneName == 'hips' || PhysAsset.BodySetup[i].BoneName == 'Spine' || PhysAsset.BodySetup[i].BoneName == 'Spine1' )
+            {
+                Index = PhysAsset.BodySetup[i].AggGeom.SphylElems.Find('HitZoneName', 'rblade');
+                while( Index != INDEX_NONE )
+                {
+                    PhysAsset.BodySetup[i].AggGeom.SphylElems.Remove(Index, 1);
+                    Index = PhysAsset.BodySetup[i].AggGeom.SphylElems.Find('HitZoneName', 'rblade');
+                }
+            }
+        }
+    }
+
 	SetCharacterArch(CharacterMonsterArch, true);
 	if( CharacterArch == None )
 	{
@@ -77,14 +94,5 @@ stripped final simulated function context(KFPawn_Monster) ForceSwitchToGoreMesh(
 
 stripped static event context(KFPawn_Monster.GetAIPawnClassToSpawn) class<KFPawn_Monster> GetAIPawnClassToSpawn()
 {
-	local WorldInfo WI;
-    
-	if( `GetURI() != None && `GetURI().bForceDisableEDARs && (ClassIsChildOf(default.Class, class'KFPawn_ZedHusk') || ClassIsChildOf(default.Class, class'KFPawn_ZedStalker')) )
-        return default.Class;
-
-	WI = class'WorldInfo'.static.GetWorldInfo();
-	if( default.ElitePawnClass.length > 0 && default.DifficultySettings != none && fRand() < default.DifficultySettings.static.GetSpecialSpawnChance(KFGameReplicationInfo(WI.GRI)) )
-		return default.ElitePawnClass[Rand(default.ElitePawnClass.length)];
-        
-	return default.Class;
+	return `GetURI().GetAIPawnClassToSpawn(default.Class);
 }

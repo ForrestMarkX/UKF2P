@@ -1,0 +1,3 @@
+class KFGFxPerksContainer_SelectionOriginal extends Object;
+
+function UpdatePerkSelection(byte SelectedPerkIndex);

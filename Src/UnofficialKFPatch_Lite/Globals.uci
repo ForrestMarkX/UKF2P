@@ -1,0 +1,2 @@
+`define GetMut() class'UKFPMutator'.default.StaticReference
+`define FindDefaultObject(ObjClass) FindObject(`ObjClass.GetPackageName()$"."$`ObjClass.default.Name,`ObjClass)

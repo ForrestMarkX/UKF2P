@@ -28,6 +28,8 @@ final function SetSeasonalEventStatsMaxEx(int StatMax1, int StatMax2, int StatMa
         CRI.SeasonalObjectiveStats.SeasonalEventStatsMax3 = StatMax3;
         CRI.SeasonalObjectiveStats.SeasonalEventStatsMax4 = StatMax4;
         CRI.SeasonalObjectiveStats.SeasonalEventStatsMax5 = StatMax5;
+        
+        CRI.SeasonalObjectiveStats.ReplicatedEvent('SeasonalStats');
     }
 }
 
@@ -58,28 +60,18 @@ final function int GetSeasonalEventStatValue(int EventIndex)
 
 final function GrantEventItemEx(int ItemId)
 {
-    local class<KFSeasonalEventStats> OverrideEventClass;
     local KFSeasonalEventStats OverrideEvent;
+    local int OldEventID;
 
-    switch( class'KFGameEngine'.default.SeasonalEventId )
-    {
-        case SEI_Spring:
-            OverrideEventClass = class'KFGameContent.KFSeasonalEventStats_Spring2021';
-            break;
-        case SEI_Summer:
-            OverrideEventClass = class'KFGameContent.KFSeasonalEventStats_Summer2022';
-            break;
-        case SEI_Fall:
-            OverrideEventClass = class'KFGameContent.KFSeasonalEventStats_Fall2022';
-            break;
-        case SEI_Winter:
-            OverrideEventClass = class'KFGameContent.KFSeasonalEventStats_Xmas2022';
-            break;
-    }
+    OldEventID = class'KFGameEngine'.default.SeasonalEventId;
+
+    class'KFGameEngine'.default.SeasonalEventId = SEI_Spring;
+    class'KFGameEngine'.default.LoadedSeasonalEventId = SEI_Spring;
+
+    OverrideEvent = new(Outer) class'KFGameContent.KFSeasonalEventStats_Spring2021';
+    OverrideEvent.GrantEventItem(ItemId);
+    OverrideEvent = None;
     
-    if( OverrideEventClass != None )
-    {
-        OverrideEvent = new(Outer) OverrideEventClass;
-        OverrideEvent.GrantEventItem(ItemId);
-    }
+    class'KFGameEngine'.default.SeasonalEventId = OldEventID;
+    class'KFGameEngine'.default.LoadedSeasonalEventId = OldEventID;
 }

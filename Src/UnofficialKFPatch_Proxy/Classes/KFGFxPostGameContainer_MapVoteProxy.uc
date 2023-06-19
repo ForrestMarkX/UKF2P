@@ -16,11 +16,29 @@ stripped final function context(KFGFxPostGameContainer_MapVote) SetupVoteHelper(
     MVH.Init();
 }
 
+stripped function context(KFGFxPostGameContainer_MapVote.LocalizeText) LocalizeText()
+{
+	local GFxObject TextObject;
+
+	TextObject = CreateObject("Object");
+
+	TextObject.SetString("yourVote", 	YourVoteString);
+	TextObject.SetString("mapList", 	MapVoteString);
+	TextObject.SetString("topVotes", 	TopVotesString);
+	TextObject.SetString("returnText", 	class'KFCommon_LocalizedStrings'.default.BackString);
+
+	SetObject("localizedText", TextObject);
+}
+
 stripped final function context(KFGFxPostGameContainer_MapVote) SetMapOptionsEx()
 {
 	local GFxObject MapList, MapObject;
-	local int i;
+	local int i, WeeklyIndex;
     local xVotingReplication RepInfo;
+    local name MapName;
+    local string Options;
+	local bool IsWeeklyMode, IsBrokenTrader, IsBossRush, IsGunGame, bShouldSkipMaps;
+    local class<GameInfo> GC;
     
     RepInfo = class'xVotingReplication'.default.StaticReference;
     if( RepInfo == None )
@@ -34,27 +52,45 @@ stripped final function context(KFGFxPostGameContainer_MapVote) SetMapOptionsEx(
             MapObject = CreateObject("Object");
             MapObject.SetString("label", RepInfo.GameModes[i].GameName @ "(" $ RepInfo.GameModes[i].GameShortName $ ")");
             MapObject.SetInt("mapindex", i);
+            MapObject.SetBool("isGamemodeSelection", true);
+            MapObject.SetString("textColor", "0xFBD2BF");
             MapList.SetElementObject(i, MapObject);
         }
     }
     else
     {
-        MapObject = CreateObject("Object");
-        MapObject.SetString("label", "----------- >>>" @ class'KFCommon_LocalizedStrings'.default.ReturnString @ "<<< -----------");
-        MapObject.SetInt("mapindex", 0);
-        MapList.SetElementObject(0, MapObject);
+        GC = GetPC().WorldInfo.GRI.GameClass;
+        if( GC == None )
+            GC = class'GameInfo';
+        
+        Options = RepInfo.GameModes[class'MapVoteHelper'.default.StaticReference.CurrentPageIndex-1].Options;
+        WeeklyIndex = GC.static.GetIntOption(Options, "CurrentWeekly", -1);
+        
+        IsWeeklyMode = class<KFGameInfo_WeeklySurvival>(DynamicLoadObject(GC.static.ParseOption(Options, "Game"), class'Class', true)) != None;
+        IsBrokenTrader = WeeklyIndex == 11;
+        IsBossRush = WeeklyIndex == 14;
+        IsGunGame = WeeklyIndex == 16;
+        
+        bShouldSkipMaps = IsWeeklyMode && (IsBrokenTrader || IsBossRush || IsGunGame);
         
         for( i=0; i<RepInfo.Maps.Length; i++ )
         {
+            MapName = name(RepInfo.Maps[i].MapName);
+            if( (bShouldSkipMaps && (MapName == MapBiolapse || MapName == MapNightmare || MapName == MapPowerCore || MapName == MapDescent || MapName == MapKrampus)) || (IsWeeklyMode && IsBossRush && MapName == MapSteam) )
+                continue;
+                
 			MapObject = CreateObject("Object");
 			MapObject.SetString("label", class'KFCommon_LocalizedStrings'.static.GetFriendlyMapName(RepInfo.Maps[i].MapName) );
 			MapObject.SetString("mapSource", GetMapSource(RepInfo.Maps[i].MapName) );
-			MapObject.SetInt("mapindex", i + 1);
-			MapList.SetElementObject(i + 1, MapObject);
+			MapObject.SetInt("mapindex", i);
+            MapObject.SetBool("isHeader", !(Left(RepInfo.Maps[i].MapName, 3) ~= "KF-"));
+			MapList.SetElementObject(i, MapObject);
         }
     }
             
 	SetObject("mapChoices", MapList);
+    if( class'MapVoteHelper'.default.StaticReference.CurrentPageIndex > 0 )
+        `TimerHelper.SetTimer(GetPC().WorldInfo.DeltaSeconds, false, 'LoadScrollingIndex', class'MapVoteHelper'.default.StaticReference);
 }
 
 stripped function context(KFGFxPostGameContainer_MapVote.SetMapOptions) SetMapOptions()
@@ -111,6 +147,7 @@ stripped function context(KFGFxPostGameContainer_MapVote.SetMapOptions) SetMapOp
                 MapObject.SetString("label", class'KFCommon_LocalizedStrings'.static.GetFriendlyMapName(ServerMapList[i]) );
                 MapObject.SetString("mapSource", GetMapSource(ServerMapList[i]) );
                 MapObject.SetInt("mapindex", i);
+                MapObject.SetBool("isHeader", !(Left(ServerMapList[i], 3) ~= "KF-"));
                 MapList.SetElementObject(Counter, MapObject);
 
                 Counter++;

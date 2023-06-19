@@ -17,7 +17,7 @@ var repnotify FSeasonalStats SeasonalStats;
 
 replication
 {
-    if( bNetDirty && Role==ROLE_Authority )
+    if( true )
         SeasonalStats;
 }
 
@@ -35,6 +35,7 @@ simulated function ReplicatedEvent(name VarName)
             CRI.bForceObjectiveRefresh = true;
             if( PCOwner.MyGFxManager != None && PCOwner.MyGFxManager.StartMenu != None && PCOwner.MyGFxManager.StartMenu.MissionObjectiveContainer != None )
                 PCOwner.MyGFxManager.StartMenu.MissionObjectiveContainer.FullRefresh();
+            else SetTimer(WorldInfo.DeltaSeconds, false, 'WaitForUI');
                 
             break;
     }
@@ -42,7 +43,12 @@ simulated function ReplicatedEvent(name VarName)
     Super.ReplicatedEvent(VarName);
 }
 
-final simulated function OnSeasonalDataLoaded()
+simulated function WaitForUI()
+{
+    ReplicatedEvent('SeasonalStats');
+}
+
+simulated function OnSeasonalDataLoaded()
 {
     if( `GetURI() == None )
     {
@@ -52,7 +58,7 @@ final simulated function OnSeasonalDataLoaded()
     `GetURI().FunctionProxy.OnSeasonalDataLoaded(PCOwner, CRI);
 }
 
-final simulated function WaitForReplicationInfo()
+simulated function WaitForReplicationInfo()
 {
     if( `GetURI() == None )
         return;
@@ -75,11 +81,13 @@ simulated function PostBeginPlay()
     {
         PCOwner = KFPlayerController(Owner);
         CRI = `GetURI().GetPlayerChat(PCOwner.PlayerReplicationInfo);
-        DataDir = Repl("../../KFGame/Script/SeasonalSaveData/%s.dat","%s",class'GameEngine'.static.GetOnlineSubsystem().UniqueNetIdToInt64(PCOwner.PlayerReplicationInfo.UniqueId));
+        if( WorldInfo.NetMode == NM_StandAlone )
+            DataDir = "../../KFGame/SeasonalStatsData.usa";
+        else DataDir = Repl("../../KFGame/Script/SeasonalSaveData/%s.dat","%s",class'GameEngine'.static.GetOnlineSubsystem().UniqueNetIdToInt64(PCOwner.PlayerReplicationInfo.UniqueId));
     }
 }
 
-final function LoadObjectiveData(int Index)
+function LoadObjectiveData(int Index)
 {
     if( SaveData != None )
     {
@@ -97,16 +105,19 @@ final function LoadObjectiveData(int Index)
         SeasonalIndex = Index;
         bDataLoaded = true;
         bForceNetUpdate = true;
+        
+        if( WorldInfo.NetMode != NM_DedicatedServer )
+            ReplicatedEvent('SeasonalStats');
     }
 }
 
-final function SaveObjectiveData()
+function SaveObjectiveData()
 {
     SaveData.SeasonalStats[SeasonalIndex] = SeasonalStats;
     class'Engine'.static.BasicSaveObject(SaveData,DataDir,false,0);
 }
 
-final simulated function int GetCurrentObjectStat(int Index)
+simulated function int GetCurrentObjectStat(int Index)
 {
     switch( Index )
     {
@@ -125,7 +136,7 @@ final simulated function int GetCurrentObjectStat(int Index)
     return 0;
 }
 
-final simulated function int GetCurrentObjectMaxStat(int Index)
+simulated function int GetCurrentObjectMaxStat(int Index)
 {
     switch( Index )
     {
@@ -144,7 +155,7 @@ final simulated function int GetCurrentObjectMaxStat(int Index)
     return 0;
 }
 
-final simulated function IncrementCurrentObjectStat(int Index, int Value)
+simulated function IncrementCurrentObjectStat(int Index, int Value)
 {
     switch( Index )
     {
@@ -165,11 +176,14 @@ final simulated function IncrementCurrentObjectStat(int Index, int Value)
             break;
     }
     
+    if( WorldInfo.NetMode == NM_StandAlone || WorldInfo.NetMode == NM_ListenServer )
+        ReplicatedEvent('SeasonalStats');
+    
     if( Role < ROLE_Authority )
         ServerIncrementCurrentObjectStat(Index, Value);
 }
 
-final simulated function ResetCurrentObjectStat(int Index)
+simulated function ResetCurrentObjectStat(int Index)
 {
     switch( Index )
     {
@@ -190,11 +204,14 @@ final simulated function ResetCurrentObjectStat(int Index)
             break;
     }
     
+    if( WorldInfo.NetMode == NM_StandAlone || WorldInfo.NetMode == NM_ListenServer )
+        ReplicatedEvent('SeasonalStats');
+    
     if( Role < ROLE_Authority )
         ServerResetCurrentObjectStat(Index);
 }
 
-final simulated function bool IsEventObjectiveComplete(int ObjectiveIndex)
+simulated function bool IsEventObjectiveComplete(int ObjectiveIndex)
 {
     switch( ObjectiveIndex )
     {
@@ -223,12 +240,12 @@ final simulated function bool IsEventObjectiveComplete(int ObjectiveIndex)
     return false;
 }
 
-private final reliable server function ServerIncrementCurrentObjectStat(int Index, int Value)
+private reliable server function ServerIncrementCurrentObjectStat(int Index, int Value)
 {
     IncrementCurrentObjectStat(Index, Value);
 }
 
-private final reliable server function ServerResetCurrentObjectStat(int Index)
+private reliable server function ServerResetCurrentObjectStat(int Index)
 {
     ResetCurrentObjectStat(Index);
 }

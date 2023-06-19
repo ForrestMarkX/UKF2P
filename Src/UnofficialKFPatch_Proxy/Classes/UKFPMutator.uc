@@ -4,12 +4,14 @@ var transient KFGameInfo KFGI;
 var private transient UKFPReplicationInfo RepInfo;
 var private transient KFRealtimeTimerHelper TimerHelper;
 
-var const private string FHUDClassLocation, YASClassLocation, AALClassLocation, CVCClassLocation;
-var const private string FHUDCommandName, YASCommandName, AALCommandName, CVCCommandName, HideCommandName, NoEventCommandName, NoEDARCommandName, NoPingCommandName, BroadcastPickupsCommandName, UseDynamicMOTDCommandName, NoThirdPersonCommandName, HandCommandName, MapVoteCommandName;
+var const private bool bVerify;
+var const private string FHUDClassLocation, FHUDExtClassLocation, YASClassLocation, AALClassLocation, CVCClassLocation, LTIClassLocation;
+var const private string FHUDCommandName, FHUDExtCommandName, YASCommandName, AALCommandName, CVCCommandName, LTICommandName, HideCommandName, NoEventCommandName, NoEDARCommandName, NoQPCommandName, NoGasCrawlerCommandName, NoPingCommandName, BroadcastPickupsCommandName, UseDynamicMOTDCommandName, NoThirdPersonCommandName, HandCommandName, MapVoteCommandName, UnSuppressCommandName, NoRageSpawnCommandName;
 
 function PreBeginPlay()
 {
-	TimerHelper = Spawn(class'KFRealtimeTimerHelper');
+    bVerify = true;
+    TimerHelper = Spawn(class'KFRealtimeTimerHelper');
 	
     GenerateMutatorEntry(Class.Name, PathName(Class));
     
@@ -20,6 +22,7 @@ function PreBeginPlay()
     Super(Info).PreBeginPlay();
 	
     KFGI = KFGameInfo(WorldInfo.Game);
+    KFGI.MaxGameDifficulty = 3;
 	
 	RepInfo = Spawn(class'UKFPReplicationInfo', self);
 	RepInfo.XPMultiplier = KFGI.XPMultiplier;
@@ -37,6 +40,14 @@ function PreBeginPlay()
         KFGI.GameplayEventsWriter.EndLogging();
         KFGI.GameplayEventsWriter = None;
     }
+}
+
+function PostBeginPlay()
+{
+    if( !bVerify )
+        return;
+	Super.PostBeginPlay();
+	SetupMutator(Repl(WorldInfo.GetLocalURL(), WorldInfo.GetMapName(true), ""));
 }
 
 final function GenerateMutatorEntry(name ClassName, string ClassPath)
@@ -67,23 +78,22 @@ final function GenerateMutatorEntry(name ClassName, string ClassPath)
     }
 }
 
-function InitMutator(string Options, out string ErrorMessage)
+final function SetupMutator(const string Options)
 {
     local KFGameInfo_WeeklySurvival WeeklyGI;
-    local int CurrentActiveEventIdx, ActiveEventIdx;
+    local int i, CurrentActiveEventIdx, ActiveEventIdx;
 	local Mutator Mut;
 	local byte MaxPlayers;
+    local array<byte> IDs, PerkList;
 	local string InOpt;
-    
-	Super.InitMutator(Options, ErrorMessage);
-    
+    local array< class<KFPawn_Monster> > BossList;
+    local class<KFPlayerController> PCC;
+    local KFGameInfo_Endless KFGIE;
+
     if( RepInfo == None )
         return;
-		
-    RepInfo.AddLoadPackage(SwfMovie'UKFP_UI_Shared.AssetLib');
-    RepInfo.AddLoadPackage(SwfMovie'UKFP_UI_HUD.InGameHUD_SWF');
-    
-    RepInfo.CurrentPickupLifespan = KFGI.GetFloatOption(Options, "PickupLifespan", RepInfo.PickupLifespan);
+
+    RepInfo.CurrentPickupLifespan = KFGI.GetIntOption(Options, "PickupLifespan", RepInfo.PickupLifespan);
 	
 	MaxPlayers = KFGI.GetIntOption(Options, "MaxPlayers", RepInfo.ForcedMaxPlayers);
 	
@@ -94,14 +104,19 @@ function InitMutator(string Options, out string ErrorMessage)
         RepInfo.RepMaxPlayers = MaxPlayers;
     }
 	
-    if( bool(KFGI.GetIntOption(Options, FHUDCommandName, int(RepInfo.bAttemptToLoadFHUD))) )
+    if( bool(KFGI.GetIntOption(Options, FHUDExtCommandName, int(RepInfo.bAttemptToLoadFHUDExt))) )
+        KFGI.AddMutator(FHUDExtClassLocation, true);
+    else if( bool(KFGI.GetIntOption(Options, FHUDCommandName, int(RepInfo.bAttemptToLoadFHUD))) )
 		KFGI.AddMutator(FHUDClassLocation, true);
+        
     if( bool(KFGI.GetIntOption(Options, YASCommandName, int(RepInfo.bAttemptToLoadYAS))) || MaxPlayers > 6 )
 		KFGI.AddMutator(YASClassLocation, true);
     if( bool(KFGI.GetIntOption(Options, AALCommandName, int(RepInfo.bAttemptToLoadAAL))) )
 		KFGI.AddMutator(AALClassLocation, true);
     if( bool(KFGI.GetIntOption(Options, CVCCommandName, int(RepInfo.bAttemptToLoadCVC))) )
 		KFGI.AddMutator(CVCClassLocation, true);
+    if( bool(KFGI.GetIntOption(Options, LTICommandName, int(RepInfo.bAttemptToLoadLTI))) )
+		KFGI.AddMutator(LTIClassLocation, true);
 		
     InOpt = KFGI.ParseOption(Options, "ServerName");
     if( InOpt != "" )
@@ -121,10 +136,24 @@ function InitMutator(string Options, out string ErrorMessage)
     CurrentActiveEventIdx = KFGI.GetIntOption(Options, "CurrentWeekly", int(RepInfo.WeeklyIndex));
     RepInfo.bToBroadcastPickups = bool(KFGI.GetIntOption(Options, BroadcastPickupsCommandName, int(RepInfo.bBroadcastPickups)));
     RepInfo.bForceDisableEDARs = bool(KFGI.GetIntOption(Options, NoEDARCommandName, int(RepInfo.bNoEDARSpawns)));
+    RepInfo.bForceDisableQPs = bool(KFGI.GetIntOption(Options, NoQPCommandName, int(RepInfo.bNoQPSpawns)));
+    RepInfo.bForceDisableGasCrawlers = bool(KFGI.GetIntOption(Options, NoGasCrawlerCommandName, int(RepInfo.bNoGasCrawlers)));
+    RepInfo.bForceDisableRageSpawns = bool(KFGI.GetIntOption(Options, NoRageSpawnCommandName, int(RepInfo.bNoRageSpawns)));
     RepInfo.bDisallowHandSwap = bool(KFGI.GetIntOption(Options, HandCommandName, int(RepInfo.bDisallowHandChanges)));
+    RepInfo.bShouldUseEnhancedTraderMenu = bool(KFGI.GetIntOption(Options, "UseEnhancedTraderMenu", int(RepInfo.bUseEnhancedTraderMenu)));
     RepInfo.CurrentMaxMonsters = KFGI.GetIntOption(Options, "MaxMonsters", RepInfo.MaxMonsters);
     RepInfo.CurrentFakePlayers = KFGI.GetIntOption(Options, "FakePlayers", RepInfo.FakePlayers);
+    RepInfo.CurrentMaxDoshSpamAmount = KFGI.GetIntOption(Options, "MaxDoshSpam", RepInfo.MaxDoshSpamAmount);
     RepInfo.CurrentForcedSeasonalEventDate = ESeasonalEventType(KFGI.GetIntOption(Options, "CurrentSeasonalEvent", RepInfo.ForcedSeasonalEventDate));
+    RepInfo.CurrentDoshKillMultiplier = `RoundFloatPrecision(FClamp(KFGI.GetFloatOption(Options, "DoshKillMultiplier", RepInfo.DoshKillMultiplier), 0.f, 1.f));
+    RepInfo.CurrentSpawnRateMultiplier = `RoundFloatPrecision(FClamp(KFGI.GetFloatOption(Options, "SpawnRateMultiplier", RepInfo.SpawnRateMultiplier), 0.f, 1.f));
+    RepInfo.CurrentWaveCountMultiplier = `RoundFloatPrecision(FMax(KFGI.GetFloatOption(Options, "WaveCountMultiplier", RepInfo.WaveCountMultiplier), 1.f));
+    RepInfo.CurrentAmmoCostMultiplier = `RoundFloatPrecision(FMax(KFGI.GetFloatOption(Options, "AmmoCostMultiplier", RepInfo.AmmoCostMultiplier), 1.f));
+    RepInfo.bBypassGameConductor = bool(KFGI.GetIntOption(Options, "DisableGameConductor", int(RepInfo.bDisableGameConductor)));
+    RepInfo.bShouldAllowDamagePopups = bool(KFGI.GetIntOption(Options, "AllowDamagePopups", int(RepInfo.bAllowDamagePopups)));
+    /*RepInfo.bShouldAbsoluteTravel = bool(KFGI.GetIntOption(Options, "AbsoluteTravel", int(RepInfo.bAbsoluteTravel)));
+    RepInfo.bShouldDisableCrossPerk = bool(KFGI.GetIntOption(Options, "DisableCrossPerk", int(RepInfo.bDisableCrossPerk)));
+    RepInfo.bShouldDisableUpgrades = bool(KFGI.GetIntOption(Options, "DisableWeaponUpgrades", int(RepInfo.bDisableWeaponUpgrades)));*/
     RepInfo.bServerEnforceVanilla = bool(KFGI.GetIntOption(Options, "EnforceVanilla", int(RepInfo.bEnforceVanilla)));
 	if( RepInfo.bServerEnforceVanilla )
 	{
@@ -143,7 +172,23 @@ function InitMutator(string Options, out string ErrorMessage)
 		RepInfo.bServerDropAllWepsOnDeath = bool(KFGI.GetIntOption(Options, "DropAllWepsOnDeath", int(RepInfo.bDropAllWepsOnDeath)));
 	}
     RepInfo.PingSpamTime = KFGI.GetFloatOption(Options, "PingSpamTime", RepInfo.PingSpamTime);
-
+    
+    RepInfo.CurrentAllowedBosses = KFGI.ParseOption(Options, "BossList");
+    if( RepInfo.CurrentAllowedBosses == "" )
+        RepInfo.CurrentAllowedBosses = RepInfo.AllowedBosses;
+        
+    RepInfo.CurrentAllowedOutbreaks = KFGI.ParseOption(Options, "Outbreaks");
+    if( RepInfo.CurrentAllowedOutbreaks == "" )
+        RepInfo.CurrentAllowedOutbreaks = RepInfo.AllowedOutbreaks;
+        
+    RepInfo.CurrentAllowedSpecialWaves = KFGI.ParseOption(Options, "SpecialWaves");
+    if( RepInfo.CurrentAllowedSpecialWaves == "" )
+        RepInfo.CurrentAllowedSpecialWaves = RepInfo.AllowedSpecialWaves;
+        
+    RepInfo.CurrentAllowedPerks = KFGI.ParseOption(Options, "Perks");
+    if( RepInfo.CurrentAllowedPerks == "" )
+        RepInfo.CurrentAllowedPerks = RepInfo.AllowedPerks;
+        
     if( bool(KFGI.GetIntOption(Options, UseDynamicMOTDCommandName, int(RepInfo.bUseDynamicMOTD))) )
     {
 		foreach DynamicActors(class'Mutator', Mut)
@@ -152,10 +197,12 @@ function InitMutator(string Options, out string ErrorMessage)
 				RepInfo.DynamicMOTD.bYASLoaded = Mut.IsA('YASMut');
 			if( !RepInfo.DynamicMOTD.bAALLoaded && Mut.Class.GetPackageName() == 'AAL' )
 				RepInfo.DynamicMOTD.bAALLoaded = Mut.IsA('AALMut');
-			if( !RepInfo.DynamicMOTD.bCVCLoaded  && Mut.Class.GetPackageName() == 'CVC' )
+			if( !RepInfo.DynamicMOTD.bCVCLoaded && Mut.Class.GetPackageName() == 'CVC' )
 				RepInfo.DynamicMOTD.bCVCLoaded = Mut.IsA('CVCMut');
-			if( !RepInfo.DynamicMOTD.bFHUDLoaded  && Mut.Class.GetPackageName() == 'FriendlyHUD' )
+			if( !RepInfo.DynamicMOTD.bFHUDLoaded && (Mut.Class.GetPackageName() == 'FriendlyHUD' || Mut.Class.GetPackageName() == 'FriendlyHudExt') )
 				RepInfo.DynamicMOTD.bFHUDLoaded = Mut.IsA('FriendlyHUDMutator');
+			if( !RepInfo.DynamicMOTD.bLTILoaded && Mut.Class.GetPackageName() == 'LTI' )
+				RepInfo.DynamicMOTD.bLTILoaded = Mut.IsA('LTIMut');
 		}
         RepInfo.DynamicMOTD.bNoEventSkins = RepInfo.bNoEventSkins;
         RepInfo.DynamicMOTD.bNoPings = RepInfo.bNoPings;
@@ -163,14 +210,87 @@ function InitMutator(string Options, out string ErrorMessage)
         RepInfo.DynamicMOTD.CurrentMaxPlayers = MaxPlayers;
         RepInfo.DynamicMOTD.CurrentMaxMonsters = RepInfo.CurrentMaxMonsters;
         RepInfo.DynamicMOTD.CurrentFakePlayers = RepInfo.CurrentFakePlayers;
+        RepInfo.DynamicMOTD.MaxDoshSpamAmount = RepInfo.CurrentMaxDoshSpamAmount;
         RepInfo.DynamicMOTD.CurrentPickupLifespan = RepInfo.CurrentPickupLifespan;
         RepInfo.DynamicMOTD.bDisableTP = RepInfo.bServerDisableTP;
         RepInfo.DynamicMOTD.bDisallowHandSwap = RepInfo.bDisallowHandSwap;
         RepInfo.DynamicMOTD.bUseNormalSummerSCAnims = RepInfo.bUseNormalSummerSCAnims;
         RepInfo.DynamicMOTD.bDropAllWepsOnDeath = RepInfo.bServerDropAllWepsOnDeath;
         RepInfo.DynamicMOTD.bNoEDARs = RepInfo.bForceDisableEDARs;
-    }
+        RepInfo.DynamicMOTD.bNoRageSpawns = RepInfo.bForceDisableRageSpawns;
+        RepInfo.DynamicMOTD.bBypassGameConductor = RepInfo.bBypassGameConductor;
+        RepInfo.DynamicMOTD.bShouldUseEnhancedTraderMenu = RepInfo.bShouldUseEnhancedTraderMenu;
+        RepInfo.DynamicMOTD.bShouldAllowDamagePopups = RepInfo.bShouldAllowDamagePopups;
+        RepInfo.DynamicMOTD.bNoQPSpawns = RepInfo.bForceDisableQPs;
+        RepInfo.DynamicMOTD.bNoGasCrawlers = RepInfo.bForceDisableGasCrawlers;
+        
+        /*RepInfo.DynamicMOTD.bShouldDisableCrossPerk = RepInfo.bShouldDisableCrossPerk;
+        RepInfo.DynamicMOTD.bShouldDisableUpgrades = RepInfo.bShouldDisableUpgrades;*/
+        
+        // Bitwise stupidry ahead
+        // Probably not needed but I want to make completely sure and incase if I add more variables I have the extra space in the struct
 
+        RepInfo.DynamicMOTD.BitData[0] = Clamp(int(`RoundFloatPrecision(RepInfo.CurrentDoshKillMultiplier, 2) * 100.f), 0, 0xFF) << 8 | Clamp(int(`RoundFloatPrecision(RepInfo.CurrentSpawnRateMultiplier, 2) * 100.f), 0, 0xFF);
+        RepInfo.DynamicMOTD.BitData[1] = Clamp(int(`RoundFloatPrecision(RepInfo.CurrentWaveCountMultiplier, 2) * 100.f), 0, 0xFFFF) << 16 | Clamp(int(`RoundFloatPrecision(RepInfo.CurrentAmmoCostMultiplier, 2) * 100.f), 0, 0xFFFF);
+
+        PCC = class<KFPlayerController>(KFGI.PlayerControllerClass);
+        
+        RepInfo.GetAllowedBossList(BossList);
+        if( BossList.Length > 0 )
+        {
+            for( i=0; i<KFGI.default.AIBossClassList.Length && i<8; i++ )
+            {
+                if( BossList.Find(KFGI.default.AIBossClassList[i]) != INDEX_NONE )
+                    RepInfo.DynamicMOTD.BossData = RepInfo.DynamicMOTD.BossData | (1 << (i+1));
+            }
+        }
+        
+        RepInfo.GetAllowedPerkList(PerkList);
+        if( PerkList.Length > 0 )
+        {
+            for( i=0; i<PCC.default.PerkList.Length && i<32; i++ )
+            {
+                if( PerkList.Find(i) != INDEX_NONE )
+                    RepInfo.DynamicMOTD.BitData[2] = RepInfo.DynamicMOTD.BitData[2] | (1 << (i+1));
+            }
+        }
+
+        KFGIE = KFGameInfo_Endless(KFGI);
+        if( KFGIE != None )
+        {
+            RepInfo.GetRandomEnabledOutbreak(IDs);
+            if( IDs.Length > 0 )
+            {
+                for( i=0; i<KFGIE.default.OutbreakEventClass.default.SetEvents.Length && i<8; i++ )
+                {
+                    if( IDs.Find(i) != INDEX_NONE )
+                        RepInfo.DynamicMOTD.OutbreakData = RepInfo.DynamicMOTD.OutbreakData | (1 << (i+1));
+                }
+            }
+                
+            IDs.Length = 0;
+            
+            RepInfo.GetRandomEnabledSpecialWave(IDs);
+            if( IDs.Length > 0 )
+            {
+                for( i=0; i<AT_MAX && i<32; i++ )
+                {
+                    if( IDs.Find(i) != INDEX_NONE )
+                        RepInfo.DynamicMOTD.BitData[3] = RepInfo.DynamicMOTD.BitData[3] | (1 << (i+1));
+                }
+            }
+        }
+    }
+    
+    foreach DynamicActors(class'Mutator', Mut)
+    {
+        if( !RepInfo.bLTILoaded && Mut.Class.GetPackageName() == 'LTI' )
+        {
+            RepInfo.bLTILoaded = Mut.IsA('LTIMut');
+            break;
+        }
+    }
+	
     RepInfo.CurrentMapName = RepInfo.ConvertMapName(WorldInfo.GetMapName(true));
     RepInfo.SetTimer(WorldInfo.DeltaSeconds*2.f, false, 'CheckForMapFixes');
 
@@ -200,49 +320,47 @@ function InitMutator(string Options, out string ErrorMessage)
         RepInfo.bForceNetUpdate = true;
     }
     
-    TimerHelper.SetTimer(0.01f, false, 'CheckCustomStatus', self);
-}
-
-final function bool IsStandardGame()
-{
-	local name GamePackage;
-	GamePackage = KFGI.GetPackageName();
-	return GamePackage == 'KFGame' || GamePackage == 'KFGameContent';
-}
-
-final function CheckCustomStatus()
-{
-	local KFGameEngine KFGE;
-
-	KFGI.XPMultiplier = RepInfo.XPMultiplier;
-    KFGI.bIsCustomGame = !IsStandardGame() || KFGI.bIsUnrankedGame || KFGI.MaxPlayers != KFGI.MaxPlayersAllowed || KFGI.FriendlyFireScale > 0.f;
-	
-	KFGE = KFGameEngine(class'Engine'.static.GetEngine());
-	KFGE.bUsedForTakeover = KFGI.bIsCustomGame ? false : KFGE.default.bUsedForTakeover;
-	KFGE.bAvailableForTakeover = !KFGI.bIsCustomGame;
-	
-	KFGI.UpdateGameSettings();
-	
-	TimerHelper.Destroy();
+    if( bool(KFGI.GetIntOption(Options, UnSuppressCommandName, 0)) )
+    {
+        ConsoleCommand("UNSUPPRESS DevNet");
+        ConsoleCommand("UNSUPPRESS DevOnline");
+        ConsoleCommand("UNSUPPRESS Log");
+    }
+    
+    if( WorldInfo.NetMode == NM_StandAlone || WorldInfo.NetMode == NM_ListenServer )
+    {
+        RepInfo.ReplicatedEvent('bServerEnforceVanilla');
+        RepInfo.ReplicatedEvent('CurrentForcedSeasonalEventDate');
+        RepInfo.ReplicatedEvent('bNoEventSkins');
+        RepInfo.ReplicatedEvent('DynamicMOTD');
+    }
 }
 
 defaultproperties
 {
     FHUDClassLocation="FriendlyHUD.FriendlyHUDMutator"
+    FHUDExtClassLocation="FriendlyHudExt.FriendlyHUDMutator"
     YASClassLocation="YAS.YASMut"
     AALClassLocation="AAL.AALMut"
     CVCClassLocation="CVC.CVCMut"
+    LTIClassLocation="LTI.LTIMut"
     FHUDCommandName="LoadFHUD"
+    FHUDExtCommandName="LoadFHUDExt"
     YASCommandName="LoadYAS"
     AALCommandName="LoadAAL"
     CVCCommandName="LoadCVC"
+    LTICommandName="LoadLTI"
     HideCommandName="HideServer"
     NoEventCommandName="NoEventSkins"
     NoEDARCommandName="NoEDARs"
+    NoQPCommandName="NoQPs"
+    NoGasCrawlerCommandName="NoGasCrawlers"
+    NoRageSpawnCommandName="NoRageSpawns"
     NoPingCommandName="NoPings"
     BroadcastPickupsCommandName="BroadcastPickups"
     UseDynamicMOTDCommandName="UseDynamicMOTD"
     NoThirdPersonCommandName="NoThirdperson"
     HandCommandName="NoHandChanges"
     MapVoteCommandName="AllowGamemodeVotes"
+    UnSuppressCommandName="UnsuppressLogs"
 }

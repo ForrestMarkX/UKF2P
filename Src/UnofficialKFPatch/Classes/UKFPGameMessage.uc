@@ -71,12 +71,12 @@ static function string GetString(optional int Switch, optional bool bPRI1HUD, op
 	return "";
 }
 
-static final function string ConvertUIDToSteamID(UniqueNetId UniqueId)
+static function string ConvertUIDToSteamID(UniqueNetId UniqueId)
 {
     return "STEAM_" $ string((UniqueId.Uid.B >> 24) & 0xFF) $ ":" $ string(UniqueId.Uid.A & 1) $ ":" $ string((UniqueId.Uid.A >> 1) & 0x7FFFFFF);
 }
 
-static final function UniqueNetId ConvertSteamIDToUID(string SteamID)
+static function UniqueNetId ConvertSteamIDToUID(string SteamID)
 {
     local string S;
     local byte Universe, AccountType;
@@ -96,7 +96,7 @@ static final function UniqueNetId ConvertSteamIDToUID(string SteamID)
     return UID;
 }
 
-static final function string ConvertSteamIDToSteamID64(string SteamID)
+static function string ConvertSteamIDToSteamID64(string SteamID)
 {
     local OnlineSubsystemSteamworks OnlineSub;
     local UniqueNetId UID;

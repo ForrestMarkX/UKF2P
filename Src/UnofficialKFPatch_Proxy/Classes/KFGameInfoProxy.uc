@@ -8,7 +8,7 @@ stripped function context(KFGameInfo.ReplicateWelcomeScreen) ReplicateWelcomeScr
 
 	WI = class'WorldInfo'.static.GetWorldInfo();
 
-	if( WI.NetMode != NM_DedicatedServer )
+	if( WI.NetMode != NM_DedicatedServer && WI.NetMode != NM_ListenServer )
 		return;
 
 	if(MyKFGRI != none)
@@ -247,4 +247,87 @@ stripped final function context(KFGameInfo) AddPlayerXPEx(KFPlayerController PC,
     
     PC.ClientAddPlayerXP(RealXP, PerkClass, bApplyPrestigeBonus);
     PC.OnPlayerXPAdded(RealXP, PerkClass);
+}
+
+stripped static function context(KFGameInfo.GetSpecificBossClass) class<KFPawn_Monster> GetSpecificBossClass(int Index, KFMapInfo MapInfo = none)
+{
+	return GetSpecificBossClassEx(Index, MapInfo);
+}
+
+stripped final static function context(KFGameInfo) class<KFPawn_Monster> GetSpecificBossClassEx(int Index, KFMapInfo MapInfo = none)
+{
+	local array< class<KFPawn_Monster> > ClassList;
+    local UKFPReplicationInfo URI;
+
+	ClassList = default.AIBossClassList;
+	if( MapInfo != None )
+		MapInfo.ModifyGameClassBossAIClassList(ClassList);
+
+	if( Index < 0 || Index >= ClassList.Length )
+		return None;
+        
+    URI = `GetURI();
+    if( URI != None && (MapInfo == None || !MapInfo.bOverrideSurvivalBoss) )
+    {
+        URI.GetAllowedBossList(ClassList);
+        if( Index >= ClassList.Length )
+            Index = Rand(ClassList.Length);
+    }
+
+	return ClassList[Index];
+}
+
+stripped function context(KFGameInfo.GetAdjustedAIDoshValue) float GetAdjustedAIDoshValue( class<KFPawn_Monster> MonsterClass )
+{
+	local float TempValue;
+
+	if( !ShouldOverrideDoshOnKill(MonsterClass, TempValue) )
+		TempValue = MonsterClass.static.GetDoshValue();
+		
+	TempValue *= DifficultyInfo.GetKillCashModifier();
+	ModifyAIDoshValueForPlayerCount( TempValue );
+	TempValue *= GameLengthDoshScale[GameLength];
+	TempValue *= FClamp(`GetURI().CurrentDoshKillMultiplier, 0.f, 1.f);
+	
+    KFMapInfo(WorldInfo.GetMapInfo()).ModifyAIDoshValue(TempValue);
+
+	return TempValue;
+}
+
+stripped function context(KFGameInfo.GetGameInfoSpawnRateMod) float GetGameInfoSpawnRateMod()
+{
+	local float SpawnRateMod;
+
+	SpawnRateMod = 1.f;
+
+	if( OutbreakEvent != None )
+	{
+		if( OutbreakEvent.ActiveEvent.SpawnRateMultiplier > 0.f )
+			SpawnRateMod *= 1.f / OutbreakEvent.ActiveEvent.SpawnRateMultiplier;
+		else SpawnRateMod = 0.0f;
+	}
+
+	if( MyKFGRI != None )
+		SpawnRateMod *= MyKFGRI.GetMapObjectiveSpawnRateMod();
+
+	return SpawnRateMod * FMax(`GetURI().CurrentSpawnRateMultiplier, 1.f);
+}
+
+stripped function context(KFGameInfo.GetTotalWaveCountScale) float GetTotalWaveCountScale()
+{
+    return GetTotalWaveCountScaleEx();
+}
+
+stripped final function context(KFGameInfo) float GetTotalWaveCountScaleEx()
+{
+    local float CurrentScale;
+    
+	if( MyKFGRI.IsBossWave() )
+		return 1.f;
+
+	if( OutbreakEvent != None && OutbreakEvent.ActiveEvent.WaveAICountScale.Length > 0 )
+        CurrentScale = GetLivingPlayerCount() > OutbreakEvent.ActiveEvent.WaveAICountScale.Length ? OutbreakEvent.ActiveEvent.WaveAICountScale[OutbreakEvent.ActiveEvent.WaveAICountScale.Length - 1] : OutbreakEvent.ActiveEvent.WaveAICountScale[GetLivingPlayerCount() - 1];
+    else CurrentScale = 1.f;
+
+	return CurrentScale * FMax(`GetURI().CurrentWaveCountMultiplier, 1.f);
 }

@@ -82,7 +82,7 @@ stripped final function context(KFGFxMoviePlayer_HUD) ShowKillMessageEx(PlayerRe
         DataObject.SetString("killedTextColor", KilledTextColor);
         DataObject.SetString("killedIcon", KilledIconpath);
         
-        DataObject.SetString("skullIcon", "img://UKFP_UI_Shared.AssetLib_I32");
+        DataObject.SetString("skullIcon", "img://UI_Shared.AssetLib_I32");
         
         DataObject.SetString("killerName", KillerName);
         DataObject.SetString("killerTextColor", KillerTextColor);
@@ -98,7 +98,7 @@ stripped function context(KFGFxMoviePlayer_HUD.TickHud) TickHud(float DeltaTime)
 {
     local bool bGunGameVisibility, bVIPModeVisibility;
 
-    if( KFPC == None )
+    if( KFPC == None)
         return;
 	
 	if( WaveInfoWidget != None )
@@ -107,24 +107,8 @@ stripped function context(KFGFxMoviePlayer_HUD.TickHud) TickHud(float DeltaTime)
     if( !KFPC.MyHUD.bShowHUD )
         return;
 
-    if( bUsingGamepad != KFPC.PlayerInput.bUsingGamepad )
-    {
-        bUsingGamepad=KFPC.PlayerInput.bUsingGamepad;
-        UpdateUsingGamepad();
-        UpdateWeaponSelect();
-    }
-
     if( BossHealthBar != None )
         BossHealthBar.TickHud( DeltaTime );
-
-    if( MapTextWidget != None )
-        MapTextWidget.TickHud( UpdateInterval );
-
-    if( MapCounterTextWidget != None )
-        MapCounterTextWidget.TickHud( UpdateInterval );
-
-    if( SpectatorInfoWidget != None )
-        SpectatorInfoWidget.TickHud( DeltaTime );
 
     if( !bIsSpectating )
     {
@@ -140,7 +124,20 @@ stripped function context(KFGFxMoviePlayer_HUD.TickHud) TickHud(float DeltaTime)
 
     if( GfxScoreBoardPlayer != None )
         GfxScoreBoardPlayer.TickHud(DeltaTime);
-
+    
+    if( KFPC.WorldInfo.TimeSeconds - LastUpdateTime < UpdateInterval )
+        return;
+        
+    if( bUsingGamepad != KFPC.PlayerInput.bUsingGamepad )
+    {
+        bUsingGamepad=KFPC.PlayerInput.bUsingGamepad;
+        UpdateUsingGamepad();
+        UpdateWeaponSelect();
+    }
+        
+    if( SpectatorInfoWidget != None )
+        SpectatorInfoWidget.TickHud( DeltaTime );
+        
     if( GunGameWidget != None )
     {
         bGunGameVisibility = KFPC.CanUseGunGame();
@@ -165,4 +162,12 @@ stripped function context(KFGFxMoviePlayer_HUD.TickHud) TickHud(float DeltaTime)
             bLastVIPVisibility = bVIPModeVisibility;
         }
     }
+ 
+    LastUpdateTime = KFPC.WorldInfo.TimeSeconds;
+        
+    if( MapTextWidget != None )
+        MapTextWidget.TickHud( UpdateInterval );
+
+    if( MapCounterTextWidget != None )
+        MapCounterTextWidget.TickHud( UpdateInterval );
 }

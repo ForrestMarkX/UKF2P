@@ -186,41 +186,22 @@ stripped reliable client event context(KFPlayerController.TeamMessage) TeamMessa
     TeamMessageEx(PRI, S, Type, MsgLifeTime);
 }
 
-stripped simulated event context(KFPlayerController.GetSeasonalStateName) name GetSeasonalStateName()
+stripped simulated function context(KFPlayerController.GetAllowSeasonalSkins) bool GetAllowSeasonalSkins()
 {
-	local int EventId;
-	local KFMapInfo KFMI;
-	local bool bIsWWLWeekly;
 	local KFGameReplicationInfo KFGRI;
-    
+	local bool bIsWWLWeekly, bIsAllowSeasonalSkins;
+
     if( `GetURI().bNoEventSkins )
-        return 'No_Event';
-	
-	EventId = class'KFGameEngine'.static.GetSeasonalEventID();
-	KFMI = KFMapInfo(WorldInfo.GetMapInfo());
-	if( KFMI != None )
-		KFMI.ModifySeasonalEventId(EventId);
+        return false;
 
 	KFGRI = KFGameReplicationInfo(WorldInfo.GRI);
-	bIsWWLWeekly = KFGRI != none && KFGRI.bIsWeeklyMode && KFGRI.CurrentWeeklyIndex == 12;
-	if( bIsWWLWeekly )
-		return 'No_Event'; 
-        
-	switch( EventId % 10 )
-	{
-		case SEI_Summer:
-			return 'Summer_Sideshow';
-		case SEI_Fall:
-			return 'Fall';
-		case SEI_Winter:
-			return 'Winter';
-		case SEI_Spring:
-			return 'Spring';
-		default:
-			return 'No_Event';
-	}
 
-    return 'No_Event';
+	bIsWWLWeekly = KFGRI != none && KFGRI.bIsWeeklyMode && KFGRI.CurrentWeeklyIndex == 12;
+	bIsAllowSeasonalSkins = KFGRI != none && KFGRI.bAllowSeasonalSkins;
+
+	if( bIsWWLWeekly || bIsAllowSeasonalSkins == false )
+		return false;
+	return true;
 }
 
 stripped reliable client event context(KFPlayerController.ReceiveLocalizedMessage) ReceiveLocalizedMessage( class<LocalMessage> Message, optional int Switch, optional PlayerReplicationInfo RelatedPRI_1, optional PlayerReplicationInfo RelatedPRI_2, optional Object OptionalObject )
@@ -322,13 +303,40 @@ stripped reliable server function context(KFPlayerController.ServerPause) Server
 stripped reliable client function context(KFPlayerController.ClientWonGame) ClientWonGame( string MapName, byte Difficulty, byte GameLength, byte bCoop )
 {
 	if( WorldInfo.NetMode != NM_DedicatedServer && IsLocalPlayerController() )
-		StatsWrite.OnGameWon( `GetURI().CurrentMapName, Difficulty, GameLength, bCoop, GetPerk().class );
+    {
+        if( StatsWrite != None )
+            StatsWrite.OnGameWon(`GetURI().CurrentMapName, Difficulty, GameLength, bCoop, GetPerk().Class);
+        if( `GetURI() != None && FunctionProxy(`GetURI().FunctionProxy) != None )
+            FunctionProxy(`GetURI().FunctionProxy).OnGameWon(self, `GetURI().CurrentMapName, Difficulty, GameLength, bCoop, GetPerk().Class);
+    }
 }
 
 stripped reliable client function context(KFPlayerController.ClientGameOver) ClientGameOver(string MapName, byte Difficulty, byte GameLength, byte bCoop, byte FinalWaveNum)
 {
 	if( WorldInfo.NetMode != NM_DedicatedServer && IsLocalPlayerController() )
-		StatsWrite.OnGameEnd(`GetURI().CurrentMapName, Difficulty, GameLength, FinalWaveNum, bCoop, GetPerk().class);
+    {
+        if( StatsWrite != None )
+            StatsWrite.OnGameEnd(`GetURI().CurrentMapName, Difficulty, GameLength, FinalWaveNum, bCoop, GetPerk().Class);
+        if( `GetURI() != None && FunctionProxy(`GetURI().FunctionProxy) != None )
+            FunctionProxy(`GetURI().FunctionProxy).OnGameEnd(self, `GetURI().CurrentMapName, Difficulty, GameLength, FinalWaveNum, bCoop, GetPerk().class);
+    }
+}
+
+stripped reliable final client event context(KFPlayerController.OnWaveComplete) OnWaveComplete(int CurrentWave)
+{
+	if( StatsWrite != None )
+		StatsWrite.CheckEndWaveObjective(CurrentWave);
+    if( `GetURI() != None && FunctionProxy(`GetURI().FunctionProxy) != None )
+        FunctionProxy(`GetURI().FunctionProxy).OnWaveComplete(self, CurrentWave);
+}
+
+stripped function context(KFPlayerController.IsEventObjectiveComplete) bool IsEventObjectiveComplete(int Index)
+{
+	if( StatsWrite != None && StatsWrite.IsEventObjectiveComplete(Index) )
+		return true;
+    else if( `GetChatRep() != None && `GetChatRep().SeasonalObjectiveStats != None && `GetChatRep().SeasonalObjectiveStats.IsEventObjectiveComplete(Index) )
+        return true;
+	return false;
 }
 
 stripped reliable client event context(KFPlayerController.OnAllMapCollectiblesFound) OnAllMapCollectiblesFound(string MapName)
@@ -338,6 +346,8 @@ stripped reliable client event context(KFPlayerController.OnAllMapCollectiblesFo
     CheckOverrideCollectibles(`GetURI().CurrentMapName);
 	if( StatsWrite != None )
 		StatsWrite.CheckCollectibleAchievement(`GetURI().CurrentMapName);
+    if( `GetURI() != None && FunctionProxy(`GetURI().FunctionProxy) != None )
+        FunctionProxy(`GetURI().FunctionProxy).OnAllMapCollectiblesFound(self);
 }
 
 stripped final simulated function context(KFPlayerController) CheckOverrideCollectibles(string MapName)
@@ -359,6 +369,71 @@ stripped final simulated function context(KFPlayerController) CheckOverrideColle
 stripped simulated function context(KFPlayerController.SeasonalEventIsValid) bool SeasonalEventIsValid()
 {
 	return (`GetChatRep() != None && `GetChatRep().SeasonalObjectiveStats != None) || (StatsWrite != None && StatsWrite.SeasonalEventIsValid());
+}
+
+stripped reliable private final server function context(KFPlayerController.MixerGiveAmmo) MixerGiveAmmo(string ControlId, string TransactionId, int Amount, int Cooldown, optional string Username)
+{
+    return;
+}
+
+stripped reliable private final server function context(KFPlayerController.MixerGiveArmor) MixerGiveArmor(string ControlId, string TransactionId, int Amount, int Cooldown, string Username)
+{
+    return;
+}
+
+stripped reliable private final server function context(KFPlayerController.MixerGiveDosh) MixerGiveDosh(string ControlId, string TransactionId, int Amount, int Cooldown, string Username)
+{
+    return;
+}
+
+stripped reliable private final server function context(KFPlayerController.MixerGiveGrenades) MixerGiveGrenades(string ControlId, string TransactionId, int Amount, int Cooldown, string Username)
+{
+    return;
+}
+
+stripped reliable private final server function context(KFPlayerController.MixerHealUser) MixerHealUser(string ControlId, string TransactionId, int Amount, int Cooldown, string Username)
+{
+    return;
+}
+
+stripped reliable private final server function context(KFPlayerController.MixerCauseZedTime) MixerCauseZedTime(string ControlId, string TransactionId, int Amount, int Cooldown, string Username)
+{
+    return;
+}
+
+stripped reliable private final server function context(KFPlayerController.MixerEnrageZeds) MixerEnrageZeds(string ControlId, string TransactionId, int Radius, int Cooldown, string Username)
+{
+    return;
+}
+
+stripped simulated private final function context(KFPlayerController.MixerPukeUser) MixerPukeUser(string ControlId, string TransactionId, float PukeLength, int Cooldown, string UserName)
+{
+    return;
+}
+
+stripped reliable private final server function context(KFPlayerController.MixerSpawnZed) MixerSpawnZed(string ControlId, string TransactionId, string ZedClass, int Amount, int Cooldown, string UserName)
+{
+    return;
+}
+
+stripped reliable server function context(KFPlayerController.SkipLobby) SkipLobby()
+{
+    return;
+}
+
+stripped reliable server function context(KFPlayerController.ServerSetEnablePurchases) ServerSetEnablePurchases(bool bEnalbe)
+{
+	local KFInventoryManager KFIM;
+    
+    if( !KFGameReplicationInfo(WorldInfo.GRI).bTraderIsOpen )
+        return;
+
+	if( Role == ROLE_Authority && Pawn != none )
+	{
+		KFIM = KFInventoryManager(Pawn.InvManager);
+		KFIM.bServerTraderMenuOpen = bEnalbe;
+	}
+	bClientTraderMenuOpen = bEnalbe;
 }
 
 stripped function context(KFPlayerController.GetSeasonalEventStatInfo) GetSeasonalEventStatInfo(int StatIdx, out int CurrentValue, out int MaxValue)

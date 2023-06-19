@@ -53,6 +53,7 @@ stripped final simulated function context(KFGFxControlsContainer_Keybinding) Upd
  	InitalizeCommandList(CombatBindList);
  	InitalizeCommandList(WeaponSelectBindList);
  	InitalizeCommandList(VoiceCommBindList);
+    InitalizeCommandList(OtherBindList);
     
     if( class'ReplicationHelper'.default.Pages.Length == 1 )
         InitalizeCommandList(class'ReplicationHelper'.default.SavedModBindList);
@@ -141,15 +142,16 @@ stripped final simulated function context(KFGFxControlsContainer_Keybinding) Upd
  	UpdateBindList( CombatBindList, 2 );
  	UpdateBindList( WeaponSelectBindList, 3 );
  	UpdateBindList( VoiceCommBindList, 4 );
+    UpdateBindList( OtherBindList, 5 );
     
     if( class'ReplicationHelper'.default.Pages.Length == 1 )
-        UpdateBindList( class'ReplicationHelper'.default.SavedModBindList, 5 );
+        UpdateBindList( class'ReplicationHelper'.default.SavedModBindList, MAX_SECTIONS );
     else
     {
         for( i=0; i<class'ReplicationHelper'.default.Pages.Length; i++ )
         {
             List = class'ReplicationHelper'.default.Pages[i].List;
-            UpdateBindList(List, 4 + class'ReplicationHelper'.default.Pages[i].PageIndex);
+            UpdateBindList(List, (MAX_SECTIONS-1) + class'ReplicationHelper'.default.Pages[i].PageIndex);
             class'ReplicationHelper'.default.Pages[i].List = List;
         }
     }

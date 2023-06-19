@@ -9,7 +9,7 @@ struct FMapInfoEntry
 };
 var config array<FMapInfoEntry> N;
 
-static final function int GetMapHistory( string MapName, string MapTitle )
+static function int GetMapHistory( string MapName, string MapTitle )
 {
 	local int i;
 
@@ -26,7 +26,7 @@ static final function int GetMapHistory( string MapName, string MapTitle )
 		Default.N[i].T = MapTitle;
 	return i;
 }
-static final function GetHistory( int i, out int UpVotes, out int DownVotes, out int Seq, out int NumP, out string Title )
+static function GetHistory( int i, out int UpVotes, out int DownVotes, out int Seq, out int NumP, out string Title )
 {
 	UpVotes = Default.N[i].U;
 	DownVotes = Default.N[i].D;
@@ -35,7 +35,7 @@ static final function GetHistory( int i, out int UpVotes, out int DownVotes, out
 	Title = Default.N[i].T;
 }
 
-static final function UpdateMapHistory( int iWon )
+static function UpdateMapHistory( int iWon )
 {
 	local int i;
 	
@@ -49,7 +49,7 @@ static final function UpdateMapHistory( int iWon )
 		else ++Default.N[i].S;
 	}
 }
-static final function AddMapKarma( int i, bool bUp )
+static function AddMapKarma( int i, bool bUp )
 {
 	if( bUp )
 		++Default.N[i].U;

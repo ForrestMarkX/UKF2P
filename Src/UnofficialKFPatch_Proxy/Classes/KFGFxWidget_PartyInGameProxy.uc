@@ -2,6 +2,7 @@ class KFGFxWidget_PartyInGameProxy extends Object;
 
 stripped function context(KFGFxWidget_PartyInGame.InitializeWidget) InitializeWidget()
 {
+    KFGRI = KFGameReplicationInfo( GetPC().WorldInfo.GRI );
     if( UseMultiPage() )
         PlayerSlots = 12;
         
@@ -14,7 +15,6 @@ stripped function context(KFGFxWidget_PartyInGame.InitializeWidget) InitializeWi
 
 	MyKFPRI = KFPlayerReplicationInfo(GetPC().PlayerReplicationInfo);
 	
-	KFGRI = KFGameReplicationInfo( GetPC().WorldInfo.GRI );
 	if( KFGRI != None )
 		StartCountdown(KFGRI.RemainingTime, false);		
 	RefreshParty();
@@ -46,7 +46,6 @@ stripped final function context(KFGFxWidget_PartyInGame) SetupWidgetHelper()
 stripped final function context(KFGFxWidget_PartyInGame) RefreshCycleButton()
 {
 	local array<KFPlayerReplicationInfo> KFPRIArray;
-    local GFxObject switchTeamsButton;
     
     if( !UseMultiPage() )
         return;
@@ -59,11 +58,7 @@ stripped final function context(KFGFxWidget_PartyInGame) RefreshCycleButton()
 	}
     
 	class'PartyWidgetHelper'.default.StaticReference.LobbyMaxPage = KFPRIArray.Length / PlayerSlots + Min(1, KFPRIArray.Length % PlayerSlots);
-    
-    switchTeamsButton = GetObject("switchTeamsButton");
-    if( switchTeamsButton != None )
-        switchTeamsButton.SetBool("visible", class'PartyWidgetHelper'.default.StaticReference.LobbyMaxPage > 1);
-        
+
     SetString("switchTeamsString", class'PartyWidgetHelper'.default.CycleListString @ class'PartyWidgetHelper'.default.StaticReference.LobbyCurrentPage $ "/" $ class'PartyWidgetHelper'.default.StaticReference.LobbyMaxPage);
 }
 
@@ -80,7 +75,7 @@ stripped function context(KFGFxWidget_PartyInGame.UpdateReadyButtonVisibility) U
 		KFGRI = KFGameReplicationInfo( GetPC().WorldInfo.GRI );
 		if ( KFGRI != None )
 		{
-            if( `GetChatRep() != None )
+            if( `GetChatRep() != None && `GetChatRep().UKFPInteraction != None )
             {
                 if( `GetChatRep().UKFPInteraction.bHasPacketLoss )
                 {
@@ -137,7 +132,6 @@ stripped final simulated function context(KFGFxWidget_PartyInGame) SetPacketLoss
     if( matchOverNotification == None )
         return;
         
-    UKFPInteraction.MatchOverText = MatchOverString;
     matchOverNotification.SetString("text", Localize("Notifications", "ConnectionLostTitle", "KFGameConsole"));
     textField = matchOverNotification.GetObject("textField");
     if( textField != None )
@@ -157,16 +151,13 @@ stripped final simulated function context(KFGFxWidget_PartyInGame) RestoreMatchC
         return;
         
     matchOverNotification = GetObject("matchOverNotification");
-    if( matchOverNotification == None || matchOverNotification.GetString("text") ~= UKFPInteraction.MatchOverText )
+    if( matchOverNotification == None )
         return;
         
-    matchOverNotification.SetString("text", UKFPInteraction.MatchOverText);
+    matchOverNotification.SetString("text", MatchOverString);
     textField = matchOverNotification.GetObject("textField");
     if( textField != None )
         textField.SetInt("textColor", 0xFFFFFF);
-    
-    SetBool("matchOver", KFGRI.bMatchIsOver);
-    SetReadyButtonVisibility(!KFGRI.bMatchIsOver);
 }
 
 stripped function context(KFGFxWidget_PartyInGame.OneSecondLoop) OneSecondLoop()
@@ -409,5 +400,5 @@ stripped function context(KFGFxWidget_PartyInGame.RefreshSlot) GFxObject Refresh
 	if( KFGRI != None )
 		PlayerInfoObject.SetBool("ready", KFPRI.bReadyToPlay && !KFGRI.bMatchHasBegun);
 
-	return PlayerInfoObject;	
+	return PlayerInfoObject;
 }

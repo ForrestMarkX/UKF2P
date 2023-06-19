@@ -1,6 +1,6 @@
 class UKFPSeasonalEventStats_Xmas2022 extends UKFPSeasonalEventStats;
 
-var transient int ShotgunJumpsIdx, FrozenZedsRequired, ShotgunJumpsRequired, BallisticBouncerImpactsRequired, EndlessWaveRequired, XmasEventIndex;
+var int ShotgunJumpsIdx, FrozenZedsRequired, ShotgunJumpsRequired, BallisticBouncerImpactsRequired, EndlessWaveRequired, XmasEventIndex;
 
 function Init(string MapName)
 {

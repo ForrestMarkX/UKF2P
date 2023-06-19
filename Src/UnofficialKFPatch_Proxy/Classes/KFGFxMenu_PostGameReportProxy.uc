@@ -22,17 +22,21 @@ stripped final function context(KFGFxMenu_PostGameReport) Callback_MapVoteEx(int
     MVH = class'MapVoteHelper'.default.StaticReference;
     if( MVH.CurrentPageIndex > 0 )
     {
-        if( MapVoteIndex == 0 )
+        if( MapVoteIndex == -1 )
         {
             MVH.CurrentPageIndex = 0;
             ResetSelection();
-            MapVoteContainer.GetObject("votedMapNameText").SetString("text", "");
         }
-        else RepInfo.ServerCastVote(MVH.CurrentPageIndex-1,MapVoteIndex-1,false);
+        else 
+        {
+            RepInfo.ServerCastVote(MVH.CurrentPageIndex-1,MapVoteIndex,false);
+            MVH.SelectedPageIndex = MVH.CurrentPageIndex;
+        }
     }
     else 
     {
         MVH.CurrentPageIndex = MapVoteIndex+1;
+        MapVoteContainer.ActionScriptVoid("pageSelected");
         ResetSelection();
     }
 }
@@ -41,7 +45,11 @@ stripped final function context(KFGFxMenu_PostGameReport) ResetSelection()
 {
     MapVoteContainer.ActionScriptVoid("resetSelection");
     MapVoteContainer.SetMapOptions();
+    
     `TimerHelper.SetTimer(GetPC().WorldInfo.DeltaSeconds*2.f, false, 'ForceResetSelection', class'MapVoteHelper'.default.StaticReference);
+    
+    if( class'MapVoteHelper'.default.StaticReference.SelectedPageIndex == class'MapVoteHelper'.default.StaticReference.CurrentPageIndex )
+        MapVoteContainer.ActionScriptVoid("updateSelectedIndex");
 }
 
 stripped function context(KFGFxMenu_PostGameReport.Callback_TopMapClicked) Callback_TopMapClicked(int MapVoteIndex, bool bDoubleClick)

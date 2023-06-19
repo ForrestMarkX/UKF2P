@@ -71,12 +71,12 @@ function InitWeb()
 	else ThrowError("No WebServer object found!");
 }
 
-final function ThrowError( string Er )
+function ThrowError( string Er )
 {
 	`Log("ERROR: "$Er,, 'WorkshopTool');
 }
 
-final function InitItemList()
+function InitItemList()
 {
 	local int i;
     
@@ -95,7 +95,7 @@ final function InitItemList()
 	if( PendingInit.Length>0 )
 		ResolveNames();
 }
-final function DeleteWorkshopItem( string User, int Index )
+function DeleteWorkshopItem( string User, int Index )
 {
 	local int i;
 
@@ -137,7 +137,7 @@ final function DeleteWorkshopItem( string User, int Index )
 	Workshop.SaveConfig();
 }
 
-final function AddNewWorkshopItem( string User, string S )
+function AddNewWorkshopItem( string User, string S )
 {
 	local int i;
 	
@@ -171,7 +171,7 @@ final function AddNewWorkshopItem( string User, string S )
 	Workshop.SaveConfig();
 }
 
-final function ResolveNames()
+function ResolveNames()
 {
 	if( CurrentLink==None )
 	{
@@ -180,7 +180,7 @@ final function ResolveNames()
 	}
 }
 
-final function OnRequestDone( string Info, bool bError )
+function OnRequestDone( string Info, bool bError )
 {
 	local int i;
 
@@ -204,12 +204,12 @@ final function OnRequestDone( string Info, bool bError )
 		ResolveNames();
 }
 
-final function BroadcastAdmins( string S )
+function BroadcastAdmins( string S )
 {
 	`Log(S,,'WorkshopTool');
 }
 
-final function CheckDownload()
+function CheckDownload()
 {
 	if( !bWasDownloading )
 	{
@@ -235,7 +235,7 @@ final function CheckDownload()
 		ResolveFileName();
 	}
 }
-final function ResolveFileName()
+function ResolveFileName()
 {
 	local int i;
 	local OnlineSubsystemSteamworks S;

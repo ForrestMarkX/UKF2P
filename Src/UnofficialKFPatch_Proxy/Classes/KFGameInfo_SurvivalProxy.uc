@@ -89,3 +89,13 @@ stripped function context(KFGameInfo_Survival.NotifyTraderClosed) NotifyTraderCl
 		}
 	}
 }
+
+stripped event context(KFGameInfo_Survival.Timer) Timer()
+{
+	Super.Timer();
+
+	if( SpawnManager != None )
+		SpawnManager.Update();
+	if( GameConductor != None && !`GetURI().bBypassGameConductor )
+		GameConductor.TimerUpdate();
+}

@@ -222,3 +222,21 @@ stripped function context(GameInfo.Killed) Killed( Controller Killer, Controller
     if( KFPawn_Human(KilledPawn) != None )
         `GetURI().NotifyPlayerDied(KFPawn_Human(KilledPawn), KFPlayerController(KilledPlayer), Killer, damageType);
 }
+
+stripped function context(GameInfo.ReduceDamage) ReduceDamage(out int Damage, Pawn Injured, Controller InstigatedBy, vector HitLocation, out vector Momentum, class<DamageType> DamageType, Actor DamageCauser, TraceHitInfo HitInfo)
+{
+	local int OriginalDamage;
+
+	OriginalDamage = Damage;
+
+	if( Injured.PhysicsVolume.bNeutralZone || Injured.InGodMode() )
+	{
+		Damage = 0;
+		return;
+	}
+
+	if( BaseMutator != None )
+		BaseMutator.NetDamage(OriginalDamage, Damage, Injured, InstigatedBy, HitLocation, Momentum, DamageType, DamageCauser);
+    if( KFPawn_Monster(Injured) != None )
+        `GetURI().OnZEDTakeDamage(KFPawn_Monster(Injured), Damage, Momentum, InstigatedBy, HitLocation, DamageType, HitInfo, DamageCauser);
+}

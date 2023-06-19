@@ -35,10 +35,13 @@ simulated function PostBeginPlay()
     
     Super.PostBeginPlay();
     
-    ItemTex = Texture2D'UI_LevelChevrons_TEX.UI_LevelChevron_Icon_02';
-    if( ItemTex == None )
-        ItemTex = Texture2D'EngineMaterials.DefaultWhiteGrid';
-        
+    ItemTex = Texture2D(DynamicLoadObject("UI_LevelChevrons_TEX.UI_LevelChevron_Icon_02", class'Texture2D'));
+    default.ItemTex = ItemTex;
+
+    MainFont = Font(DynamicLoadObject("UI_Canvas_Fonts.Font_Main", class'Font'));
+    default.MainFont = MainFont;
+    default.MapImage = Texture2D(DynamicLoadObject("ui_mappreview_tex.UI_MapPreview_Placeholder", class'Texture2D'));
+
     MapName = MS_Game(WorldInfo.Game).MapName;
     MapImage = GetMapImage(MapName);
 }
@@ -198,7 +201,7 @@ static final function Texture2D GetMapImage(string M)
             return Texture2D(DynamicLoadObject(MapData.ScreenshotPathName, class'Texture2D'));    
     }
     
-    return None;
+    return default.MapImage;
 }
 
 final function Font PickFont( out float Scaler )
@@ -983,6 +986,4 @@ final function DrawRectBoxEx(float X, float Y, float Width, float Height, int Ed
 
 defaultproperties
 {
-    MainFont=Font'UI_Canvas_Fonts.Font_Main'
-    MapImage=Texture2D'ui_mappreview_tex.UI_MapPreview_Placeholder'
 }

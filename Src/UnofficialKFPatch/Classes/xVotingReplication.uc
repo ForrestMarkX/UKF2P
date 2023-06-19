@@ -4,7 +4,7 @@ Class xVotingReplication extends ReplicationInfo;
 
 struct FGameTypeEntry
 {
-	var string GameName,GameShortName,Prefix;
+	var string GameName,GameShortName,Prefix,Options;
 };
 struct FMapEntry
 {
@@ -25,7 +25,7 @@ var array<FMapEntry> Maps;
 var array<FVotedMaps> ActiveVotes;
 
 var PlayerController PlayerOwner;
-var xVotingHandlerBase VoteHandler;
+var xVotingHandler VoteHandler;
 var byte DownloadStage;
 var int DownloadIndex,ClientCurrentGame;
 var int CurrentVote[2];
@@ -38,6 +38,7 @@ var FAdvancedTopVotes CurrentAdvancedTopVotes;
 simulated function PostBeginPlay()
 {
     default.StaticReference = self;
+    xVotingReplication(`FindDefaultObject(class'xVotingReplication')).StaticReference = self;
 	PlayerOwner = PlayerController(Owner);
 	RebunchTimer = WorldInfo.TimeSeconds+5.f;
 }
@@ -63,32 +64,33 @@ function Tick( float Delta )
     }
 }
 
-final reliable server function ServerNotifyReady()
+reliable server function ServerNotifyReady()
 {
 	bClientConnected = true;
 }
-final unreliable client simulated function ClientVerify()
+unreliable client simulated function ClientVerify()
 {
 	SetOwner(GetPlayer());
 	ServerNotifyReady();
 }
 
-simulated final function PlayerController GetPlayer()
+simulated function PlayerController GetPlayer()
 {
 	if( PlayerOwner==None )
 		PlayerOwner = GetALocalPlayerController();
 	return PlayerOwner;
 }
-final reliable client simulated function ClientReceiveGame( int Index, string GameName, string GameSName, string Prefix )
+reliable client simulated function ClientReceiveGame( int Index, string GameName, string GameSName, string Prefix, string Options )
 {
 	if( GameModes.Length<=Index )
 		GameModes.Length = Index+1;
 	GameModes[Index].GameName = GameName;
 	GameModes[Index].GameShortName = GameSName;
 	GameModes[Index].Prefix = Prefix;
+	GameModes[Index].Options = Options;
 	bListDirty = true;
 }
-final reliable client simulated function ClientReceiveMap( int Index, string MapName, int UpVote, int DownVote, int Sequence, int NumPlays, optional string MapTitle )
+reliable client simulated function ClientReceiveMap( int Index, string MapName, int UpVote, int DownVote, int Sequence, int NumPlays, optional string MapTitle )
 {
 	if( Maps.Length<=Index )
 		Maps.Length = Index+1;
@@ -100,7 +102,7 @@ final reliable client simulated function ClientReceiveMap( int Index, string Map
 	Maps[Index].NumPlays = NumPlays;
 	bListDirty = true;
 }
-final function int MapVoteSort(FVotedMaps A, FVotedMaps B)
+function int MapVoteSort(FVotedMaps A, FVotedMaps B)
 {
 	local int Result;
 
@@ -110,7 +112,7 @@ final function int MapVoteSort(FVotedMaps A, FVotedMaps B)
 
 	return Result;
 }
-final reliable client simulated function ClientReceiveVote( int GameIndex, int MapIndex, int VoteCount )
+reliable client simulated function ClientReceiveVote( int GameIndex, int MapIndex, int VoteCount )
 {
 	local int i;
 
@@ -140,7 +142,7 @@ final reliable client simulated function ClientReceiveVote( int GameIndex, int M
     
     UpdateTopVotes();
 }
-simulated final function UpdateTopVotes()
+simulated function UpdateTopVotes()
 {
     local TopVotes TopVotesObject;
     
@@ -165,26 +167,26 @@ simulated final function UpdateTopVotes()
     
     KFPlayerReplicationInfo(GetPlayer().PlayerReplicationInfo).RecieveTopMaps(TopVotesObject);
 }
-final reliable client simulated function ClientReady( int CurGame )
+reliable client simulated function ClientReady( int CurGame )
 {
 	ClientCurrentGame = CurGame;
 	bAllReceived = true;
 	MapVoteMsg("Maplist successfully received.");
 }
 
-simulated final function MapVoteMsg( string S )
+simulated function MapVoteMsg( string S )
 {
 	if( S!="" )
 		`GetURI().GetPlayerChat(GetPlayer().PlayerReplicationInfo).WriteToChat("<font color=\"#22B14C\" face=\"MIcon\">"$`GetMIconChar("vote")$"</font> <font color=\"#22B14C\">MapVote</font><font color=\"#FFFFFF\">: "$S$"</font>");
 }
-final reliable client simulated function ClientNotifyVote( PlayerReplicationInfo PRI, int GameIndex, int MapIndex )
+reliable client simulated function ClientNotifyVote( PlayerReplicationInfo PRI, int GameIndex, int MapIndex )
 {
 	if( bAllReceived )
 		MapVoteMsg((PRI!=None ? PRI.PlayerName : "Someone")$" has voted for "$Maps[MapIndex].MapTitle$" ("$GameModes[GameIndex].GameShortName$").");
 	else MapVoteMsg((PRI!=None ? PRI.PlayerName : "Someone")$" has voted for a map.");
 }
 
-final reliable client simulated function ClientNotifyVoteTime( int Time )
+reliable client simulated function ClientNotifyVoteTime( int Time )
 {
 	if( Time==0 )
 		MapVoteMsg("Initializing mid-game mapvote...");
@@ -197,7 +199,7 @@ final reliable client simulated function ClientNotifyVoteTime( int Time )
 	else if( Time==120 )
 		MapVoteMsg("2 minutes remain...");
 }
-final reliable client simulated function ClientNotifyVoteWin( int GameIndex, int MapIndex, bool bAdminForce )
+reliable client simulated function ClientNotifyVoteWin( int GameIndex, int MapIndex, bool bAdminForce )
 {
 	if( bAdminForce )
 	{
@@ -209,7 +211,7 @@ final reliable client simulated function ClientNotifyVoteWin( int GameIndex, int
 		MapVoteMsg(Maps[MapIndex].MapTitle$" ("$GameModes[GameIndex].GameShortName$") has won mapvote, switching map...");
 	else MapVoteMsg("A map has won mapvote, switching map...");
 }
-final reliable client simulated function ClientOpenMapvote( optional bool bShowRank )
+reliable client simulated function ClientOpenMapvote( optional bool bShowRank )
 {
     if( bAllReceived )
         SetTimer(0.01f,false,'DelayedOpenMapvote'); // To prevent no-mouse issue when local server host opens it from chat.
@@ -218,7 +220,7 @@ final reliable client simulated function ClientOpenMapvote( optional bool bShowR
     if( KFGameReplicationInfo(WorldInfo.GRI)!=none )
         KFGameReplicationInfo(WorldInfo.GRI).ProcessChanceDrop();
 }
-final simulated function WaitForMaps()
+simulated function WaitForMaps()
 {
     if( bAllReceived )
     {
@@ -226,23 +228,23 @@ final simulated function WaitForMaps()
         ClearTimer('WaitForMaps');
     }
 }
-final simulated function DelayedOpenMapvote()
+simulated function DelayedOpenMapvote()
 {
 	KFPlayerController(PlayerOwner).ClientShowPostGameMenu();
 }
 
-final reliable server simulated function ServerCastVote( int GameIndex, int MapIndex, bool bAdminForce )
+reliable server simulated function ServerCastVote( int GameIndex, int MapIndex, bool bAdminForce )
 {
     if( PlayerOwner.PlayerReplicationInfo.bOnlySpectator )
         return;
         
-	if( NextVoteTimer<WorldInfo.TimeSeconds )
+	if( NextVoteTimer<WorldInfo.TimeSeconds && Left(VoteHandler.Maps[MapIndex].MapName, 3) ~= "KF-" )
 	{
 		NextVoteTimer = WorldInfo.TimeSeconds+1.f;
 		VoteHandler.ClientCastVote(Self,GameIndex,MapIndex,bAdminForce);
 	}
 }
-final reliable server simulated function ServerRankMap( bool bUp )
+reliable server simulated function ServerRankMap( bool bUp )
 {
     if( PlayerOwner.PlayerReplicationInfo.bOnlySpectator )
         return;

@@ -2,10 +2,11 @@
 
 `define GetURI() class'UKFPReplicationInfo'.default.StaticReference
 `define GetChatRep() class'ReplicationHelper'.default.StaticReference
+`define FindDefaultObject(ObjClass) FindObject(`ObjClass.GetPackageName()$"."$`ObjClass.default.Name,`ObjClass)
 `define DebugLogFunc() class'UnrealDebugger'.default.StaticReference.LogFile(GetScriptTrace(), GetFuncName())
 `define DebugLog(log) class'UnrealDebugger'.default.StaticReference.LogFile(`log)
 `define Print(log) LocalPlayer(class'WorldInfo'.static.GetWorldInfo().GetALocalPlayerController().Player).ViewportClient.ViewportConsole.OutputText(`log)
-`define SafeLoadObject(S, ObjClass) class'UKFPReplicationInfo'.static.SafeLoadObject(`S, `ObjClass)
+`define SafeLoadObject(S, ObjClass, bCanFail) class'UKFPReplicationInfo'.static.SafeLoadObject(`S, `ObjClass, `bCanFail)
 `define VectorMA(Start, Scale, Direction) class'FunctionUtils'.static.VectorMA(`Start, `Scale, `Direction)
 `define RemapVal(Value, InMin, InMax, OutMin, OutMax) class'FunctionUtils'.static.RemapVal(`Value, `InMin, `InMax, `OutMin, `OutMax)
 `define IntToBin(Num, bPadWithZeroes, PadLength) class'FunctionUtils'.static.IntToBin(`Num, `bPadWithZeroes, `PadLength)
@@ -49,6 +50,9 @@
 `define FormatMIcon(S) class'ReplicationHelper'.static.FormatMIcon(`S)
 `define StripHTMLFromString(S) class'ReplicationHelper'.static.StripHTMLFromString(`S)
 `define ConvertUIDToSteamID(UniqueId) class'UKFPGameMessage'.static.ConvertUIDToSteamID(`UniqueId)
+`define ConvertUIDToSteamID64(UniqueId) class'GameEngine'.static.GetOnlineSubsystem().UniqueNetIdToInt64(`UniqueId)
 `define ConvertSteamIDToUID(SteamID) class'UKFPGameMessage'.static.ConvertSteamIDToUID(`SteamID)
 `define ConvertSteamIDToSteamID64(SteamID) class'UKFPGameMessage'.static.ConvertSteamIDToSteamID64(`SteamID)
 `define Broadcast(S, HexClr) class'UKFPReplicationInfo'.default.StaticReference.Broadcast(`S, `HexClr)
+
+`define MAX_DAMAGE_NUMS 64

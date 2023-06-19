@@ -26,7 +26,9 @@ var array<FStripMessage> StripMessageCache, FormatMessageCache;
 var KFPlayerController KFPC;
 var PlayerReplicationInfo PRI;
 var UniqueNetId UniqueId;
-var Texture2D DefaultKillIcon;
+var Texture2D DefaultKillIcon, DefaultRackEmUpImage;
+var StaticMesh Mosin3PMesh, M14EBR3PMesh, Centerfire3PMesh;
+var SkeletalMesh TommyGun1PMesh;
 var transient float NextSpectateChange, PingTime, MoneyTossTime, OldEyeHeight, PingFadeTime;
 var transient byte HealingSpeedBoost, HealingDamageBoost, HealingShield, ZedTimeExtensionsUsed, PingCount, MoneyTossCount;
 var transient int ServerDoshThrowAmt;
@@ -61,13 +63,47 @@ var Texture2D ZedTimeTexture, SpeedBoostTexture, DamageBoostTexture, ShieldBoost
 
 var SeasonalObjectiveStats SeasonalObjectiveStats;
 
-var bool bBehindView, OldDrawCrosshair, bOnFirstPerson;
-var transient bool bDoNotSaveConsoleHistory, bForceObjectiveRefresh, bUndoWeaponFlip, bCustomizationView, bSentServerPing, bDropProtection, bMOTDReceived;
+var bool bBehindView, OldDrawCrosshair, bOnFirstPerson, bNoDamageTracking;
+var transient bool bImportantDataRecieved, bUseEnhancedTraderMenu, bDoNotSaveConsoleHistory, bForceObjectiveRefresh, bUndoWeaponFlip, bCustomizationView, bSentServerPing, bDropProtection, bMOTDReceived;
+
+struct FCompressedDamNumber
+{
+    var vector Pos;
+    var int Damage;
+    var bool bHeadshot;
+    var class<KFDamageType> Type;
+    var class<KFPawn_Monster> Monster;
+};
+var repretry repnotify FCompressedDamNumber DamageNumbers[`MAX_DAMAGE_NUMS];
+var transient FCompressedDamNumber DamageNumbersRecieved[`MAX_DAMAGE_NUMS];
+var int NextDamageNumberIndex;
 
 replication
 {
     if( true )
-        MainRepInfo, SeasonalObjectiveStats, PRI, PingFadeTime;
+        MainRepInfo, SeasonalObjectiveStats, PRI, PingFadeTime, DamageNumbers;
+}
+
+simulated function ReplicatedEvent(name VarName)
+{
+    local int i;
+    
+    switch( VarName )
+    {
+        case 'DamageNumbers':
+            for( i=0; i<`MAX_DAMAGE_NUMS; i++ )
+            {
+                if( DamageNumbers[i] != DamageNumbersRecieved[i] )
+                {
+                    ClientNumberMsg(DamageNumbers[i].Damage, DamageNumbers[i].Pos, DamageNumbers[i].Type, DamageNumbers[i].bHeadshot);
+                    DamageNumbersRecieved[i] = DamageNumbers[i];
+                }
+            }
+            break;
+        default:
+            Super.ReplicatedEvent(VarName);
+            break;
+    }
 }
 
 simulated function PostBeginPlay()
@@ -76,71 +112,121 @@ simulated function PostBeginPlay()
     
     SetTimer(0.5f, true, 'ClearCache');
     
-    if( Role < ROLE_Authority || WorldInfo.NetMode == NM_StandAlone )
+    if( WorldInfo.NetMode != NM_DedicatedServer )
     {
-        KFPC = KFPlayerController(GetALocalPlayerController());
-        SetOwner(KFPC);
+        ZedTimeTexture = Texture2D(DynamicLoadObject("UI_PerkIcons_TEX.UI_PerkIcon_ZED", class'Texture2D'));
+        default.ZedTimeTexture = ZedTimeTexture;
+        
+        if( Mosin3PMesh.LODInfo.Length <= 0 )
+            Mosin3PMesh.LODInfo.Add(1);
+        if( Mosin3PMesh.LODInfo[0].Elements.Length <= 0 )
+            Mosin3PMesh.LODInfo[0].Elements.Add(1);
+        Mosin3PMesh.LODInfo[0].Elements[0].Material = MaterialInstanceConstant(DynamicLoadObject("WEP_3P_Mosin_MAT.WEP_3P_Mosin_Pickup_MIC", class'MaterialInstanceConstant'));
+        
+        if( M14EBR3PMesh.LODInfo.Length <= 0 )
+            M14EBR3PMesh.LODInfo.Add(1);
+        if( M14EBR3PMesh.LODInfo[0].Elements.Length <= 0 )
+            M14EBR3PMesh.LODInfo[0].Elements.Add(1);
+        M14EBR3PMesh.LODInfo[0].Elements[0].Material = MaterialInstanceConstant(DynamicLoadObject("WEP_3P_M14EBR_MAT.3P_Pickup_M14EBR_MIC", class'MaterialInstanceConstant'));
+        
+        if( Centerfire3PMesh.LODInfo.Length <= 0 )
+            Centerfire3PMesh.LODInfo.Add(1);
+        if( Centerfire3PMesh.LODInfo[0].Elements.Length <= 0 )
+            Centerfire3PMesh.LODInfo[0].Elements.Add(1);
+        Centerfire3PMesh.LODInfo[0].Elements[0].Material = MaterialInstanceConstant(DynamicLoadObject("WEP_3P_Centerfire_MAT.Wep_3rdP_Centerfire_Pickup_MIC", class'MaterialInstanceConstant'));
+        
+        if( TommyGun1PMesh.Materials.Length <= 0 )
+            TommyGun1PMesh.Materials.Add(1);
+        TommyGun1PMesh.Materials[0] = MaterialInstanceConstant(DynamicLoadObject("wep_1p_tommygun_mat.Wep_1P_TommyGun_MIC", class'MaterialInstanceConstant'));
+        
+        if( KFPC == None )
+            KFPC = KFPlayerController(Owner);
+        if( KFPC == None )
+            KFPC = KFPlayerController(GetALocalPlayerController());
+            
         KFPC.bShortConnectTimeOut = true;
         PRI = KFPC.PlayerReplicationInfo;
         OldDrawCrosshair = KFHudBase(KFPC.myHUD).bDrawCrosshair;
         InitializeHUD();
-        default.StaticReference = self;
+        
+        if( WorldInfo.NetMode == NM_Client || WorldInfo.NetMode == NM_StandAlone || (WorldInfo.NetMode == NM_ListenServer && KFPC.IsLocalPlayerController()) )
+        {
+            default.StaticReference = self;
+            ReplicationHelper(`FindDefaultObject(class'ReplicationHelper')).StaticReference = self;
+            
+            if( WorldInfo.NetMode == NM_Client )
+                `TimerHelper.SetTimer(1.f, true, 'CheckPacketLoss', self);
+            if( WorldInfo.NetMode == NM_ListenServer && KFPC.IsLocalPlayerController() )
+                SendMOTD();
+        }
     }
-    
-    if( WorldInfo.NetMode == NM_Client )
-        `TimerHelper.SetTimer(1.f, true, 'CheckPacketLoss', self);
-    else if( WorldInfo.NetMode == NM_DedicatedServer )
-        SendMOTD();
+    else SendMOTD();
 }
 
 simulated function InitializeHUD()
 {
     local KFGFxHudWrapper HUD;
     
-    if( PRI == None || KFPC == None || KFPC.MyGFxManager == None )
+    if( PRI == None || KFPC == None || KFPC.MyGFxManager == None || KFPC.MyGFxManager.BackendStatusIndicatorWidget == None )
     {
-        SetTimer(0.25f, false, 'InitializeHUD');
+        `TimerHelper.SetTimer(0.01f, false, 'InitializeHUD', self);
         return;
     }
-        
-    HUD = KFGFxHudWrapper(KFPC.myHUD);
-    if( HUD == None || HUD.HUDMovie == None || HUD.HUDMovie.HudChatBox == None )
-    {
-        SetTimer(0.25f, false, 'InitializeHUD');
-        return;
-    }
-    
-    if( UKFPInteraction == None )
-    {
-        UKFPInteraction = new (KFPC) class'UKFPHUDInteraction';
-        UKFPInteraction.ChatRep = Self;
-        UKFPInteraction.KFPlayerOwner = KFPC;
-        UKFPInteraction.HUD = HUD;
-        UKFPInteraction.WorldInfo = WorldInfo;
-        KFPC.Interactions.InsertItem(0, UKFPInteraction);
-        UKFPInteraction.Initialized();
 
-        ServerSetDropProtection(UKFPInteraction.bDropProtection);
-        
-        if( PRI.bOnlySpectator )
-        {
-            ForceCloseMenus(true);
-            ServerForceLobbySpectate();
-        }
-    }
-    
-    if( KFPC.MyGFxManager.PartyWidget == None || KFPC.MyGFxManager.PartyWidget.PartyChatWidget == None )
+    HUD = KFGFxHudWrapper(KFPC.myHUD);
+    if( HUD == None )
     {
-        SetTimer(0.25f, false, 'InitializeHUD');
+        `TimerHelper.SetTimer(0.01f, false, 'InitializeHUD', self);
         return;
     }
+    
+    UKFPInteraction = new(KFPC) class'UKFPHUDInteraction';
+    UKFPInteraction.ChatRep = Self;
+    UKFPInteraction.KFPlayerOwner = KFPC;
+    UKFPInteraction.HUD = HUD;
+    UKFPInteraction.WorldInfo = WorldInfo;
+    KFPC.Interactions.InsertItem(0, UKFPInteraction);
+    UKFPInteraction.Initialized();
+
+    ServerSetDropProtection(UKFPInteraction.bDropProtection);
+    ServerDisableDamageTracking(UKFPInteraction.bDisableDamagePopups);
+    
+    if( PRI.bOnlySpectator )
+    {
+        ForceCloseMenus(true);
+        ServerForceLobbySpectate();
+    }
+    
+    if( HUD.HUDMovie == None || HUD.HUDMovie.HudChatBox == None || KFPC.MyGFxManager.PartyWidget == None || KFPC.MyGFxManager.PartyWidget.PartyChatWidget == None )
+    {
+        `TimerHelper.SetTimer(0.01f, false, 'InitializeHUD', self);
+        return;
+    }
+    
+    UpdateRhythmCounter();
     
     KFPC.MyGFxManager.PartyWidget.PartyChatWidget.SetVisible(true);
     
     WriteToChat("<font color=\"#00FF00\" face=\"MIcon\">"$`GetMIconChar("gamepad-variant")$"</font> <font color=\"#FFFFFF\">[UKFP] This server is running Unofficial KF2 Patch by</font> <font color=\"#FFFF00\"><b>Forrest Mark X</b></font>\n<font color=\"#00A2E8\" face=\"MIcon\">"$`GetMIconChar("information")$"</font> <font color=\"#FFFFFF\">Type !UKFPhelp for a list of changes</font>", "FFFF00");
 }
 
-final simulated private function CheckPacketLoss()
+simulated function UpdateRhythmCounter()
+{
+    if( KFPC.MyGFxHUD.RhythmCounterWidget == None )
+    {
+        `TimerHelper.SetTimer(WorldInfo.DeltaSeconds, false, 'UpdateRhythmCounter', self);
+        return;
+    }
+    KFPC.MyGFxHUD.RhythmCounterWidget.SetString("headshotImage", PathName(DefaultRackEmUpImage));
+}
+
+simulated function ForcePerkUpdate()
+{
+	if( KFPC.MyGFxManager != None && KFPC.MyGFxManager.PerksMenu != None && KFPC.MyGFxManager.PerksMenu.SelectionContainer != None && KFPC.MyGFxManager.CurrentMenuIndex == UI_Perks )
+        KFPC.MyGFxManager.PerksMenu.SelectionContainer.ActionScriptVoid("refreshPerkList");
+}
+
+simulated private function CheckPacketLoss()
 {
     if( bSentServerPing )
     {
@@ -152,12 +238,12 @@ final simulated private function CheckPacketLoss()
     ServerPing();
 }
 
-reliable server final private function ServerPing()
+reliable server private function ServerPing()
 {
     ClientPing();
 }
 
-reliable client final private function ClientPing()
+reliable client private function ClientPing()
 {
     if( UKFPInteraction != None )
     {
@@ -169,7 +255,7 @@ reliable client final private function ClientPing()
     bSentServerPing = false;
 }
  
-simulated final private function PingFailure()
+simulated private function PingFailure()
 {
     if( UKFPInteraction != None )
     {
@@ -179,7 +265,7 @@ simulated final private function PingFailure()
     }
 }
 
-final reliable client function WriteToChat(string Message, optional string HexColor="0099FF")
+reliable client function WriteToChat(string Message, optional string HexColor="0099FF")
 {
     local KFGFxHudWrapper HUD;
     
@@ -196,7 +282,7 @@ final reliable client function WriteToChat(string Message, optional string HexCo
         HUD.HUDMovie.HudChatBox.AddChatMessage(Message, HexColor);
 }
 
-final simulated function WriteLargeStringToChat(string Text, string HexColor)
+simulated function WriteLargeStringToChat(string Text, string HexColor)
 {
 	local string S;
 	
@@ -209,7 +295,7 @@ final simulated function WriteLargeStringToChat(string Text, string HexColor)
 	ReceiveLargeChat(S,true,HexColor);
 }
 
-final reliable client function ReceiveLargeChat(string S, bool bFinal, optional string HexColor)
+reliable client function ReceiveLargeChat(string S, bool bFinal, optional string HexColor)
 {
 	PendingChatMessage $= S;
 	if( bFinal )
@@ -219,34 +305,42 @@ final reliable client function ReceiveLargeChat(string S, bool bFinal, optional 
     }
 }
 
-final simulated function SetCustomizationView(bool B)
+simulated function SetCustomizationView(bool B)
 {
     bCustomizationView = B;
     if( WorldInfo.NetMode == NM_Client )
         ServerSetCustomizationView(B);
 }
 
-final reliable server function ServerSetCustomizationView(bool B)
+reliable server function ServerSetCustomizationView(bool B)
 {
     bCustomizationView = B;
 }
 
-final simulated function ApplySpeedBoostStatus(int BoostCount, float BoostTime)
+reliable server function ServerDisableDamageTracking(bool B)
 {
-    UKFPInteraction.AddStatusEffect("SpeedBoost", KFPawn_Human(KFPC.Pawn), BoostCount, MakeColor(47, 181, 136, 255), SpeedBoostTexture, BoostTime, UpdateStatusHUD);
+    bNoDamageTracking = B;
 }
 
-final simulated function ApplyDamageBoostStatus(int BoostCount, float BoostTime)
+simulated function ApplySpeedBoostStatus(int BoostCount, float BoostTime)
 {
-    UKFPInteraction.AddStatusEffect("DamageBoost", KFPawn_Human(KFPC.Pawn), BoostCount, MakeColor(47, 181, 136, 255), DamageBoostTexture, BoostTime, UpdateStatusHUD);
+    if( UKFPInteraction != None )
+        UKFPInteraction.AddStatusEffect("SpeedBoost", KFPawn_Human(KFPC.Pawn), BoostCount, MakeColor(47, 181, 136, 255), SpeedBoostTexture, BoostTime, UpdateStatusHUD);
 }
 
-final simulated function ApplyShieldBoostStatus(int BoostCount, float BoostTime)
+simulated function ApplyDamageBoostStatus(int BoostCount, float BoostTime)
 {
-    UKFPInteraction.AddStatusEffect("ShieldBoost", KFPawn_Human(KFPC.Pawn), BoostCount, MakeColor(47, 181, 136, 255), ShieldBoostTexture, BoostTime, UpdateStatusHUD);
+    if( UKFPInteraction != None )
+        UKFPInteraction.AddStatusEffect("DamageBoost", KFPawn_Human(KFPC.Pawn), BoostCount, MakeColor(47, 181, 136, 255), DamageBoostTexture, BoostTime, UpdateStatusHUD);
 }
 
-final reliable client function ApplyZedTimeStatus(byte ZT, float ZedTimeRemaining)
+simulated function ApplyShieldBoostStatus(int BoostCount, float BoostTime)
+{
+    if( UKFPInteraction != None )
+        UKFPInteraction.AddStatusEffect("ShieldBoost", KFPawn_Human(KFPC.Pawn), BoostCount, MakeColor(47, 181, 136, 255), ShieldBoostTexture, BoostTime, UpdateStatusHUD);
+}
+
+reliable client function ApplyZedTimeStatus(byte ZT, float ZedTimeRemaining)
 {
 	if( KFPC.PlayerCamera != None && !MainRepInfo.GetEnforceVanilla() )
 		KFPC.PlayerCamera.ClearAllCameraShakes();
@@ -255,47 +349,50 @@ final reliable client function ApplyZedTimeStatus(byte ZT, float ZedTimeRemainin
     UKFPInteraction.AddStatusEffect("ZEDTime", KFPawn_Human(KFPC.Pawn), ZT, MakeColor(96, 96, 96, 255), ZedTimeTexture, ZedTimeRemaining, UpdateZTStatusHUD);
 }
 
-final reliable client function ApplyParryBuffStatus(float BoostTime)
+reliable client function ApplyParryBuffStatus(float BoostTime)
 {
     UKFPInteraction.AddStatusEffect("ParryTimer", KFPawn_Human(KFPC.Pawn), `FormatFloat(`RoundFloatPrecision(BoostTime, 1), 1), MakeColor(34, 177, 76, 255), ParryTexture, BoostTime, UpdateParryHUD);
 }
 
-final simulated function FStatusIcon UpdateParryHUD(FStatusIcon Status, float DT)
+simulated function FStatusIcon UpdateParryHUD(FStatusIcon Status, float DT)
 {
     Status.Name = `FormatFloat(`RoundFloatPrecision(Status.Value, 1), 1);
     return UpdateStatusHUD(Status, DT);
 }
 
-final simulated function FStatusIcon UpdateStatusHUD(FStatusIcon Status, float DT)
+simulated function FStatusIcon UpdateStatusHUD(FStatusIcon Status, float DT)
 {
     Status.Value -= DT;
     return Status;
 }
 
-final simulated function FStatusIcon UpdateZTStatusHUD(FStatusIcon Status, float DT)
+simulated function FStatusIcon UpdateZTStatusHUD(FStatusIcon Status, float DT)
 {
     Status.Value -= DT * (1.f / (CustomTimeDilation * WorldInfo.TimeDilation));
     return Status;
 }
 
-final reliable client function ForceUpdateSharedContent()
+reliable client function ForceUpdateSharedContent()
 {
     if( KFPC.PlayerReplicationInfo.bOnlySpectator )
     {
-        KFPC.SetTimer(0.001f, false, 'ForceUpdateSharedContent');
+        SetTimer(WorldInfo.DeltaSeconds, false, 'ForceUpdateSharedContent');
         return;
     }
     
     KFPlayerReplicationInfo(KFPC.PlayerReplicationInfo).SharedContentInitChain_CrossTitleContentRead(true);
 }
 
-final reliable client function ReceiveKillMessage( class<Pawn> Victim, optional bool bLargeZED, optional PlayerReplicationInfo KillerPRI, optional class<KFDamageType> DT )
+reliable client function ReceiveKillMessage( class<Pawn> Victim, optional bool bLargeZED, optional PlayerReplicationInfo KillerPRI, optional class<KFDamageType> DT )
 {
 	local class<KFPawn_Monster> KFPMClass;
 	local KFPlayerReplicationInfo KFPRI;
 	local GFxObject DataObject;
     local string KilledName, KillerName, KilledIconPath, KillerIconPath, SkullIconPath, KillerTextColor, KilledTextColor;
 	local class<KFWeapon> WepClass;
+    
+    if( UKFPInteraction == None )
+        return;
     
     if( !KFPC.bShowKillTicker || (bLargeZED && UKFPInteraction.bDisableLargeKillTicker) )
         return;
@@ -351,12 +448,12 @@ final reliable client function ReceiveKillMessage( class<Pawn> Victim, optional 
     KFPC.MyGFxHUD.KFGXHUDManager.SetObject("newBark", DataObject);
 }
 
-final simulated function bool CheckZEDCloaking(KFPawn_Monster M)
+simulated function bool CheckZEDCloaking(KFPawn_Monster M)
 {
     return M.bIsCloaking && !M.bIsCloakingSpottedByTeam;
 }
 
-final unreliable server function ServerPingLocation(Actor A, vector HitLocation, bool bHitWorld)
+unreliable server function ServerPingLocation(Actor A, vector HitLocation, bool bHitWorld)
 {
     local KFPlayerController PC;
     local ReplicationHelper CRI;
@@ -378,12 +475,12 @@ final unreliable server function ServerPingLocation(Actor A, vector HitLocation,
     }
 }
 
-final unreliable client function ClientNotifyPing(Actor A, vector HitLocation, bool bHitWorld, PlayerReplicationInfo OtherPRI)
+unreliable client function ClientNotifyPing(Actor A, vector HitLocation, bool bHitWorld, PlayerReplicationInfo OtherPRI)
 {
     UKFPInteraction.AddActorPing(OtherPRI, A, HitLocation, bHitWorld);
 }
 
-final simulated function bool CheckPingSpam()
+simulated function bool CheckPingSpam()
 {
 	if( PingFadeTime <= 0.f )
 		return false;
@@ -404,7 +501,7 @@ final simulated function bool CheckPingSpam()
     return false;
 }
 
-final function SendMOTD()
+function SendMOTD()
 {
 	local string S;
 	local int StrLen;
@@ -426,7 +523,7 @@ final function SendMOTD()
 	ReceiveServerMOTD(S,true);
 }
 
-final reliable client function ReceiveServerMOTD( string S, bool bFinal )
+reliable client function ReceiveServerMOTD( string S, bool bFinal )
 {
     local UKFPReplicationInfo UKFRep;
     
@@ -445,23 +542,23 @@ final reliable client function ReceiveServerMOTD( string S, bool bFinal )
     }
 }
 
-final simulated function ShowMOTD()
+simulated function ShowMOTD()
 {
     if( KFPC.MyGFxManager != None )
         KFPC.MyGFxManager.ShowWelcomeScreen();
 }
 
-final reliable server function ServerSetDropProtection(bool B)
+reliable server function ServerSetDropProtection(bool B)
 {
     bDropProtection = B;
 }
 
-final private reliable server function ServerThrowMoney(int Amount)
+private reliable server function ServerThrowMoney(int Amount)
 {
 	local Inventory Inv;
 	local KFInventoryManager KFIM;
     
-	if( KFPC.Pawn != None && KFPC.Pawn.InvManager != none )
+	if( KFPC.Pawn != None && KFPC.Pawn.InvManager != None )
 	{
 		KFIM = KFInventoryManager(KFPC.Pawn.InvManager);
 		if ( KFIM != None )
@@ -485,11 +582,11 @@ final private reliable server function ServerThrowMoney(int Amount)
 	}
 }
 
-final simulated function bool CheckDoshSpam()
+simulated function bool CheckDoshSpam()
 {
 	if( MoneyTossTime>WorldInfo.RealTimeSeconds )
 	{
-		if( MoneyTossCount>=10 )
+		if( MoneyTossCount>=(MainRepInfo.CurrentMaxDoshSpamAmount > 0 ? MainRepInfo.CurrentMaxDoshSpamAmount : byte(15)) )
 			return true;
 		++MoneyTossCount;
 		MoneyTossTime = FMax(MoneyTossTime,WorldInfo.RealTimeSeconds+0.5);
@@ -503,21 +600,21 @@ final simulated function bool CheckDoshSpam()
     return false;
 }
 
-final simulated exec function TossMoney(int Amount)
+simulated exec function TossMoney(int Amount)
 {
     if( CheckDoshSpam() )
         return;
 	ServerThrowMoney(Amount == 0 ? UKFPInteraction.DoshThrowAmt : Amount);
 }
 
-final simulated function bool ExecuteCommand(string Command)
+simulated function bool ExecuteCommand(string Command)
 {
 	local int i, j, k;
 	local string Cmd,S,FirstEntry,LastEntry;
     local array<string> Args, Commands;
 	local LocalPlayer LP;
-	
-	if( WorldInfo.NetMode == NM_DedicatedServer )
+    
+	if( WorldInfo.NetMode == NM_DedicatedServer || (WorldInfo.NetMode == NM_ListenServer && !KFPC.IsLocalPlayerController()) )
 		return false;
 	
 	LP = LocalPlayer(KFPC.Player);
@@ -577,7 +674,7 @@ final simulated function bool ExecuteCommand(string Command)
 	return false;
 }
 
-static final function string StripHTMLFromString(string S)
+static function string StripHTMLFromString(string S)
 {
     local int Index, Index2, FontEndIndex;
     local string FontSect, Str;
@@ -692,7 +789,7 @@ static final function string StripHTMLFromString(string S)
     return S;
 }
 
-static final function string GetMIconChar(string IconName)
+static function string GetMIconChar(string IconName)
 {
     local int CodeIndex;
     
@@ -703,7 +800,7 @@ static final function string GetMIconChar(string IconName)
     return Chr(0x46);
 }
 
-static final function string FormatMIcon(string S)
+static function string FormatMIcon(string S)
 {
     local int Index, Index2, Index3, CodeIndex;
     local string IconName, Str, IconString;
@@ -749,13 +846,13 @@ static final function string FormatMIcon(string S)
     return S;
 }
 
-final simulated function ClearCache()
+simulated function ClearCache()
 {
     StripMessageCache.Length = 0;
     FormatMessageCache.Length = 0;
 }
 
-final simulated function AddServerToFavorites()
+simulated function AddServerToFavorites()
 {
     local DataStoreClient DSClient;
     local OnlineGameSearch Search;
@@ -785,7 +882,7 @@ final simulated function AddServerToFavorites()
     WriteToChat("Searching for server...", "00FF00");
 }
 
-final simulated function OnFindOnlineGamesCompleteDelegate(bool bWasSuccessful)
+simulated function OnFindOnlineGamesCompleteDelegate(bool bWasSuccessful)
 {
     local bool bSearchCompleted;
     local OnlineGameSearch Search;
@@ -805,7 +902,7 @@ final simulated function OnFindOnlineGamesCompleteDelegate(bool bWasSuccessful)
     }
 }
 
-final simulated function FindServerToFavorite()
+simulated function FindServerToFavorite()
 {
     local KFOnlineGameSettings TempOnlineGamesSettings;
     local KFOnlineGameSearch LatestGameSearch;
@@ -840,7 +937,7 @@ final simulated function FindServerToFavorite()
     }
 }
 
-final unreliable server function ServerWasFavorited()
+unreliable server function ServerWasFavorited()
 {
     local ReplicationHelper CRI;
     local KFPlayerReplicationInfo KFPRI;
@@ -850,14 +947,14 @@ final unreliable server function ServerWasFavorited()
         CRI.OnPlayerFavorited(KFPRI, KFPC.Pawn);
 }
 
-final unreliable client function OnPlayerFavorited(KFPlayerReplicationInfo KFPRI, Pawn P)
+unreliable client function OnPlayerFavorited(KFPlayerReplicationInfo KFPRI, Pawn P)
 {
     local ParticleSystem FavFX;
     local vector SpawnVector;
     
     if( P != None )
     {
-        FavFX = ParticleSystem'fx_headshot_alt_emit.FX_Headshot_Alt_Hearts_01';
+        FavFX = ParticleSystem(DynamicLoadObject("fx_headshot_alt_emit.FX_Headshot_Alt_Hearts_01", class'ParticleSystem'));
         P.Mesh.GetSocketWorldLocationAndRotation('Eyes_Attach', SpawnVector);
         WorldInfo.MyEmitterPool.SpawnEmitter(FavFX, SpawnVector + vect(0,0,65.f));
         P.PlaySoundBase(AkEvent'WW_Headshot_Packs.Play_WEP_Hearts_Headshot');
@@ -866,7 +963,7 @@ final unreliable client function OnPlayerFavorited(KFPlayerReplicationInfo KFPRI
     WriteToChat("<font color=\"#FC5555\" face=\"MIcon\">"$`GetMIconChar("heart-plus")@"</font><font color=\"#FFC0CB\">"@KFPRI.PlayerName@"has favorited the server!");
 }
 
-final reliable client function ClientForceWeaponSkin(KFWeapon KFW, int SkinID)
+reliable client function ClientForceWeaponSkin(KFWeapon KFW, int SkinID)
 {
     local int i, NumSkins;
     local KFWeap_ScopedBase ScopeWep;
@@ -911,7 +1008,7 @@ final reliable client function ClientForceWeaponSkin(KFWeapon KFW, int SkinID)
 }
 
 // Dumb hack to fix camera issues, too lazy to look into the issue as it only happens to certain people
-final function ForceFixCamera()
+function ForceFixCamera()
 {
     if( KFPawn_Customization(KFPC.Pawn) != None )
         return;
@@ -919,18 +1016,18 @@ final function ForceFixCamera()
 	KFPC.SetTimer(0.25f, false, 'ResetCameraMode');
 }
 
-final unreliable client function ForceCloseMenus(optional bool bIgnoreMenu)
+unreliable client function ForceCloseMenus(optional bool bIgnoreMenu)
 {
     if( KFPC.MyGFxManager != None && (KFPC.MyGFxManager.CurrentMenu == KFPC.MyGFxManager.TraderMenu || bIgnoreMenu) )
         KFPC.MyGFxManager.CloseMenus(true);
 }
 
-final private reliable server function ServerForceLobbySpectate()
+private reliable server function ServerForceLobbySpectate()
 {
     ForceLobbySpectate();
 }
 
-final function ForceLobbySpectate()
+function ForceLobbySpectate()
 {
     if( KFPC.Pawn != None && KFPawn_Customization(KFPC.Pawn) == None && !WorldInfo.GRI.bMatchHasBegun )
         return;
@@ -944,48 +1041,54 @@ final function ForceLobbySpectate()
     KFPC.ServerCamera('FreeCam');
 }
 
-final unreliable client function ClientSpawnFade()
+unreliable client function ClientSpawnFade()
 {
     SetTimer(0.05f, false, 'SpawnFade');
 }
 
-final simulated function SpawnFade()
+simulated function SpawnFade()
 {
     KFPC.ClientSetCameraFade( true, MakeColor(255,255,255,255), vect2d(1.f, 0.f), 0.6f, true );
 }
 
-final simulated function SetLastHX25NukeTime( float NewTime )
+simulated function SetLastHX25NukeTime( float NewTime )
 {
 	LastHX25NukeTime = NewTime;
 }
 
-final simulated function float GetLastHX25NukeTime()
+simulated function float GetLastHX25NukeTime()
 {
 	return LastHX25NukeTime;
 }
 
-final reliable client function ClientSpawnFunctionProxy()
+reliable client function ClientRecieveImportantData(bool bTraderMenu, byte MaxPlayers)
 {
-    if( Role == ROLE_Authority || FunctionProxy != None )
+    bUseEnhancedTraderMenu = bTraderMenu;
+    RepMaxPlayers = MaxPlayers;
+    
+    bImportantDataRecieved = true;
+    
+    if( FunctionProxy != None || MainRepInfo.FunctionProxy != None )
         return;
+        
+    if( default.StaticReference == None )
+    {
+        default.StaticReference = self;
+        ReplicationHelper(`FindDefaultObject(class'ReplicationHelper')).StaticReference = self;
+    }
         
     FunctionProxy = New class<ProxyInfo>(`SafeLoadObject("UnofficialKFPatch.FunctionProxy", Class'Class'));
     FunctionProxy.WorldInfo = WorldInfo;
     FunctionProxy.Init();
 }
 
-final reliable client function ClientSetMaxPlayers(byte MaxPlayers)
-{
-    RepMaxPlayers = MaxPlayers;
-}
-
-final reliable client function ClientSetWeeklyIndex(int WeeklyIndex)
+reliable client function ClientSetWeeklyIndex(int WeeklyIndex)
 {
     FunctionProxy.ForceUpdateWeeklyIndex(WeeklyIndex);
     KFPC.ResetGameplayPostProcessFX();
 }
 
-final simulated function AdjustWeaponPosition(KFWeapon W, out float ZAdjustment)
+simulated function AdjustWeaponPosition(KFWeapon W, out float ZAdjustment)
 {
 	if( W.IsA('KFWeap_AssaultRifle_FAMAS') || W.IsA('KFWeap_SMG_P90') )
 		ZAdjustment = -5;
@@ -1007,9 +1110,9 @@ final simulated function AdjustWeaponPosition(KFWeapon W, out float ZAdjustment)
 	}
 }
 
-final simulated function EWeaponHand GetHand(optional KFWeapon W)
+simulated function EWeaponHand GetHand(optional KFWeapon W)
 {
-	if( MainRepInfo.bDisallowHandSwap || (W != None && W.Instigator == None) )
+	if( MainRepInfo.bDisallowHandSwap || (W != None && W.Instigator == None) || UKFPInteraction == None )
 		return HAND_Right;
 	return UKFPInteraction.WeaponHand;
 }
@@ -1021,7 +1124,7 @@ simulated function Destroyed()
         SeasonalObjectiveStats.Destroy();
 }
 
-final simulated function CalcViewModelView( KFPawn_Human P, KFWeapon Wep, float BobDamping, out vector Pos, out rotator Ang )
+simulated function CalcViewModelView( KFPawn_Human P, KFWeapon Wep, float BobDamping, out vector Pos, out rotator Ang )
 {
 	local KFPerk OwnerPerk;
     
@@ -1036,13 +1139,13 @@ final simulated function CalcViewModelView( KFPawn_Human P, KFWeapon Wep, float 
     UKFPInteraction.CurrentBobClass.CalcViewBob(P, Wep, BobDamping, Pos, Ang);
 }
 
-final simulated function CalcViewRotation(KFPawn_Human P, out rotator Rot)
+simulated function CalcViewRotation(KFPawn_Human P, out rotator Rot)
 {
-    if( UKFPInteraction == None || UKFPInteraction.CurrentBobClass != None )
+    if( UKFPInteraction != None && UKFPInteraction.CurrentBobClass != None )
         UKFPInteraction.CurrentBobClass.CalcViewRotation(P, Rot);
 }
 
-final simulated function OnPlayerHandsChanged()
+simulated function OnPlayerHandsChanged()
 {
 	local int i;
 	
@@ -1059,19 +1162,52 @@ final simulated function OnPlayerHandsChanged()
 	}
 }
 
+function AddDamageNumberMessage( int Count, vector Pos, class<KFDamageType> Type, class<KFPawn_Monster> M, optional bool bIsHeadshot )
+{
+    DamageNumbers[NextDamageNumberIndex].Damage = Count;
+    DamageNumbers[NextDamageNumberIndex].bHeadshot = bIsHeadshot;
+    DamageNumbers[NextDamageNumberIndex].Pos = Pos;
+    DamageNumbers[NextDamageNumberIndex].Type = Type;
+    DamageNumbers[NextDamageNumberIndex].Monster = M;
+    
+    if( WorldInfo.NetMode != NM_DedicatedServer )
+        ClientNumberMsg(DamageNumbers[NextDamageNumberIndex].Damage, DamageNumbers[NextDamageNumberIndex].Pos, DamageNumbers[NextDamageNumberIndex].Type, DamageNumbers[NextDamageNumberIndex].bHeadshot);
+    
+    bNetDirty = true;
+    bForceNetUpdate = true;
+    
+    if( ++NextDamageNumberIndex >= `MAX_DAMAGE_NUMS )
+        NextDamageNumberIndex = 0;
+}
+
+simulated function ClientNumberMsg( int Count, vector Pos, class<KFDamageType> Type, optional bool bIsHeadshot )
+{
+    if( UKFPInteraction != None )
+        UKFPInteraction.AddNumberMsg(Count,Pos,Type,bIsHeadshot);
+}
+
 defaultproperties
 {
     bOnlyRelevantToOwner=true
     bAlwaysRelevant=false
+    bAlwaysTick=true
+	bOnlyDirtyReplication=false
+	bSkipActorPropertyReplication=false
     
-	NetUpdateFrequency=8
+    NetPriority=4
+	NetUpdateFrequency=20
     
-	ZedTimeTexture=Texture2D'UI_PerkIcons_TEX.UI_PerkIcon_ZED'
     SpeedBoostTexture=Texture2D'UKFP_HUD.HUD.UI_Talents_Medic_AdrenalineShot'
     DamageBoostTexture=Texture2D'UKFP_HUD.HUD.UI_Talents_Medic_FocusInjection'
     ShieldBoostTexture=Texture2D'UKFP_HUD.HUD.UI_Talents_Medic_CoagulantBooster'
     ParryTexture=Texture2D'UKFP_HUD.HUD.UI_Talents_Berserker_Parry'
-	DefaultKillIcon=Texture2D'UKFP_UI_Shared.AssetLib_I32'
+	DefaultKillIcon=Texture2D'UI_Shared.AssetLib_I32'
+    DefaultRackEmUpImage=Texture2D'UI_HUD.InGameHUD_SWF_I93'
+    
+    Mosin3PMesh=StaticMesh'UKFP_3P_Mosin_MESH.WEP_3rdP_Mosin_Pickup'
+    M14EBR3PMesh=StaticMesh'UKFP_3P_M14EBR_MESH.Wep_M14EBR_Pickup'
+    Centerfire3PMesh=StaticMesh'UKFP_3P_Centerfire_MESH.Wep_3rdP_Centerfire_Pickup'
+    TommyGun1PMesh=SkeletalMesh'UKFP_1P_TommyGun_MESH.Wep_1stP_TommyGun_Rig'
     
     ModBindList.Add((BindCommand="PingLocation",BindName="Ping"))
     ModBindList.Add((BindCommand="ToggleCameraMode",BindName="Third Person"))

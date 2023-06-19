@@ -34,40 +34,25 @@ simulated function GrantEventItemsEx()
 	}
 }
 
-simulated event OnGameWon(class<GameInfo> GameClass, int Difficulty, int GameLength, bool bCoOp)
+simulated function OnGameWon(class<GameInfo> GameClass, int Difficulty, int GameLength, bool bCoOp)
 {
-	if( bObjectiveIsValidForMap[0] != 0 )
+	if( ClassIsChildOf(GameClass, class'KFGameInfo_Objective') && Difficulty >= `DIFFICULTY_HARD )
 	{
-		if( GameClass == class'KFGameInfo_Objective' && Difficulty >= `DIFFICULTY_HARD )
+		if( bObjectiveIsValidForMap[4] != 0 )
+			FinishedObjectiveEx(SEI_Summer, 4);
+		else if( bObjectiveIsValidForMap[3] != 0 )
+			FinishedObjectiveEx(SEI_Summer, 3);
+		else if( bObjectiveIsValidForMap[0] != 0 )
 			FinishedObjectiveEx(SEI_Summer, 0);
 	}
-
-	if( bObjectiveIsValidForMap[3] != 0 )
-	{
-		if( GameClass == class'KFGameInfo_Objective' && Difficulty >= `DIFFICULTY_HARD )
-			FinishedObjectiveEx(SEI_Summer, 3);
-	}
-
-	if( bObjectiveIsValidForMap[4] != 0 )
-	{
-		if( GameClass == class'KFGameInfo_Objective' && Difficulty >= `DIFFICULTY_HARD )
-			FinishedObjectiveEx(SEI_Summer, 4);
-	}
-
-	if( bObjectiveIsValidForMap[1] != 0 )
-	{
-		if( GameClass == class'KFGameInfo_WeeklySurvival' )
-			FinishedObjectiveEx(SEI_Summer, 1);
-	}
+    else if( bObjectiveIsValidForMap[1] != 0 && ClassIsChildOf(GameClass, class'KFGameInfo_WeeklySurvival') )
+		FinishedObjectiveEx(SEI_Summer, 1);
 }
 
-simulated event OnWaveCompleted(class<GameInfo> GameClass, int Difficulty, int WaveNum)
+simulated function OnWaveCompleted(class<GameInfo> GameClass, int Difficulty, int WaveNum)
 {
-	if( bObjectiveIsValidForMap[2] != 0 )
-	{
-		if( WaveNum >= EndlessWaveRequired && GameClass == class'KFGameInfo_Endless' && Difficulty >= `DIFFICULTY_HARD )
-			FinishedObjectiveEx(SEI_Summer, 2);
-	}
+	if( bObjectiveIsValidForMap[2] != 0 && WaveNum >= EndlessWaveRequired && ClassIsChildOf(GameClass, class'KFGameInfo_Endless') && Difficulty >= `DIFFICULTY_HARD )
+		FinishedObjectiveEx(SEI_Summer, 2);
 }
 
 defaultproperties
