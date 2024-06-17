@@ -105,9 +105,12 @@ simulated function OnAfflictionCaused(EAfflictionType Type)
 	}
 }
 
-simulated function OnZedKilled(class<KFPawn_Monster> MonsterClass, int Difficulty, class<DamageType> DT)
+simulated function OnZedKilled(class<KFPawn_Monster> MonsterClass, int Difficulty, class<DamageType> DT, bool bKiller)
 {
 	local int ObjIdx;
+    
+    if( !bKiller )
+        return;
 
 	// Kill 1500 Zeds with HRG Bombardier
 	ObjIdx = 0;

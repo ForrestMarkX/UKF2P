@@ -4,7 +4,7 @@ stripped reliable client function context(KFPlayerController.ClientTriggerWeapon
 { 
 	if( WeaponClass != None ) 
 		class'UKFPReplicationInfo'.static.StaticLoadWeaponAssets(WeaponClass); 
-} 
+}
 
 stripped event context(KFPlayerController.PreClientTravel) PreClientTravel( string PendingURL, ETravelType TravelType, bool bIsSeamlessTravel )
 {
@@ -189,19 +189,72 @@ stripped reliable client event context(KFPlayerController.TeamMessage) TeamMessa
 stripped simulated function context(KFPlayerController.GetAllowSeasonalSkins) bool GetAllowSeasonalSkins()
 {
 	local KFGameReplicationInfo KFGRI;
-	local bool bIsWWLWeekly, bIsAllowSeasonalSkins;
-
-    if( `GetURI().bNoEventSkins )
+	local bool bIsWWLWeekly, bIsCastleVolter, bIsAllowSeasonalSkins;
+    
+    if( `GetURI().bNoEventSkins || `GetURI().GetEnforceVanilla() )
         return false;
 
 	KFGRI = KFGameReplicationInfo(WorldInfo.GRI);
 
 	bIsWWLWeekly = KFGRI != none && KFGRI.bIsWeeklyMode && KFGRI.CurrentWeeklyIndex == 12;
-	bIsAllowSeasonalSkins = KFGRI != none && KFGRI.bAllowSeasonalSkins;
-
-	if( bIsWWLWeekly || bIsAllowSeasonalSkins == false )
+	bIsCastleVolter = Caps(WorldInfo.GetMapName(true)) == "KF-CASTLEVOLTER";
+	bIsAllowSeasonalSkins = KFGRI != None && KFGRI.bAllowSeasonalSkins;
+	
+	if( bIsWWLWeekly || bIsCastleVolter || !bIsAllowSeasonalSkins )
 		return false;
 	return true;
+}
+
+stripped simulated event context(KFPlayerController.GetSeasonalStateName) name GetSeasonalStateName()
+{
+	local int EventId, MapModifiedEventId;
+	local KFMapInfo KFMI;
+	local KFGameReplicationInfo KFGRI;
+    
+    if( `GetURI().bNoEventSkins || `GetURI().GetEnforceVanilla() )
+    {
+        `Log("GetSeasonalStateName: No Event");
+        return 'No_Event';
+    }
+
+	KFGRI = KFGameReplicationInfo(WorldInfo.GRI);
+	EventId = class'KFGameEngine'.static.GetSeasonalEventIDForZedSkins();
+	MapModifiedEventId = SEI_None;
+
+	KFMI = KFMapInfo(WorldInfo.GetMapInfo());
+	if( KFMI != None )
+		KFMI.ModifySeasonalEventId(MapModifiedEventId);
+        
+	bAllowSeasonalSkins = GetAllowSeasonalSkins();
+	if( MapModifiedEventId == SEI_None )
+	{
+		if( !bAllowSeasonalSkins )
+			EventId = SEI_None;
+        else if( KFGRI != None && KFGRI.SeasonalSkinsIndex != -1 )
+            EventId = KFGRI.SeasonalSkinsIndex;
+	}
+	else EventId = MapModifiedEventId;
+
+	switch( EventId % 10 )
+	{
+		case SEI_Summer:
+			`Log("GetSeasonalStateName: Summer");
+			return 'Summer_Sideshow';
+		case SEI_Fall:
+			`Log("GetSeasonalStateName: Fall");
+			return 'Fall';
+		case SEI_Winter:
+			`Log("GetSeasonalStateName: Winter");
+			return 'Winter';
+		case SEI_Spring:
+			`Log("GetSeasonalStateName: Spring");
+			return 'Spring';
+		default:
+			`Log("GetSeasonalStateName: No Event");
+			return 'No_Event';
+	}
+
+    return 'No_Event';
 }
 
 stripped reliable client event context(KFPlayerController.ReceiveLocalizedMessage) ReceiveLocalizedMessage( class<LocalMessage> Message, optional int Switch, optional PlayerReplicationInfo RelatedPRI_1, optional PlayerReplicationInfo RelatedPRI_2, optional Object OptionalObject )

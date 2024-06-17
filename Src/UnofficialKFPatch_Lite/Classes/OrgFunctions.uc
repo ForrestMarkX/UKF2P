@@ -32,3 +32,4 @@ static function int GetGameModeNumFromClass( string GameModeClassString );
 static function string GetGameModeFriendlyNameFromClass( string GameModeClassString );
 function CreateOutbreakEvent();
 event MutPreBeginPlay();
+function GameInfoTick( float DeltaTime );

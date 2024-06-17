@@ -28,7 +28,8 @@ var config enum FOutbreakType
     OUTBREAK_ARSENALASCENT,
     OUTBREAK_PRIMARYTARGET,
     OUTBREAK_PERKROULETTE,
-    OUTBREAK_CONTAMINATIONZONE
+    OUTBREAK_CONTAMINATIONZONE,
+    OUTBREAK_BOUNTYHUNT
 } WeeklyIndex;
 var int InitialWeeklyIndex;
 var transient int CurrentWeeklyIndex;
@@ -51,9 +52,10 @@ var config enum ESeasonalEventType
     SET_Fall2021,
     SET_Xmas2021,
     SET_Summer2022,
+    SET_Summer2023,
     SET_Fall2022,
-    SET_Xmas2022,
-    SET_Summer2023
+    SET_Fall2023,
+    SET_Xmas2022
 } ForcedSeasonalEventDate;
 var repnotify ESeasonalEventType CurrentForcedSeasonalEventDate;
 var int InitialSeasonalEventDate;
@@ -89,13 +91,6 @@ struct FAchCollectibleOverride
     var int ID;
 };
 var array<FAchCollectibleOverride> CollectibleAchIDForMap;
-
-struct SeasonalMonsterArchs
-{
-    var class<KFPawn_Monster> MonsterClass;
-    var string Regular, Summer, Winter, Fall, Spring;
-};
-var array<SeasonalMonsterArchs> ZEDArchList;
 
 struct PrecachedArch
 {
@@ -141,8 +136,8 @@ var config string AllowedBosses, AllowedOutbreaks, AllowedSpecialWaves, AllowedP
 var transient string CurrentAllowedBosses, CurrentAllowedOutbreaks, CurrentAllowedSpecialWaves, CurrentAllowedPerks;
 var string DefaultAllowedOutbreaks, DefaultAllowedSpecialWaves;
 
-var config bool bAllowDamagePopups, bUseEnhancedTraderMenu, bEnforceVanilla, bUseNormalSummerSCAnims, bAllowGamemodeVotes, bAttemptToLoadFHUD, bAttemptToLoadFHUDExt, bAttemptToLoadYAS, bAttemptToLoadAAL, bAttemptToLoadCVC, bAttemptToLoadLTI, bServerHidden, bNoEventZEDSkins, bNoEDARSpawns, bNoQPSpawns, bNoGasCrawlers, bNoRageSpawns, bNoPingsAllowed, bBroadcastPickups, bUseDynamicMOTD, bDisableTP, bDisallowHandChanges, bDropAllWepsOnDeath, bDisableGameConductor, bDisableCrossPerk, bDisableWeaponUpgrades;
-var transient bool LastHeadshot, bShouldAllowDamagePopups, bShouldUseEnhancedTraderMenu, bLTILoaded, CurrentNormalSummerSCAnims, bForceResetInterpActors, bDisallowHandSwap, bPlayingEmote, bHandledTravel, bServerIsHidden, bNoPings, bToBroadcastPickups, bServerDisableTP, bForceDisableEDARs, bForceDisableQPs, bForceDisableGasCrawlers, bForceDisableRageSpawns, bServerDropAllWepsOnDeath, bBypassGameConductor, bShouldDisableCrossPerk, bShouldDisableUpgrades;
+var config bool bDisableTraderLocking, bDisableCustomLoadingScreen, bAllowDamagePopups, bUseEnhancedTraderMenu, bEnforceVanilla, bUseNormalSummerSCAnims, bAllowGamemodeVotes, bAttemptToLoadFHUD, bAttemptToLoadFHUDExt, bAttemptToLoadYAS, bAttemptToLoadAAL, bAttemptToLoadCVC, bAttemptToLoadLTI, bServerHidden, bNoEventZEDSkins, bNoEDARSpawns, bNoQPSpawns, bNoGasCrawlers, bNoRageSpawns, bNoPingsAllowed, bBroadcastPickups, bUseDynamicMOTD, bDisableTP, bDisallowHandChanges, bDropAllWepsOnDeath, bDisableGameConductor, bDisableCrossPerk, bDisableWeaponUpgrades;
+var transient bool bShouldDisableTraderLocking, bShouldDisableCustomLoadingScreen, LastHeadshot, bShouldAllowDamagePopups, bShouldUseEnhancedTraderMenu, bLTILoaded, CurrentNormalSummerSCAnims, bForceResetInterpActors, bDisallowHandSwap, bPlayingEmote, bHandledTravel, bServerIsHidden, bNoPings, bToBroadcastPickups, bServerDisableTP, bForceDisableEDARs, bForceDisableQPs, bForceDisableGasCrawlers, bForceDisableRageSpawns, bServerDropAllWepsOnDeath, bBypassGameConductor, bShouldDisableCrossPerk, bShouldDisableUpgrades;
 var transient repnotify bool bNoEventSkins, bServerEnforceVanilla;
 var transient byte RepMaxPlayers;
 
@@ -165,7 +160,7 @@ var string DynamicMOTDString;
 replication
 {
     if( bNetInitial )
-        InitialWeeklyIndex, InitialSeasonalEventDate, CurrentForcedSeasonalEventDate, bServerEnforceVanilla, bServerDropAllWepsOnDeath, bLTILoaded, bShouldDisableUpgrades, bShouldDisableCrossPerk;
+        InitialWeeklyIndex, InitialSeasonalEventDate, CurrentForcedSeasonalEventDate, bServerEnforceVanilla, bServerDropAllWepsOnDeath, bLTILoaded, bShouldDisableUpgrades, bShouldDisableCrossPerk, bShouldDisableCustomLoadingScreen, bShouldDisableTraderLocking;
     if( true )
         KFGRI, KFGRIE, bServerIsHidden, bNoEventSkins, bNoPings, DynamicMOTD, bServerDisableTP, CurrentMapName, bDisallowHandSwap, CurrentMaxDoshSpamAmount;
 }
@@ -248,7 +243,7 @@ simulated function ReplicatedEvent(name VarName)
             S $= "<font color=\"#81ABC0\">Summer Scrake Animation Fix</font> is "$(DynamicMOTD.bUseNormalSummerSCAnims ? "<font color=\"#FF0000\">Disabled</font>" : "<font color=\"#00FF00\">Enabled</font>")$"!\n";
             S $= "<font color=\"#81ABC0\">Pickup Lifespan</font> is set to <font color=\"#00FFFF\">"$(DynamicMOTD.CurrentPickupLifespan > 0 ? string(DynamicMOTD.CurrentPickupLifespan) : Chr(0x221E))$"</font>!\n";
             S $= "<font color=\"#81ABC0\">Drop All Weapons on Death</font> is "$(DynamicMOTD.bDropAllWepsOnDeath ? "<font color=\"#FF0000\">Enabled</font>" : "<font color=\"#00FF00\">Disabled</font>")$"!\n";
-            S $= "<font color=\"#81ABC0\">Enhanced Trader Menu</font> is "$(DynamicMOTD.bShouldUseEnhancedTraderMenu ? "<font color=\"#FF0000\">Disabled</font>" : "<font color=\"#00FF00\">Enabled</font>")$"!\n";
+            S $= "<font color=\"#81ABC0\">Enhanced Trader Menu</font> is "$(DynamicMOTD.bShouldUseEnhancedTraderMenu ? "<font color=\"#FF0000\">Enabled</font>" : "<font color=\"#00FF00\">Disabled</font>")$"!\n";
             S $= "<font color=\"#81ABC0\">EDARs</font> are "$(DynamicMOTD.bNoEDARs ? "<font color=\"#FF0000\">Disabled</font>" : "<font color=\"#00FF00\">Enabled</font>")$"!\n";
             S $= "<font color=\"#81ABC0\">Rage Spawns</font> are "$(DynamicMOTD.bNoRageSpawns ? "<font color=\"#FF0000\">Disabled</font>" : "<font color=\"#00FF00\">Enabled</font>")$"!\n";
             S $= "<font color=\"#81ABC0\">Quarterpounds</font> are "$(DynamicMOTD.bNoQPSpawns ? "<font color=\"#FF0000\">Disabled</font>" : "<font color=\"#00FF00\">Enabled</font>")$"!\n";
@@ -350,8 +345,6 @@ simulated function PreBeginPlay()
     local KFGameInfo_WeeklySurvival WeeklyGI;
     local KFWeaponAttachment Attachment;
     local KFMuzzleFlash MuzzleFlash;
-    
-    OriginalTraderItems = new class'KFGFxObject_TraderItems' (KFGFxObject_TraderItems'GP_Trader_ARCH.DefaultTraderItems');
     
     MuzzleFlash = new class'KFMuzzleFlash' (KFMuzzleFlash(DynamicLoadObject("WEP_TommyGun_ARCH.Wep_TommyGun_MuzzleFlash_3P", class'KFMuzzleFlash')));
     MuzzleFlash.MuzzleFlash.ParticleSystemTemplate = ParticleSystem'UKFP_TommyGun_EMIT.FX_Wep_MuzzleFlash_TommyGun';
@@ -660,8 +653,14 @@ function InitGameReplicationInfo(KFGameReplicationInfo GRI)
     KFGRI = GRI;
     KFGRIE = KFGameReplicationInfo_Endless(KFGRI);
     
-    KFGRI.bNetInitial = true;
+    KFGRI.NetPriority = 2.f;
     KFGRI.GameAmmoCostScale = FMax(CurrentAmmoCostMultiplier, 1.f);
+    
+    if( bNoEventSkins || bServerEnforceVanilla )
+    {
+        MyKFGI.AllowSeasonalSkinsIndex = 1;
+        GRI.NotifyAllowSeasonalSkins(1);
+    }
     
     if( KFGameInfo_WeeklySurvival(MyKFGI) == None )
     {
@@ -683,8 +682,6 @@ simulated function Tick(float DT)
 
 simulated function Cleanup()
 {
-    local int i;
-    
     if( bCleanedUp )
         return;
       
@@ -699,10 +696,6 @@ simulated function Cleanup()
         if( CurrentNetDriverIndex != default.CurrentNetDriverIndex )
             SaveConfig();
     }
-    
-    for( i=0; i<ChatArray.Length; i++ )
-        ChatArray[i].Destroy();
-    Destroy();
 
     bCleanedUp = true;
 }
@@ -765,7 +758,7 @@ simulated function bool ClientProcessChatMessage(string Msg, PlayerController Se
     else if( Left(Msg, 10) ~= "tossmoney " || Left(Msg, 3) ~= "tm " )
     {
         Msg = Repl(Msg, "tm", "tossmoney");
-        CRI.ExecuteCommand(Msg);
+        KFPC.ConsoleCommand(Msg);
         return true;
     }
     else if( Msg ~= "fav" || Msg ~= "favorite" )
@@ -806,11 +799,7 @@ function PlayerChangeSpec( KFPlayerController PC, bool bSpectator )
         
 	CRI.NextSpectateChange = WorldInfo.TimeSeconds+0.5;
 
-	if( WorldInfo.Game.bGameEnded )
-		WriteToClient(PC, "Can't change spectate mode after end-game.", "FF0000");
-	else if( WorldInfo.Game.bWaitingToStartMatch )
-		WriteToClient(PC, "Can't change spectate mode before game has started.", "FF0000");
-	else if( WorldInfo.Game.AtCapacity(bSpectator,PC.PlayerReplicationInfo.UniqueId) )
+	if( WorldInfo.Game.AtCapacity(bSpectator,PC.PlayerReplicationInfo.UniqueId) )
 		WriteToClient(PC, "Can't change spectate mode because game is at its maximum capacity.", "FF0000");
 	else if( bSpectator )
 	{
@@ -1242,18 +1231,19 @@ simulated function PawnAnimEnd(KFPawn P, AnimNodeSequence SeqNode, float PlayedT
     }
 }
 
-simulated function PreClientTravel(KFPlayerController PC, string PendingURL, ETravelType TravelType, bool bIsSeamlessTravel)
-{
+// Causes issues and I'm tired of dealing with it so lets disable this for now - FMX
+simulated function PreClientTravel(KFPlayerController PC, string PendingURL, ETravelType TravelType, bool bIsSeamlessTravel);
+/*{
     if( WorldInfo.NetMode == NM_DedicatedServer || WorldInfo.NetMode == NM_ListenServer )
         return;
         
     if( !bHandledTravel )
     {
         bHandledTravel = true;
-        SetTimer(0.5f,false,'PendingMapSwitch');
+        PendingMapSwitch();
         TravelMapName = StripOptionsFromURL(PendingURL);
     }
-}
+}*/
 
 static function string StripOptionsFromURL( string URL )
 {
@@ -1272,7 +1262,7 @@ simulated function PendingMapSwitch()
     local array<string> S;
     local class<GameInfo> RedirectCheck;
     
-    if( WorldInfo.NetMode == NM_DedicatedServer || WorldInfo.NetMode == NM_ListenServer )
+    if( WorldInfo.NetMode == NM_DedicatedServer || WorldInfo.NetMode == NM_ListenServer || bShouldDisableCustomLoadingScreen )
         return;
         
     URL = WorldInfo.GetAddressURL();
@@ -1288,48 +1278,57 @@ simulated function PendingMapSwitch()
     else GetALocalPlayerController().ConsoleCommand("Open KFMainMenu?Game=UnofficialKFPatch_LevelTransition.MS_Game?MapName="$TravelMapName$"?SpectatorInfo="$(GetALocalPlayerController().PlayerReplicationInfo.bOnlySpectator ? "1" : "0")$"?URL="$S[0]$"?Port="$S[1]$"?bServerHidden="$(bServerIsHidden ? 1 : 0));
 }
 
+simulated function byte GetZEDSeasonalIndex()
+{
+    local int SeasonalID;
+    local KFMapInfo KFMI;
+    local bool bAllowSeasonalSkins;
+    local KFPlayerController PC;
+    local KFGameReplicationInfo GRI;
+	
+    GRI = KFGameReplicationInfo(WorldInfo.GRI);
+    PC = KFPlayerController(GetALocalPlayerController());
+    SeasonalID = class'KFGameEngine'.static.GetSeasonalEventIDForZedSkins();
+    
+    KFMI = KFMapInfo(WorldInfo.GetMapInfo());
+    if( KFMI != None )
+        KFMI.ModifySeasonalEventId(SeasonalID);
+        
+    bAllowSeasonalSkins = (PC != None && PC.GetAllowSeasonalSkins()) || GRI.bAllowSeasonalSkins;
+
+    if( SeasonalID == SEI_None )
+    {
+        if( !bAllowSeasonalSkins )
+            SeasonalID = SEI_None;
+        else if( GRI.SeasonalSkinsIndex != -1 )
+            SeasonalID = GRI.SeasonalSkinsIndex;
+    }
+    
+    return SeasonalID;
+}
+
 simulated function KFCharacterInfoBase GetSeasonalCharacterArch(class<KFPawn_Monster> Monster)
 {
-    local SeasonalMonsterArchs ZEDArch;
     local string ToLoad;
     local KFCharacterInfoBase LoadedInfo;
     local PrecachedArch PrecacheInfo;
     local int Index;
-	
-    foreach default.ZEDArchList(ZEDArch)
+    
+    ToLoad = Monster.default.MonsterArchPath;
+
+    if( !(bNoEventSkins || bServerEnforceVanilla) )
     {
-        if( ClassIsChildOf(Monster, ZEDArch.MonsterClass) )
+        switch( GetZEDSeasonalIndex() % 10 )
         {
-			if( Caps(Monster.default.MonsterArchPath) != Caps(ZEDArch.Regular)  )
-				ToLoad = Monster.default.MonsterArchPath;
-            else if( bNoEventSkins || bServerEnforceVanilla )
-                ToLoad = ZEDArch.Regular;
-            else
-            {
-                switch( class'KFGameEngine'.static.GetSeasonalEventID() % 10 )
-                {
-                    case SEI_Summer:
-                        ToLoad = ZEDArch.Summer;
-                        break;
-                    case SEI_Winter:
-                        ToLoad = ZEDArch.Winter;
-                        break;
-                    case SEI_Fall:
-                        ToLoad = ZEDArch.Fall;
-                        break;
-                    case SEI_Spring:
-                        ToLoad = ZEDArch.Spring;
-                        break;
-                    default:
-                        ToLoad = ZEDArch.Regular;
-                        break;
-                }
-                
-                if( ToLoad == "" )
-                    ToLoad = ZEDArch.Regular;
-            }
-            
-            break;
+            case SEI_Summer:
+                ToLoad = "SUMMER_"$ToLoad;
+                break;
+            case SEI_Winter:
+                ToLoad = "XMAS_"$ToLoad;
+                break;
+            case SEI_Fall:
+                ToLoad = "HALLOWEEN_"$ToLoad;
+                break;
         }
     }
 	
@@ -1337,7 +1336,10 @@ simulated function KFCharacterInfoBase GetSeasonalCharacterArch(class<KFPawn_Mon
     if( Index != INDEX_NONE )
         return PrecachedArchs[Index].Arch;
 
-    LoadedInfo = KFCharacterInfoBase(SafeLoadObject(ToLoad, class'KFCharacterInfoBase'));
+    LoadedInfo = KFCharacterInfoBase(SafeLoadObject(ToLoad, class'KFCharacterInfoBase', true));
+    if( LoadedInfo == None )
+        LoadedInfo = KFCharacterInfoBase(SafeLoadObject(Monster.default.MonsterArchPath, class'KFCharacterInfoBase'));
+        
     if( LoadedInfo != None )
     {
         PrecacheInfo.ArchPath = ToLoad;
@@ -1431,7 +1433,7 @@ function bool OverridePickupQuery(Pawn Other, class<Inventory> ItemClass, Actor 
         }
     }
     
-    if( PRI == None || PRI == Other.PlayerReplicationInfo || SteamID == OnlineSub.UniqueNetIdToInt64(Other.PlayerReplicationInfo.UniqueId) )
+    if( SteamID == OnlineSub.UniqueNetIdToInt64(Other.PlayerReplicationInfo.UniqueId) )
         return false;
     
     CRI = GetPlayerChat(PRI);
@@ -1884,6 +1886,10 @@ simulated function GetYearAndMonthFromEvent(out int Year, out int Month)
             Month = 10;
             Year = 2022;
             break;
+        case SET_Fall2023:
+            Month = 10;
+            Year = 2023;
+            break;
     }
 }
 
@@ -2215,25 +2221,6 @@ function PerkAvailableData GetAllowedPerkList(optional out array<byte> IDs)
     return PerkData;
 }
 
-function class<KFPawn_Monster> GetAIPawnClassToSpawn(class<KFPawn_Monster> M)
-{
-    if( bForceDisableEDARs && (ClassIsChildOf(M, class'KFPawn_ZedHusk') || ClassIsChildOf(M, class'KFPawn_ZedStalker')) )
-        return M;
-        
-    if( MyKFGI != None && bForceDisableQPs && ClassIsChildOf(M, class'KFPawn_ZedFleshpoundMini') && !MyKFGI.MyKFGRI.IsBossWave() )
-        return MyKFGI.GetAISpawnType(AT_Scrake);
-
-	if( M.default.ElitePawnClass.Length > 0 && M.default.DifficultySettings != None && fRand() < M.default.DifficultySettings.static.GetSpecialSpawnChance(KFGRI) )
-    {
-        if( MyKFGI != None && bForceDisableGasCrawlers && ClassIsChildOf(M, class'KFPawn_ZedCrawler') && !ClassIsChildOf(M, class'KFPawn_ZedCrawlerKing') )
-            return MyKFGI.GetAISpawnType(AT_Stalker);
-        if( KFGRI != None && !KFGRI.IsContaminationMode() )
-            return M.default.ElitePawnClass[Rand(M.default.ElitePawnClass.Length)];
-    }
-        
-	return M;
-}
-
 defaultproperties
 {
 	bAlwaysTick=true
@@ -2241,6 +2228,11 @@ defaultproperties
     
     NetPriority=4
     NetUpdateFrequency=20
+    
+    Begin Object Class=class'KFGFxObject_TraderItems' Name=OriginalTraderItems_0
+        ObjectArchetype=KFGFxObject_TraderItems'GP_Trader_ARCH.DefaultTraderItems'
+    End Object
+    OriginalTraderItems=OriginalTraderItems_0
     
     IgnoreDecentMaps.Add("KF-Elysium")
     
@@ -2253,32 +2245,6 @@ defaultproperties
     MapNameOverrides.Add((Original="KF-Crash_Original",New="KF-Crash"))
     MapNameOverrides.Add((Original="KF-Crash_Night",New="KF-Crash"))
     MapNameOverrides.Add((Original="KF-Crash_Final",New="KF-Crash"))
-  
-    ZEDArchList.Add((MonsterClass=class'KFPawn_ZedBloatKingSubSpawn', Regular="ZED_ARCH.ZED_KingBloatSubSpawn_Archetype"))
-    ZEDArchList.Add((MonsterClass=class'KFPawn_ZedClot_AlphaKing', Regular="ZED_ARCH.ZED_Clot_AlphaKing_Archetype", Summer="SUMMER_ZED_ARCH.ZED_Clot_AlphaKing_Archetype", Winter="XMAS_ZED_ARCH.ZED_Clot_AlphaKing_Archetype", Fall="HALLOWEEN_ZED_ARCH.ZED_Clot_AlphaKing_Archetype"))
-    ZEDArchList.Add((MonsterClass=class'KFPawn_ZedCrawlerKing', Regular="ZED_ARCH.ZED_CrawlerKing_Archetype", Summer="SUMMER_ZED_ARCH.ZED_CrawlerKing_Archetype", Winter="XMAS_ZED_ARCH.ZED_CrawlerKing_Archetype", Fall="HALLOWEEN_ZED_ARCH.ZED_CrawlerKing_Archetype"))
-    ZEDArchList.Add((MonsterClass=class'KFPawn_ZedFleshpoundMini', Regular="ZED_ARCH.ZED_FleshpoundMini_Archetype", Summer="SUMMER_ZED_ARCH.ZED_FleshpoundMini_Archetype", Winter="XMAS_ZED_ARCH.ZED_FleshpoundMini_Archetype", Fall="HALLOWEEN_ZED_ARCH.ZED_FleshpoundMini_Archetype"))
-    ZEDArchList.Add((MonsterClass=class'KFPawn_ZedGorefastDualBlade', Regular="ZED_ARCH.ZED_Gorefast2_Archetype", Summer="SUMMER_ZED_ARCH.ZED_Gorefast2_Archetype", Winter="XMAS_ZED_ARCH.ZED_Gorefast2_Archetype", Fall="HALLOWEEN_ZED_ARCH.ZED_Gorefast2_Archetype"))
-    ZEDArchList.Add((MonsterClass=class'KFPawn_ZedBloatKing', Regular="ZED_ARCH.ZED_BloatKing_Archetype", Summer="SUMMER_ZED_ARCH.ZED_BloatKing_Archetype", Winter="XMAS_ZED_ARCH.ZED_BloatKing_Archetype", Fall="HALLOWEEN_ZED_ARCH.ZED_BloatKing_Archetype"))
-    ZEDArchList.Add((MonsterClass=class'KFPawn_ZedFleshpoundKing', Regular="ZED_ARCH.ZED_FleshpoundKing_Archetype", Summer="SUMMER_ZED_ARCH.ZED_FleshpoundKing_Archetype", Winter="XMAS_ZED_ARCH.ZED_FleshpoundKing_Archetype", Fall="HALLOWEEN_ZED_ARCH.ZED_FleshpoundKing_Archetype"))
-    ZEDArchList.Add((MonsterClass=class'KFPawn_ZedDAR_EMP', Regular="ZED_ARCH.ZED_DAR_EMP_Archetype", Summer="SUMMER_ZED_ARCH.ZED_DAR_EMP_Archetype", Winter="XMAS_ZED_ARCH.ZED_DAR_EMP_Archetype", Fall="HALLOWEEN_ZED_ARCH.ZED_DAR_EMP_Archetype"))
-    ZEDArchList.Add((MonsterClass=class'KFPawn_ZedDAR_Laser', Regular="ZED_ARCH.ZED_DAR_Laser_Archetype", Summer="SUMMER_ZED_ARCH.ZED_DAR_Laser_Archetype", Winter="XMAS_ZED_ARCH.ZED_DAR_Laser_Archetype", Fall="HALLOWEEN_ZED_ARCH.ZED_DAR_Laser_Archetype"))
-    ZEDArchList.Add((MonsterClass=class'KFPawn_ZedDAR_Rocket', Regular="ZED_ARCH.ZED_DAR_Rocket_Archetype", Summer="SUMMER_ZED_ARCH.ZED_DAR_Rocket_Archetype", Winter="XMAS_ZED_ARCH.ZED_DAR_Rocket_Archetype", Fall="HALLOWEEN_ZED_ARCH.ZED_DAR_Rocket_Archetype"))
-    
-    ZEDArchList.Add((MonsterClass=class'KFPawn_ZedBloat', Regular="ZED_ARCH.ZED_Bloat_Archetype", Summer="SUMMER_ZED_ARCH.ZED_Bloat_Archetype", Winter="XMAS_ZED_ARCH.ZED_Bloat_Archetype", Fall="HALLOWEEN_ZED_ARCH.ZED_Bloat_Archetype"))
-    ZEDArchList.Add((MonsterClass=class'KFPawn_ZedClot_Cyst', Regular="ZED_ARCH.ZED_Clot_Undev_Archetype", Summer="SUMMER_ZED_ARCH.ZED_Clot_Undev_Archetype", Winter="XMAS_ZED_ARCH.ZED_Clot_Undev_Archetype", Fall="HALLOWEEN_ZED_ARCH.ZED_Clot_Undev_Archetype"))
-    ZEDArchList.Add((MonsterClass=class'KFPawn_ZedClot_Alpha', Regular="ZED_ARCH.ZED_Clot_Alpha_Archetype", Summer="SUMMER_ZED_ARCH.ZED_Clot_Slasher_Archetype", Winter="XMAS_ZED_ARCH.ZED_Clot_Alpha_Archetype", Fall="HALLOWEEN_ZED_ARCH.ZED_Clot_Alpha_Archetype"))
-    ZEDArchList.Add((MonsterClass=class'KFPawn_ZedClot_Slasher', Regular="ZED_ARCH.ZED_Clot_Slasher_Archetype", Summer="SUMMER_ZED_ARCH.ZED_Clot_Slasher_Archetype", Winter="XMAS_ZED_ARCH.ZED_Clot_Slasher_Archetype", Fall="HALLOWEEN_ZED_ARCH.ZED_Clot_Slasher_Archetype"))
-    ZEDArchList.Add((MonsterClass=class'KFPawn_ZedCrawler', Regular="ZED_ARCH.ZED_Crawler_Archetype", Summer="SUMMER_ZED_ARCH.ZED_Crawler_Archetype", Winter="XMAS_ZED_ARCH.ZED_Crawler_Archetype", Fall="HALLOWEEN_ZED_ARCH.ZED_Crawler_Archetype"))
-    ZEDArchList.Add((MonsterClass=class'KFPawn_ZedFleshpound', Regular="ZED_ARCH.ZED_Fleshpound_Archetype", Summer="SUMMER_ZED_ARCH.ZED_Fleshpound_Archetype", Winter="XMAS_ZED_ARCH.ZED_Fleshpound_Archetype", Fall="HALLOWEEN_ZED_ARCH.ZED_Fleshpound_Archetype"))
-    ZEDArchList.Add((MonsterClass=class'KFPawn_ZedGorefast', Regular="ZED_ARCH.ZED_Gorefast_Archetype", Summer="SUMMER_ZED_ARCH.ZED_Gorefast_Archetype", Winter="XMAS_ZED_ARCH.ZED_Gorefast_Archetype", Fall="HALLOWEEN_ZED_ARCH.ZED_Gorefast_Archetype"))
-    ZEDArchList.Add((MonsterClass=class'KFPawn_ZedHusk', Regular="ZED_ARCH.ZED_Husk_Archetype", Summer="SUMMER_ZED_ARCH.ZED_Husk_Archetype", Winter="XMAS_ZED_ARCH.ZED_Husk_Archetype", Fall="HALLOWEEN_ZED_ARCH.ZED_Husk_Archetype"))
-    ZEDArchList.Add((MonsterClass=class'KFPawn_ZedPatriarch', Regular="ZED_ARCH.ZED_Patriarch_Archetype", Summer="SUMMER_ZED_ARCH.ZED_Patriarch_Archetype", Winter="XMAS_ZED_ARCH.ZED_Patriarch_Archetype", Fall="HALLOWEEN_ZED_ARCH.ZED_Patriarch_Archetype"))
-    ZEDArchList.Add((MonsterClass=class'KFPawn_ZedHans', Regular="ZED_ARCH.ZED_Hans_Archetype", Summer="SUMMER_ZED_ARCH.ZED_Hans_Archetype", Winter="XMAS_ZED_ARCH.ZED_Hans_Archetype", Fall="HALLOWEEN_ZED_ARCH.ZED_Hans_Archetype"))
-    ZEDArchList.Add((MonsterClass=class'KFPawn_ZedMatriarch', Regular="ZED_ARCH.ZED_Matriarch_Archetype", Winter="XMAS_ZED_ARCH.ZED_Matriarch_Archetype", Fall="HALLOWEEN_ZED_ARCH.ZED_Matriarch_Archetype"))
-    ZEDArchList.Add((MonsterClass=class'KFPawn_ZedScrake', Regular="ZED_ARCH.ZED_Scrake_Archetype", Summer="SUMMER_ZED_ARCH.ZED_Scrake_Archetype", Winter="XMAS_ZED_ARCH.ZED_Scrake_Archetype", Fall="HALLOWEEN_ZED_ARCH.ZED_Scrake_Archetype"))
-    ZEDArchList.Add((MonsterClass=class'KFPawn_ZedSiren', Regular="ZED_ARCH.ZED_Siren_Archetype", Summer="SUMMER_ZED_ARCH.ZED_Siren_Archetype", Winter="XMAS_ZED_ARCH.ZED_Siren_Archetype", Fall="HALLOWEEN_ZED_ARCH.ZED_Siren_Archetype"))
-    ZEDArchList.Add((MonsterClass=class'KFPawn_ZedStalker', Regular="ZED_ARCH.ZED_Stalker_Archetype", Summer="SUMMER_ZED_ARCH.ZED_Stalker_Archetype", Winter="XMAS_ZED_ARCH.ZED_Stalker_Archetype", Fall="HALLOWEEN_ZED_ARCH.ZED_Stalker_Archetype"))
 
     WeaponExploitFix.Add(class'KFGameContent.KFWeap_HRG_Vampire')
     WeaponExploitFix.Add(class'KFGameContent.KFWeap_HRG_BlastBrawlers')

@@ -95,14 +95,6 @@ function Init()
         KFDroppedPickup.Pickup.BeginState = KFDroppedPickupProxy.Pickup.BeginState;
         ActorOriginal.FellOutOfWorld = Actor.FellOutOfWorld;  
         Actor.FellOutOfWorld = ActorProxy.FellOutOfWorld;
-        KFWeaponOriginal.SpawnProjectile = KFWeapon.SpawnProjectile;  
-        KFWeapon.SpawnProjectile = KFWeaponProxy.SpawnProjectile;
-        KFPawn_HumanOriginal.UpdateHealingSpeedBoost = KFPawn_Human.UpdateHealingSpeedBoost;  
-        KFPawn_Human.UpdateHealingSpeedBoost = KFPawn_HumanProxy.UpdateHealingSpeedBoost;
-        KFPawn_HumanOriginal.UpdateHealingDamageBoost = KFPawn_Human.UpdateHealingDamageBoost;  
-        KFPawn_Human.UpdateHealingDamageBoost = KFPawn_HumanProxy.UpdateHealingDamageBoost;
-        KFPawn_HumanOriginal.UpdateHealingShield = KFPawn_Human.UpdateHealingShield;
-        KFPawn_Human.UpdateHealingShield = KFPawn_HumanProxy.UpdateHealingShield;
         KFPawn_HumanOriginal.PossessedBy = KFPawn_Human.PossessedBy;
         KFPawn_Human.PossessedBy = KFPawn_HumanProxy.PossessedBy;
         KFPawn_HumanOriginal.Tick = KFPawn_Human.Tick;
@@ -149,6 +141,8 @@ function Init()
     KFPlayerController.PreClientTravel = KFPlayerControllerProxy.PreClientTravel;
     KFPlayerControllerOriginal.GetAllowSeasonalSkins = KFPlayerController.GetAllowSeasonalSkins;
     KFPlayerController.GetAllowSeasonalSkins = KFPlayerControllerProxy.GetAllowSeasonalSkins;
+    KFPlayerControllerOriginal.GetSeasonalStateName = KFPlayerController.GetSeasonalStateName;
+    KFPlayerController.GetSeasonalStateName = KFPlayerControllerProxy.GetSeasonalStateName;
     KFWeaponOriginal.PreBeginPlay = KFWeapon.PreBeginPlay;
     KFWeapon.PreBeginPlay = KFWeaponProxy.PreBeginPlay;
     KFWeaponOriginal.GivenTo = KFWeapon.GivenTo;
@@ -163,6 +157,8 @@ function Init()
     KFWeapon.HandleRecoil = KFWeaponProxy.HandleRecoil;
     KFWeaponOriginal.GetWeaponPerkClass = KFWeapon.GetWeaponPerkClass;  
     KFWeapon.GetWeaponPerkClass = KFWeaponProxy.GetWeaponPerkClass;
+    KFWeaponOriginal.SyncCurrentAmmoCount = KFWeapon.SyncCurrentAmmoCount;
+    KFWeapon.SyncCurrentAmmoCount = KFWeaponProxy.SyncCurrentAmmoCount;
     KFSprayActorOriginal.BeginSpray = KFSprayActor.BeginSpray;  
     KFSprayActor.BeginSpray = KFSprayActorProxy.BeginSpray;
     KFWeap_FlameBaseOriginal.WeaponEquipping.BeginState = KFWeap_FlameBase.WeaponEquipping.BeginState;  
@@ -213,6 +209,8 @@ function Init()
     KFPerk.GetPerkFromDamageCauser = KFPerkProxy.GetPerkFromDamageCauser;
     KFPerkOriginal.IsDual9mm = KFPerk.IsDual9mm;
     KFPerk.IsDual9mm = KFPerkProxy.IsDual9mm;
+    KFPerkOriginal.IsHRG93R = KFPerk.IsHRG93R;
+    KFPerk.IsHRG93R = KFPerkProxy.IsHRG93R;
     KFPerkOriginal.IsFAMAS = KFPerk.IsFAMAS;
     KFPerk.IsFAMAS = KFPerkProxy.IsFAMAS;
     KFPerkOriginal.IsBlastBrawlers = KFPerk.IsBlastBrawlers;
@@ -237,6 +235,8 @@ function Init()
     Mutator.PreBeginPlay = MutatorProxy.PreBeginPlay;
     KFAutoPurchaseHelperOriginal.CanUpgrade = KFAutoPurchaseHelper.CanUpgrade;
     KFAutoPurchaseHelper.CanUpgrade = KFAutoPurchaseHelperProxy.CanUpgrade;
+    KFPawn_ZedHansBaseOriginal.PossessedBy = KFPawn_ZedHansBase.PossessedBy;
+    KFPawn_ZedHansBase.PossessedBy = KFPawn_ZedHansBaseProxy.PossessedBy;
     
 	if( WorldInfo.NetMode != NM_DedicatedServer )
 	{
@@ -420,6 +420,8 @@ function Init()
         KFGFxTraderContainer_ItemDetails.SetGenericItemDetails = KFGFxTraderContainer_ItemDetailsProxy.SetGenericItemDetails;
         KFGFxTraderContainer_ItemDetailsOriginal.SetDetailsText = KFGFxTraderContainer_ItemDetails.SetDetailsText;
         KFGFxTraderContainer_ItemDetails.SetDetailsText = KFGFxTraderContainer_ItemDetailsProxy.SetDetailsText;
+        KFGFxMissionObjectivesContainerOriginal.ShowShouldSpecialEvent = KFGFxMissionObjectivesContainer.ShowShouldSpecialEvent;
+        KFGFxMissionObjectivesContainer.ShowShouldSpecialEvent = KFGFxMissionObjectivesContainerProxy.ShowShouldSpecialEvent;
 
         KFOnlineStatsWriteOriginal.SeasonalEventStats_OnMapObjectiveDeactivated = KFOnlineStatsWrite.SeasonalEventStats_OnMapObjectiveDeactivated;
         KFOnlineStatsWriteOriginal.SeasonalEventStats_OnMapCollectibleFound = KFOnlineStatsWrite.SeasonalEventStats_OnMapCollectibleFound;
@@ -506,10 +508,6 @@ function Cleanup()
         KFDroppedPickup.GiveTo = KFDroppedPickupOriginal.GiveTo;
         KFDroppedPickup.Pickup.BeginState = KFDroppedPickupOriginal.Pickup.BeginState;
         Actor.FellOutOfWorld = ActorOriginal.FellOutOfWorld;
-        KFWeapon.SpawnProjectile = KFWeaponOriginal.SpawnProjectile;
-        KFPawn_Human.UpdateHealingSpeedBoost = KFPawn_HumanOriginal.UpdateHealingSpeedBoost;
-        KFPawn_Human.UpdateHealingDamageBoost = KFPawn_HumanOriginal.UpdateHealingDamageBoost;
-        KFPawn_Human.UpdateHealingShield = KFPawn_HumanOriginal.UpdateHealingShield;
         KFPawn_Human.PossessedBy = KFPawn_HumanOriginal.PossessedBy;
         KFPawn_Human.Tick = KFPawn_HumanOriginal.Tick;
         DroppedPickup.Landed = DroppedPickupOriginal.Landed;
@@ -534,6 +532,7 @@ function Cleanup()
     KFPlayerController.ClientTriggerWeaponContentLoad = KFPlayerControllerOriginal.ClientTriggerWeaponContentLoad;
     KFPlayerController.PreClientTravel = KFPlayerControllerOriginal.PreClientTravel;
     KFPlayerController.GetAllowSeasonalSkins = KFPlayerControllerOriginal.GetAllowSeasonalSkins;
+    KFPlayerController.GetSeasonalStateName = KFPlayerControllerOriginal.GetSeasonalStateName;
     KFWeapon.PreBeginPlay = KFWeaponOriginal.PreBeginPlay;
     KFWeapon.GivenTo = KFWeaponOriginal.GivenTo;
     KFWeapon.ClientGivenTo = KFWeaponOriginal.ClientGivenTo;
@@ -541,6 +540,7 @@ function Cleanup()
     KFWeapon.GetWeaponAttachmentTemplate = KFWeaponOriginal.GetWeaponAttachmentTemplate;
     KFWeapon.HandleRecoil = KFWeaponOriginal.HandleRecoil;  
     KFWeapon.GetWeaponPerkClass = KFWeaponOriginal.GetWeaponPerkClass;
+    KFWeapon.SyncCurrentAmmoCount = KFWeaponOriginal.SyncCurrentAmmoCount;
     KFSprayActor.BeginSpray = KFSprayActorOriginal.BeginSpray;
     KFWeap_FlameBase.WeaponEquipping.BeginState = KFWeap_FlameBaseOriginal.WeaponEquipping.BeginState;
     KFWeap_FlameBase.ChangeVisibility = KFWeap_FlameBaseOriginal.ChangeVisibility;
@@ -566,6 +566,7 @@ function Cleanup()
     KFPerk.IsDamageTypeOnThisPerk = KFPerkOriginal.IsDamageTypeOnThisPerk;
     KFPerk.GetPerkFromDamageCauser = KFPerkOriginal.GetPerkFromDamageCauser;
     KFPerk.IsDual9mm = KFPerkOriginal.IsDual9mm;
+    KFPerk.IsHRG93R = KFPerkOriginal.IsHRG93R;
     KFPerk.IsFAMAS = KFPerkOriginal.IsFAMAS;
     KFPerk.IsBlastBrawlers = KFPerkOriginal.IsBlastBrawlers;
     KFPerk.IsDoshinegun = KFPerkOriginal.IsDoshinegun;
@@ -578,6 +579,7 @@ function Cleanup()
     KFPerk_Commando.ModifyMagSizeAndNumber = KFPerk_CommandoOriginal.ModifyMagSizeAndNumber;
     Mutator.PreBeginPlay = MutatorOriginal.PreBeginPlay;
     KFAutoPurchaseHelper.CanUpgrade = KFAutoPurchaseHelperOriginal.CanUpgrade;
+    KFPawn_ZedHansBase.PossessedBy = KFPawn_ZedHansBaseOriginal.PossessedBy;
     
 	if( WorldInfo.NetMode != NM_DedicatedServer )
 	{
@@ -671,6 +673,7 @@ function Cleanup()
         KFGFxTraderContainer_ItemDetails.SetPlayerItemDetails = KFGFxTraderContainer_ItemDetailsOriginal.SetPlayerItemDetails;
         KFGFxTraderContainer_ItemDetails.SetGenericItemDetails = KFGFxTraderContainer_ItemDetailsOriginal.SetGenericItemDetails;
         KFGFxTraderContainer_ItemDetails.SetDetailsText = KFGFxTraderContainer_ItemDetailsOriginal.SetDetailsText;
+        KFGFxMissionObjectivesContainer.ShowShouldSpecialEvent = KFGFxMissionObjectivesContainerOriginal.ShowShouldSpecialEvent;
 
         KFOnlineStatsWrite.SeasonalEventStats_OnMapObjectiveDeactivated = KFOnlineStatsWriteOriginal.SeasonalEventStats_OnMapObjectiveDeactivated;
         KFOnlineStatsWrite.SeasonalEventStats_OnMapCollectibleFound = KFOnlineStatsWriteOriginal.SeasonalEventStats_OnMapCollectibleFound;
@@ -846,6 +849,7 @@ function ForceSeasonalEvent(ESeasonalEventType Type)
         case SET_Fall2020:
         case SET_Fall2021:
         case SET_Fall2022:
+        case SET_Fall2023:
             KFEngine.default.SeasonalEventId = int(SEI_Fall);
             KFEngine.default.LoadedSeasonalEventId = KFEngine.default.SeasonalEventId;
             break;
@@ -859,7 +863,7 @@ final function CheckSeasonalUpdate()
     local KFGameEngine KFEngine;
     
     KFEngine = KFGameEngine(class'Engine'.static.GetEngine());
-    if( class'KFGameEngine'.static.GetSeasonalEventId() <= SEI_None )
+    if( KFEngine.default.SeasonalEventId <= SEI_None )
     {
         switch( `GetURI().CurrentForcedSeasonalEventDate )
         {
@@ -890,6 +894,7 @@ final function CheckSeasonalUpdate()
             case SET_Fall2020:
             case SET_Fall2021:
             case SET_Fall2022:
+            case SET_Fall2023:
                 KFEngine.default.SeasonalEventId = int(SEI_Fall);
                 KFEngine.default.LoadedSeasonalEventId = KFEngine.default.SeasonalEventId;
                 break;
@@ -912,7 +917,10 @@ function CheckSpecialEventID(KFPlayerController PC)
         
         `GetChatRep().bForceObjectiveRefresh = true;
         if( PC.MyGFxManager != None && PC.MyGFxManager.StartMenu != None && PC.MyGFxManager.StartMenu.MissionObjectiveContainer != None )
+        {
+            PC.MyGFxManager.StartMenu.MissionObjectiveContainer.UpdateSpecialEventActive();
             PC.MyGFxManager.StartMenu.MissionObjectiveContainer.FullRefresh();
+        }
     }
 }
 
@@ -998,6 +1006,20 @@ final function UpdateSpecialEventState(KFPlayerController PC, int Year, int Mont
                     break;
             }
             break;
+        case 2023:
+            switch( Month )
+            {
+                case 7:
+                    PC.StatsWrite.SeasonalEvent = new(PC.StatsWrite) class'UKFPSeasonalEventStats_Summer2023';
+                    break;
+                case 10:
+                    PC.StatsWrite.SeasonalEvent = new(PC.StatsWrite) class'UKFPSeasonalEventStats_Fall2023';
+                    break;
+                case 12:
+                    //PC.StatsWrite.SeasonalEvent = new(PC.StatsWrite) class'UKFPSeasonalEventStats_Xmas2022';
+                    break;
+            }
+            break;
     }
 
     FSE = UKFPSeasonalEventStats(PC.StatsWrite.SeasonalEvent);
@@ -1008,7 +1030,10 @@ final function UpdateSpecialEventState(KFPlayerController PC, int Year, int Mont
         
         FSE.CRI.bForceObjectiveRefresh = true;
         if( PC.MyGFxManager != None && PC.MyGFxManager.StartMenu != None && PC.MyGFxManager.StartMenu.MissionObjectiveContainer != None )
+        {
+            PC.MyGFxManager.StartMenu.MissionObjectiveContainer.UpdateSpecialEventActive();
             PC.MyGFxManager.StartMenu.MissionObjectiveContainer.FullRefresh();
+        }
     }
 }
 

@@ -36,7 +36,7 @@ simulated function GrantEventItemsEx()
 	}
 }
 
-simulated function OnZedKilled(class<KFPawn_Monster> MonsterClass, int Difficulty, class<DamageType> DT)
+simulated function OnZedKilled(class<KFPawn_Monster> MonsterClass, int Difficulty, class<DamageType> DT, bool bKiller)
 {
 	local int ObjIdx;
     
@@ -50,6 +50,9 @@ simulated function OnZedKilled(class<KFPawn_Monster> MonsterClass, int Difficult
 				FinishedObjectiveEx(SEI_Fall, ObjIdx);
 		}
 	}
+    
+    if( !bKiller )
+        return;
     
 	ObjIdx = 2;
 	if( bObjectiveIsValidForMap[ObjIdx] != 0 )

@@ -44,8 +44,11 @@ simulated function OnMapObjectiveDeactivated(Actor ObjectiveInterfaceActor)
 	}
 }
 
-simulated function OnZedKilled(class<KFPawn_Monster> MonsterClass, int Difficulty, class<DamageType> DT)
+simulated function OnZedKilled(class<KFPawn_Monster> MonsterClass, int Difficulty, class<DamageType> DT, bool bKiller)
 {
+    if( !bKiller )
+        return;
+        
 	if( bObjectiveIsValidForMap[2] != 0 )
 	{
         IncrementSeasonalEventStatEx(2, 1);

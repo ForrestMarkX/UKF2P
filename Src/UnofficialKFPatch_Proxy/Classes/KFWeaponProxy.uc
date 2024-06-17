@@ -53,55 +53,6 @@ stripped simulated event context(KFWeapon.PreBeginPlay) PreBeginPlay()
 	}
 }
 
-stripped simulated function context(KFWeapon.SpawnProjectile) KFProjectile SpawnProjectile( class<KFProjectile> KFProjClass, vector RealStartLoc, vector AimDir )
-{
-	local KFProjectile	SpawnedProjectile;
-	local int ProjDamage;
-    
-	SpawnedProjectile = Spawn(KFProjClass, Self,, RealStartLoc);
-	if( SpawnedProjectile != None && !SpawnedProjectile.bDeleteMe )
-	{
-		if( InstantHitDamage.Length > CurrentFireMode && InstantHitDamageTypes.Length > CurrentFireMode )
-		{
-            ProjDamage = GetModifiedDamage(CurrentFireMode);
-            SpawnedProjectile.Damage = ProjDamage;
-            SpawnedProjectile.MyDamageType = InstantHitDamageTypes[CurrentFireMode];
-		}
-
-		SpawnedProjectile.InitialPenetrationPower = GetInitialPenetrationPower(CurrentFireMode);
-		SpawnedProjectile.PenetrationPower = SpawnedProjectile.InitialPenetrationPower;
-
-		SpawnedProjectile.UpgradeDamageMod = GetUpgradeDamageMod();
-		SpawnedProjectile.Init( AimDir );
-	}
-
-	if( MedicComp != None && KFProj_HealingDart(SpawnedProjectile) != None )
-	{
-		if( TargetingComp != None && TargetingComp.LockedTarget[1] != None )
-			KFProj_HealingDart(SpawnedProjectile).SeekTarget = TargetingComp.LockedTarget[1];
-	}
-    
-    if( SpawnedProjectile.bNoReplicationToInstigator && WorldInfo.NetMode == NM_DedicatedServer )
-        CheckForReplication(SpawnedProjectile, AimDir, RealStartLoc);
-
-	return SpawnedProjectile;
-}
-
-stripped final function context(KFWeapon) CheckForReplication(KFProjectile SpawnedProjectile, vector AimDir, vector RealStartLoc)
-{
-    local ReplicatedProjectile P;
-
-    P = Spawn(class'ReplicatedProjectile', Self);
-    P.RepInfo.Pawn = Instigator;
-    P.RepInfo.ProjectileClass = SpawnedProjectile.Class;
-    P.RepInfo.AimLoc = `ConvertVectorToUnCompressed(RealStartLoc);
-    P.RepInfo.AimDir = `ConvertVectorToUnCompressed(AimDir);
-    P.RepInfo.PenPower = SpawnedProjectile.InitialPenetrationPower;
-    P.LifeSpan = SpawnedProjectile.LifeSpan;
-    P.bNetDirty = true;
-    P.bForceNetUpdate = true;
-}
-
 stripped function context(KFWeapon.GivenTo) GivenTo( Pawn thisPawn, optional bool bDoNotActivate )
 {
 	Super.GivenTo(thisPawn, bDoNotActivate);
@@ -626,4 +577,9 @@ stripped final simulated function context(KFWeapon) SetupViewRoll(KFPawn Holder,
         RHI.CurWeaponAngMod = RInterpTo(RHI.CurWeaponAngMod, Target, WorldInfo.DeltaSeconds * CustomTimeDilation, 8.f);
         
     FinalRotation.Roll = RHI.CurWeaponAngMod.Roll;
+}
+
+stripped reliable server function context(KFWeapon.SyncCurrentAmmoCount) SyncCurrentAmmoCount(byte FireMode, int CurrentAmmoCount)
+{
+	return;
 }

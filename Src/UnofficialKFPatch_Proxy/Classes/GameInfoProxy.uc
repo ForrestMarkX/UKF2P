@@ -142,7 +142,7 @@ stripped function context(GameInfo.ProcessServerTravel) ProcessServerTravel(stri
 
 	NextMapGuid = GetPackageGuid(name(NextMap));
 
-	LocalPlayer = ProcessClientTravel(URL, NextMapGuid, bSeamless, bAbsolute);
+	LocalPlayer = ProcessClientTravel(NextMap, NextMapGuid, bSeamless, bAbsolute);
 
 	`Log(URL,,'ProcessServerTravel');
     

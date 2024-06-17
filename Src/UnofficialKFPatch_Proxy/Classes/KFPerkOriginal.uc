@@ -5,6 +5,7 @@ static function bool IsDamageTypeOnPerk( class<KFDamageType> KFDT );
 static function bool IsDamageTypeOnThisPerk( class<KFDamageType> KFDT, class<KFPerk> PerkClass );
 static function class<KFPerk> GetPerkFromDamageCauser( Actor WeaponActor, class<KFPerk> InstigatorPerkClass );
 static function bool IsDual9mm( KFWeapon KFW );
+static function bool IsHRG93R( KFWeapon KFW );
 static function bool IsFAMAS( KFWeapon KFW );
 static function bool IsBlastBrawlers( KFWeapon KFW );
 static function bool IsDoshinegun( KFWeapon KFW );

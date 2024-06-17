@@ -80,6 +80,19 @@ stripped function context(KFGFxTraderContainer_Store.IsItemFiltered) bool IsItem
 			`Log("Item is platform restricted");
 		return true;
 	}
+	bUses9mm = Has9mmGun();
+	if( bUses9mm && (Item.ClassName == 'KFWeap_HRG_93r' || Item.ClassName == 'KFWeap_HRG_93r_Dual') )
+	{
+		if( bDebug )
+			`Log("9mm owned, skip HRG_93");
+		return true;
+	}
+	if( !bUses9mm && (Item.ClassName == 'KFWeap_Pistol_9mm' || Item.ClassName == 'KFWeap_Pistol_Dual9mm') )
+	{
+		if( bDebug )
+			`Log("HRG_93R owned, skip 9mm");
+		return true;
+	}
 	if( `GetChatRep().UKFPInteraction.bFilterHRGWeapons && InStr(Item.WeaponDef.Name, "_HRG") != INDEX_NONE )
 	{
 		if( bDebug )

@@ -78,10 +78,7 @@ stripped function context(KFGFxWidget_PartyInGame.UpdateReadyButtonVisibility) U
             if( `GetChatRep() != None && `GetChatRep().UKFPInteraction != None )
             {
                 if( `GetChatRep().UKFPInteraction.bHasPacketLoss )
-                {
                     SetPacketLoss();
-                    return;
-                }
                 else RestoreMatchContainer();
             }
             

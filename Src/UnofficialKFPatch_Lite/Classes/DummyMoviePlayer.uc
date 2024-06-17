@@ -7,8 +7,7 @@ function Init(optional LocalPlayer LocPlay)
 
 function OnCleanup()
 {
-    if( !`GetMut().bCleanedUp )
-        `GetMut().Cleanup();
+    `GetMut().Cleanup();
 	Super.OnCleanup();
 }
 

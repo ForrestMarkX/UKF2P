@@ -30,6 +30,8 @@ stripped static function context(KFGFxMenu_StartGame.GetSpecialEventClass) class
             return class'KFGFxSpecialEventObjectivesContainer_Fall2021';
         case SET_Fall2022:
             return class'KFGFxSpecialEventObjectivesContainer_Fall2022';
+        case SET_Fall2023:
+            return class'KFGFxSpecialEventObjectivesContainer_Fall2023';
         case SET_Xmas2018:
             return class'KFGFxChristmasObjectivesContainer';
         case SET_Xmas2019:
@@ -49,7 +51,7 @@ stripped static function context(KFGFxMenu_StartGame.GetSpecialEventClass) class
 		case SEI_Summer:
 			return class'KFGFxSpecialEventObjectivesContainer_Summer2023';
 		case SEI_Fall:
-			return class'KFGFxSpecialEventObjectivesContainer_Fall2022';
+			return class'KFGFxSpecialEventObjectivesContainer_Fall2023';
 		case SEI_Winter:
             return class'KFGFxSpecialEventObjectivesContainer_Xmas2022';
 	}

@@ -143,7 +143,12 @@ stripped final simulated static function context(KFPerk) class<KFPerk> GetPerkTy
 
 stripped static function context(KFPerk.IsDual9mm) bool IsDual9mm( KFWeapon KFW )
 {
-	return KFW != None && KFW.IsA('KFWeap_Pistol_Dual9mm');
+	return KFW != None && (KFW.IsA('KFWeap_Pistol_Dual9mm') || KFW.IsA('KFWeap_HRG_93R_Dual'));
+}
+
+stripped static function context(KFPerk.IsHRG93R) bool IsHRG93R( KFWeapon KFW )
+{
+	return KFW != None && (KFW.IsA('KFWeap_HRG_93R') || KFW.IsA('KFWeap_HRG_93R_Dual'));
 }
 
 stripped static function context(KFPerk.IsFAMAS) bool IsFAMAS( KFWeapon KFW )

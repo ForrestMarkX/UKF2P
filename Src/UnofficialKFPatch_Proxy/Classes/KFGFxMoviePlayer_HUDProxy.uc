@@ -96,10 +96,13 @@ stripped final function context(KFGFxMoviePlayer_HUD) ShowKillMessageEx(PlayerRe
 
 stripped function context(KFGFxMoviePlayer_HUD.TickHud) TickHud(float DeltaTime)
 {
-    local bool bGunGameVisibility, bVIPModeVisibility;
+    local KFGameReplicationInfo KFGRI;
+    local bool bGunGameVisibility, bVIPModeVisibility, bBountyHuntVisibility;
 
-    if( KFPC == None)
+    if( KFPC == None )
         return;
+        
+    KFGRI = KFGameReplicationInfo(KFPC.WorldInfo.GRI);
 	
 	if( WaveInfoWidget != None )
 		WaveInfoWidget.TickHUD(DeltaTime);
@@ -162,6 +165,22 @@ stripped function context(KFGFxMoviePlayer_HUD.TickHud) TickHud(float DeltaTime)
             bLastVIPVisibility = bVIPModeVisibility;
         }
     }
+    
+	if( BountyHuntWidget != None )
+	{
+		bBountyHuntVisibility = KFPC.CanUseBountyHunt();
+
+        if( !KFGRI.bWaveIsActive )
+            bBountyHuntVisibility = false;
+		else if( KFGRI.WaveNum == KFGRI.WaveMax )
+			bBountyHuntVisibility = false;
+
+        if( bBountyHuntVisibility != bLastBountyHuntVisibility )
+        {
+			BountyHuntWidget.UpdateBountyHuntVisibility(bBountyHuntVisibility);
+			bLastBountyHuntVisibility = bBountyHuntVisibility;
+		}
+	}
  
     LastUpdateTime = KFPC.WorldInfo.TimeSeconds;
         

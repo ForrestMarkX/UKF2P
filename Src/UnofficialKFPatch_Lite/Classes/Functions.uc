@@ -21,7 +21,7 @@ stripped final function context(DroppedPickup) PickupFellOutOfWorld()
     local vector BoxExtent, HitLocation;
     local int NumLoops;
     local float CollisionRadius, CollisionHeight;
-    
+
     if( Instigator != None )
     {
         Instigator.GetBoundingCylinder(CollisionRadius, CollisionHeight);
@@ -142,7 +142,7 @@ stripped reliable server function context(KFPlayerController.SkipLobby) SkipLobb
 stripped reliable server function context(KFPlayerController.ServerSetEnablePurchases) ServerSetEnablePurchases(bool bEnalbe)
 {
 	local KFInventoryManager KFIM;
-    
+
     if( !KFGameReplicationInfo(WorldInfo.GRI).bTraderIsOpen )
         return;
 
@@ -170,7 +170,7 @@ stripped simulated event context(KFPlayerReplicationInfo.PostBeginPlay) PRIPostB
 stripped reliable server function context(KFPlayerReplicationInfo.ServerStartKickVote) ServerStartKickVote(PlayerReplicationInfo Kickee, PlayerReplicationInfo Kicker)
 {
 	local KFGameReplicationInfo KFGRI;
-    
+
     if( Kicker != self )
         return;
 
@@ -182,7 +182,7 @@ stripped reliable server function context(KFPlayerReplicationInfo.ServerStartKic
 stripped reliable server function context(KFPlayerReplicationInfo.ServerCastKickVote) ServerCastKickVote(PlayerReplicationInfo PRI, bool bKick)
 {
 	local KFGameReplicationInfo KFGRI;
-    
+
     if( PRI != self )
         return;
 
@@ -194,7 +194,7 @@ stripped reliable server function context(KFPlayerReplicationInfo.ServerCastKick
 stripped reliable server function context(KFPlayerReplicationInfo.ServerRequestSkipTraderVote) ServerRequestSkipTraderVote(PlayerReplicationInfo PRI)
 {
 	local KFGameReplicationInfo KFGRI;
-    
+
     if( PRI != self )
         return;
 
@@ -206,7 +206,7 @@ stripped reliable server function context(KFPlayerReplicationInfo.ServerRequestS
 stripped reliable server function context(KFPlayerReplicationInfo.ServerCastSkipTraderVote) ServerCastSkipTraderVote(PlayerReplicationInfo PRI, bool bSkipTrader)
 {
 	local KFGameReplicationInfo KFGRI;
-    
+
     if( PRI != self )
         return;
 
@@ -260,7 +260,7 @@ stripped event context(KFAIController.FindNewEnemy) bool FindNewEnemy()
     local int BestEnemyZedCount;
     local int PotentialEnemyZedCount;
     local bool bUpdateBestEnemy;
- 
+
     if( Pawn == None )
         return false;
  
@@ -312,7 +312,7 @@ stripped event context(KFAIController.FindNewEnemy) bool FindNewEnemy()
 stripped function context(KFGameInfo_Survival.StartMatch) StartMatch()
 {
     local KFPlayerController KFPC;
-	
+
 	WaveNum = 0;
 
 	Super.StartMatch();
@@ -334,7 +334,7 @@ stripped function context(KFGameInfo_Survival.NotifyTraderOpened) NotifyTraderOp
 	local KFSeqEvent_TraderOpened TraderOpenedEvt;
 	local Sequence GameSeq;
 	local int i;
-	
+
 	`GetMut().NotifyWaveEnded();
 
 	GameSeq = WorldInfo.GetGameSequence();
@@ -363,7 +363,7 @@ stripped function context(KFGameInfo_Survival.NotifyTraderClosed) NotifyTraderCl
 	local array<SequenceObject> AllTraderClosedEvents;
 	local Sequence GameSeq;
 	local int i;
-	
+
 	`GetMut().NotifyWaveStarted();
 
 	GameSeq = WorldInfo.GetGameSequence();
@@ -477,7 +477,7 @@ stripped simulated function context(KFDroppedPickup.SetPickupMesh) SetPickupMesh
 	local SkeletalMeshComponent SkelMC;
 	local StaticMeshComponent StaticMC;
 	local KFGameInfo KFGI;
-    
+
     NetUpdateFrequency = 10.f;
 
 	if( Role == ROLE_Authority )
@@ -578,7 +578,7 @@ stripped final function context(KFDroppedPickup) AddPickupToList()
     local UKFPMutator Mut;
     local int Index;
     local FPlayerPickups Info;
-    
+
     if( Instigator == None )
         return;
     
@@ -629,20 +629,25 @@ stripped final function context(KFDroppedPickup) RemovePickupFromList()
 stripped function context(KFPawn_Monster.GetAIPawnClassToSpawn) class<KFPawn_Monster> GetAIPawnClassToSpawn()
 {
 	local WorldInfo WI;
+	local KFGameReplicationInfo KFGRI;
 
 	WI = class'WorldInfo'.static.GetWorldInfo();
-    
+	KFGRI = KFGameReplicationInfo(WI.GRI);
+
     if( `GetMut().bForceDisableEDARs && (ClassIsChildOf(default.Class, class'KFPawn_ZedHusk') || ClassIsChildOf(default.Class, class'KFPawn_ZedStalker')) )
         return default.Class;
         
     if( KFGameInfo(WI.Game) != None && `GetMut().bForceDisableQPs && ClassIsChildOf(default.Class, class'KFPawn_ZedFleshpoundMini') && !KFGameReplicationInfo(WI.GRI).IsBossWave() )
         return KFGameInfo(WI.Game).GetAISpawnType(AT_Scrake);
 
-	if( default.ElitePawnClass.Length > 0 && default.DifficultySettings != None && fRand() < default.DifficultySettings.static.GetSpecialSpawnChance(KFGameReplicationInfo(WI.GRI)) )
+    if( KFGRI != None && !KFGRI.IsContaminationMode() )
     {
-        if( KFGameInfo(WI.Game) != None && `GetMut().bForceDisableGasCrawlers && ClassIsChildOf(default.Class, class'KFPawn_ZedCrawler') && !ClassIsChildOf(default.Class, class'KFPawn_ZedCrawlerKing') )
-            return KFGameInfo(WI.Game).GetAISpawnType(AT_Stalker);
-		return default.ElitePawnClass[Rand(default.ElitePawnClass.Length)];
+        if( default.ElitePawnClass.Length > 0 && default.DifficultySettings != None && fRand() < default.DifficultySettings.static.GetSpecialSpawnChance(KFGameReplicationInfo(WI.GRI)) )
+        {
+            if( KFGameInfo(WI.Game) != None && `GetMut().bForceDisableGasCrawlers && ClassIsChildOf(default.Class, class'KFPawn_ZedCrawler') && !ClassIsChildOf(default.Class, class'KFPawn_ZedCrawlerKing') )
+                return KFGameInfo(WI.Game).GetAISpawnType(AT_Stalker);
+            return default.ElitePawnClass[Rand(default.ElitePawnClass.Length)];
+        }
     }
         
 	return default.Class;
@@ -656,7 +661,7 @@ stripped function context(KFAIController_ZedFleshpound.SpawnEnraged) bool SpawnE
 stripped final function context(KFAIController_ZedFleshpound) bool SpawnEnragedEx()
 {
     local UKFPMutator Mut;
-    
+
     Mut = `GetMut();
     if( Mut != None && Mut.bForceDisableRageSpawns && !MyKFPawn.IsABoss() )
         return false;
@@ -669,7 +674,7 @@ stripped function context(KFAISpawnManager.GetMaxMonsters) int GetMaxMonsters()
 {
 	local int LivingPlayerCount;
 	local int Difficulty;
-    
+
 	LivingPlayerCount = Clamp(GetLivingPlayerCount() - 1, 0, 5);
 	Difficulty = Clamp(GameDifficulty, 0, 3);
     
@@ -681,7 +686,7 @@ stripped function context(KFAISpawnManager.GetMaxMonsters) int GetMaxMonsters()
 stripped function context(KFGameDifficultyInfo.GetNumPlayersModifier) float GetNumPlayersModifier( const out NumPlayerMods PlayerSetting, byte NumLivingPlayers )
 {
 	local float StartingLerp, LerpRate;
-	
+
 	NumLivingPlayers = Max(`GetMut().CurrentFakePlayers, NumLivingPlayers);
 
 	if( `KF_MAX_PLAYERS > NumLivingPlayers )
@@ -745,7 +750,7 @@ stripped function context(KFGameInfo.GetTotalWaveCountScale) float GetTotalWaveC
 stripped final function context(KFGameInfo) float GetTotalWaveCountScaleEx()
 {
     local float CurrentScale;
-    
+
 	if( MyKFGRI.IsBossWave() )
 		return 1.f;
 
@@ -766,94 +771,12 @@ stripped event context(KFGameInfo_Survival.Timer) GameTimer()
 		GameConductor.TimerUpdate();
 }
 
-stripped function context(KFGameInfo.SetMonsterDefaults) SetMonsterDefaults( KFPawn_Monster P )
-{
-	local float HealthMod;
-	local float HeadHealthMod;
-	local float TotalSpeedMod, StartingSpeedMod;
-	local float DamageMod;
-	local int LivingPlayerCount;
-	local int i;
-
-    LivingPlayerCount = GetLivingPlayerCount();
-
-   	DamageMod = 1.0;
-    HealthMod = 1.0;
-    HeadHealthMod = 1.0;
-
-    if( P.bVersusZed )
-    {
-    	DifficultyInfo.GetVersusHealthModifier(P, LivingPlayerCount, HealthMod, HeadHealthMod);
-
-        HealthMod *= GameConductor.CurrentVersusZedHealthMod;
-        HeadHealthMod *= GameConductor.CurrentVersusZedHealthMod;
-
-        P.DifficultyDamageMod = DamageMod * GameConductor.CurrentVersusZedDamageMod;
-
-        StartingSpeedMod = 1.f;
-		TotalSpeedMod = 1.f;
-    }
-    else
-    {
-    	DifficultyInfo.GetAIHealthModifier(P, GameDifficulty, LivingPlayerCount, HealthMod, HeadHealthMod);
-		DamageMod = DifficultyInfo.GetAIDamageModifier(P, GameDifficulty,bOnePlayerAtStart);
-
-        P.DifficultyDamageMod = DamageMod;
-
-        StartingSpeedMod = DifficultyInfo.GetAISpeedMod(P, GameDifficulty);
-		TotalSpeedMod = GameConductor.CurrentAIMovementSpeedMod * StartingSpeedMod;
-    }
-
-	P.GroundSpeed = P.default.GroundSpeed * TotalSpeedMod;
-	P.SprintSpeed = P.default.SprintSpeed * TotalSpeedMod;
-
-	P.NormalGroundSpeed = P.GroundSpeed;
-	P.NormalSprintSpeed = P.SprintSpeed;
-	P.InitialGroundSpeedModifier = StartingSpeedMod;
-
-	P.Health = P.default.Health * HealthMod;
-	if( P.default.HealthMax == 0 )
-	   	P.HealthMax = P.default.Health * HealthMod;
-	else P.HealthMax = P.default.HealthMax * HealthMod;
-
-	P.ApplySpecialZoneHealthMod(HeadHealthMod);
-	P.GameResistancePct = DifficultyInfo.GetDamageResistanceModifier(LivingPlayerCount);
-
-	for( i=0; i<ArrayCount(SpawnedMonsterProperties); i++ )
-	{
-		if( SpawnedMonsterProperties[i] != 0 )
-		{
-			switch( EMonsterProperties(i) )
-			{
-			case EMonsterProperties_Enraged:
-				P.SetEnraged(true);
-				break;
-			case EMonsterProperties_Sprinting:
-				P.bSprintOverride=true;
-				break;
-			}
-		}
-	}
-
-	if( OutbreakEvent != None )
-		OutbreakEvent.AdjustMonsterDefaults(P);
-        
-    `GetMut().SetMonsterDefaults(P);
-
-   	`Log("==== SetMonsterDefaults for pawn: " @P @"====",bLogAIDefaults);
-	`Log("HealthMod: " @HealthMod @ "Original Health: " @P.default.Health @" Final Health = " @P.Health, bLogAIDefaults);
-	`Log("HeadHealthMod: " @HeadHealthMod @ "Original Head Health: " @P.default.HitZones[HZI_HEAD].GoreHealth @" Final Head Health = " @P.HitZones[HZI_HEAD].GoreHealth, bLogAIDefaults);
-	`Log("GroundSpeedMod: " @TotalSpeedMod @" Final Ground Speed = " @P.GroundSpeed, bLogAIDefaults);
-	`Log("SprintSpeedMod: " @TotalSpeedMod @" Final Sprint Speed = " @P.SprintSpeed, bLogAIDefaults);
-	`Log("DamageMod: " @DamageMod @" Final Melee Damage = " @P.MeleeAttackHelper.BaseDamage * DamageMod, bLogAIDefaults);
-}
-
 stripped final simulated function context(KFInventoryManager) DiscardInventoryEx()
 {
 	local Inventory Inv;
 	local KFPawn KFP;
 	local UKFPMutator Mut;
-    
+
 	Mut = `GetMut();
     if( Mut == None || !Mut.bServerDropAllWepsOnDeath )
     {
@@ -879,7 +802,7 @@ stripped simulated event context(KFInventoryManager.DiscardInventory) DiscardInv
 stripped reliable server function context(KFInventoryManager.ServerThrowMoney) ServerThrowMoney()
 {
     local Inventory Inv;
-    
+
     if( CheckDoshSpam() )
         return;
         
@@ -901,7 +824,7 @@ final function context(KFInventoryManager) bool CheckDoshSpam()
 	local UKFPMutator Mut;
     local FPlayerConfig Info;
     local int Index;
-    
+
 	Mut = `GetMut();
     if( Mut.GetPlayerConfig(Instigator.PlayerReplicationInfo, Info, Index) )
         return false;
@@ -941,7 +864,7 @@ stripped final static function context(KFGameInfo) int GetActualGamemodeNum(stri
 {
     local int i;
     local class<KFGameInfo> GIC;
-    
+
     for( i=default.GameModes.Length-1; i>=0; i-- )
     {
         GIC = class<KFGameInfo>(DynamicLoadObject(default.GameModes[i].ClassNameAndPath, Class'Class'));
@@ -971,7 +894,7 @@ stripped final function context(Mutator) GenerateMutatorEntry(name ClassName, st
     local array<string> Names, Groups;
     local int i;
     local bool bFoundConfig;
-    
+
     GetPerObjectConfigSections(class'KFMutatorSummary', Names);
     for (i = 0; i < Names.Length; i++)
     {
@@ -1008,4 +931,11 @@ stripped function context(KFGameInfo.ReplicateWelcomeScreen) ReplicateWelcomeScr
 		MyKFGRI.ServerAdInfo.WebsiteLink = WebsiteLink;
 		MyKFGRI.ServerAdInfo.ClanMotto = ClanMotto;
 	}
+}
+
+stripped function context(KFGameInfo.Tick) GameInfoTick( float DeltaTime )
+{
+    `GetMut().TickActor(DeltaTime);
+    if( ZedTimeRemaining > 0.f )
+		TickZedTime(DeltaTime);
 }

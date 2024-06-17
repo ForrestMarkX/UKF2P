@@ -4,7 +4,7 @@ class KFOnlineStatsWriteProxy extends Object;
 
 stripped private event context(KFOnlineStatsWrite.AddToKills) AddToKills( class<KFPawn_Monster> MonsterClass, byte Difficulty, class<DamageType> DT, bool bKiller )
 {
-	SeasonalEventStats_OnZedKilled(MonsterClass, Difficulty, DT);
+	SeasonalEventStats_OnZedKilled(MonsterClass, Difficulty, DT, bKiller);
 
 	if( !bKiller )
 		return;
@@ -74,10 +74,10 @@ stripped final simulated function context(KFOnlineStatsWrite.SeasonalEventStats_
 		SeasonalEvent.OnHitGiven(DT);
 }
 
-stripped final simulated function context(KFOnlineStatsWrite.SeasonalEventStats_OnZedKilled) SeasonalEventStats_OnZedKilled(class<KFPawn_Monster> MonsterClass, int Difficulty, class<DamageType> DT)
+stripped final simulated function context(KFOnlineStatsWrite.SeasonalEventStats_OnZedKilled) SeasonalEventStats_OnZedKilled(class<KFPawn_Monster> MonsterClass, int Difficulty, class<DamageType> DT, bool bKiller)
 {
 	if( SeasonalEventIsValidEx() )
-		SeasonalEvent.OnZedKilled(MonsterClass, Difficulty, DT);
+		SeasonalEvent.OnZedKilled(MonsterClass, Difficulty, DT, bKiller);
 }
 
 stripped final simulated function context(KFOnlineStatsWrite.SeasonalEventStats_OnZedKilledByHeadshot) SeasonalEventStats_OnZedKilledByHeadshot(class<KFPawn_Monster> MonsterClass, int Difficulty, class<DamageType> DT)

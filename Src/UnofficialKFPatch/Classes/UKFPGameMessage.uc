@@ -73,7 +73,7 @@ static function string GetString(optional int Switch, optional bool bPRI1HUD, op
 
 static function string ConvertUIDToSteamID(UniqueNetId UniqueId)
 {
-    return "STEAM_" $ string((UniqueId.Uid.B >> 24) & 0xFF) $ ":" $ string(UniqueId.Uid.A & 1) $ ":" $ string((UniqueId.Uid.A >> 1) & 0x7FFFFFF);
+    return "STEAM_" $ string((UniqueId.Uid.B >> 24) & 0xFF) $ ":" $ string(UniqueId.Uid.A & 1) $ ":" $ string(UniqueId.Uid.A >> 1);
 }
 
 static function UniqueNetId ConvertSteamIDToUID(string SteamID)

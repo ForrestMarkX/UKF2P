@@ -21,9 +21,6 @@ stripped function context(Console.ConsoleCommand) ConsoleCommand(string Command)
 		OutputText("\n>>>" @ Command @ "<<<");
 	}
     
-    if( `GetChatRep().ExecuteCommand(Command) )
-		return;
-
 	if( ConsoleTargetPlayer != None )
 		ConsoleTargetPlayer.Actor.ConsoleCommand(Command);
 	else if( GamePlayers.Length > 0 && GamePlayers[0].Actor != None )

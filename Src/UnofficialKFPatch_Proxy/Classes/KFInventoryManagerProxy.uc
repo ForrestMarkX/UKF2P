@@ -2,7 +2,7 @@ class KFInventoryManagerProxy extends Object;
 
 stripped simulated function context(KFInventoryManager.ThrowMoney) ThrowMoney()
 {
-    `GetChatRep().ExecuteCommand("TossMoney");
+    `GetChatRep().TossMoney();
 }
 
 stripped reliable server function context(KFInventoryManager.ServerThrowMoney) ServerThrowMoney()

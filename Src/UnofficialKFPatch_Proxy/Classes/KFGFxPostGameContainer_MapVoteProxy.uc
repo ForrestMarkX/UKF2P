@@ -101,47 +101,109 @@ stripped function context(KFGFxPostGameContainer_MapVote.SetMapOptions) SetMapOp
 	local array<string> ServerMapList;
 	local KFGameReplicationInfo KFGRI;
 	local bool IsWeeklyMode;
-	local bool IsBrokenTrader;
-	local bool IsBossRush;
-	local bool IsGunGame;
-	local bool bShouldSkipMaps;
+	local bool IsBoom, IsScavenger, IsBossRush, IsGunGame, IsContaminationMode, IsBountyHunt;
 	local name MapName;
-    
+
     if( class'xVotingReplication'.default.StaticReference != None )
         SetMapOptionsEx();
     else
     {
         KFGRI = KFGameReplicationInfo(GetPC().WorldInfo.GRI);
 
-        bShouldSkipMaps = false;
         Counter = 0;
 
-        if( KFGRI != None && KFGRI.VoteCollector != None )
+        if (KFGRI != none && KFGRI.VoteCollector != none)
         {
             ServerMapList = KFGRI.VoteCollector.MapList;
-            IsWeeklyMode = KFGRI.bIsWeeklyMode;
-            IsBrokenTrader = KFGRI.CurrentWeeklyIndex == 11;
-            IsBossRush = KFGRI.CurrentWeeklyIndex == 14;
-            IsGunGame = KFGRI.CurrentWeeklyIndex == 16;
 
-            bShouldSkipMaps = IsWeeklyMode && (IsBrokenTrader || IsBossRush || IsGunGame);
+            IsWeeklyMode = KFGRI.bIsWeeklyMode;
+
+            IsBoom = false;
+            IsScavenger = false;
+            IsBossRush = false;
+            IsGunGame = false;
+            IsContaminationMode = false;
+            IsBountyHunt = false;
+
+            switch (KFGRI.CurrentWeeklyIndex)
+            {
+                case 0: IsBoom = true; break;
+                case 11: IsScavenger = true; break;
+                case 14: IsBossRush = true; break;
+                case 16: IsGunGame = true; break;
+                case 19: IsContaminationMode = true; break;
+                case 20: IsBountyHunt = true; break;
+            }
 
             MapList = CreateArray();
 
-            for( i=0; i<ServerMapList.Length; i++ )
+            for (i = 0; i < ServerMapList.length; i++)
             {
                 MapName = name(ServerMapList[i]);
-                if ( bShouldSkipMaps && ( MapName == MapBiolapse || 
-                                          MapName == MapNightmare ||
-                                          MapName == MapPowerCore ||
-                                          MapName == MapDescent ||
-                                          MapName == MapKrampus))
+
+                if (IsWeeklyMode)
                 {
-                    continue;
+                    if (MapName == MapSantas)
+                    {
+                        continue;
+                    }
                 }
 
-                if( IsWeeklyMode && IsBossRush && MapName == MapSteam )
-                    continue;
+                if (IsWeeklyMode && IsBoom)
+                {
+                    if (MapName == MapSteam)
+                    {
+                        continue;
+                    }				
+                }
+
+                if (IsWeeklyMode && (IsScavenger || IsBossRush || IsGunGame))
+                {
+                    if (MapName == MapBiolapse || 
+                        MapName == MapNightmare ||
+                        MapName == MapPowerCore ||
+                        MapName == MapDescent ||
+                        MapName == MapKrampus)
+                    {
+                        continue;
+                    }
+                }
+
+                if (IsWeeklyMode && IsContaminationMode)
+                {
+                    if (MapName == MapBiolapse || 
+                        MapName == MapNightmare ||
+                        MapName == MapPowerCore ||
+                        MapName == MapDescent ||
+                        MapName == MapKrampus ||
+                        MapName == MapElysium ||
+                        MapName == MapSantas)
+                    {
+                        continue;
+                    }				
+                }
+
+                if (IsWeeklyMode && IsBountyHunt)
+                {
+                    if (MapName == MapBiolapse || 
+                        MapName == MapNightmare ||
+                        MapName == MapPowerCore ||
+                        MapName == MapDescent ||
+                        MapName == MapKrampus ||
+                        MapName == MapElysium ||
+                        MapName == MapSteam)
+                    {
+                        continue;
+                    }				
+                }			
+
+                if (IsWeeklyMode && IsBossRush)
+                {
+                    if (MapName == MapSteam)
+                    {
+                        continue;
+                    }
+                }
 
                 MapObject = CreateObject("Object");
                 MapObject.SetString("label", class'KFCommon_LocalizedStrings'.static.GetFriendlyMapName(ServerMapList[i]) );

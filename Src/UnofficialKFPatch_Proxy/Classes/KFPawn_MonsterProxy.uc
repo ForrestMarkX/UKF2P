@@ -15,14 +15,26 @@ stripped final simulated event context(KFPawn_Monster) PreBeginPlayEx()
 
 	Super.PreBeginPlay();
 
-    CharacterMonsterArch = KFCharacterInfo_Monster(`GetURI().GetSeasonalCharacterArch(Class));
-    if( CharacterMonsterArch == None )
+    if( WorldInfo.NetMode != NM_DedicatedServer )
+    {
+        CharacterMonsterArch = KFCharacterInfo_Monster(`GetURI().GetSeasonalCharacterArch(Class));
+        if( CharacterMonsterArch == None )
+            CharacterMonsterArch = KFCharacterInfo_Monster(`SafeLoadObject(MonsterArchPath, class'KFCharacterInfo_Monster'));
+        if( CharacterMonsterArch == None )
+            LastChanceLoad();
+    }
+    else
+    {
         CharacterMonsterArch = KFCharacterInfo_Monster(`SafeLoadObject(MonsterArchPath, class'KFCharacterInfo_Monster'));
-	if( CharacterMonsterArch == None )
-		LastChanceLoad();
-        
-	if( IsA('KFPawn_ZedScrake') && !`GetURI().CurrentNormalSummerSCAnims && CharacterMonsterArch != None && CharacterMonsterArch.GetPackageName() == 'SUMMER_ZED_ARCH' && CharacterMonsterArch.AnimSets.Length > 3 )
-		CharacterMonsterArch.AnimSets.Remove(3, 2);
+        if( CharacterMonsterArch == None )
+            LastChanceLoad();
+    }
+
+	if( IsA('KFPawn_ZedScrake') && !`GetURI().CurrentNormalSummerSCAnims && CharacterMonsterArch != None )
+    {
+		CharacterMonsterArch.AnimSets.RemoveItem(AnimSet(DynamicLoadObject("SUMMER_ZED_Scrake_ANIM.SUMMER_Monkey_anim_Walk", class'AnimSet')));
+		CharacterMonsterArch.AnimSets.RemoveItem(AnimSet(DynamicLoadObject("SUMMER_ZED_Scrake_ANIM.SUMMER_Scrake_anim_Attacks", class'AnimSet')));
+    }
 	else if( (IsA('KFPawn_ZedGorefast') || IsA('KFPawn_ZedGorefastDualBlade')) && CharacterMonsterArch != None && CharacterMonsterArch.GetPackageName() == 'SUMMER_ZED_ARCH' )
     {
         PhysAsset = CharacterMonsterArch.PhysAsset;
@@ -92,7 +104,29 @@ stripped final simulated function context(KFPawn_Monster) ForceSwitchToGoreMesh(
 	ReplicatedEvent('RepBleedInflateMatParam');
 }
 
-stripped static event context(KFPawn_Monster.GetAIPawnClassToSpawn) class<KFPawn_Monster> GetAIPawnClassToSpawn()
+stripped function context(KFPawn_Monster.GetAIPawnClassToSpawn) class<KFPawn_Monster> GetAIPawnClassToSpawn()
 {
-	return `GetURI().GetAIPawnClassToSpawn(default.Class);
+	local WorldInfo WI;
+	local KFGameReplicationInfo KFGRI;
+
+	WI = class'WorldInfo'.static.GetWorldInfo();
+	KFGRI = KFGameReplicationInfo(WI.GRI);
+
+    if( `GetURI().bForceDisableEDARs && (ClassIsChildOf(default.Class, class'KFPawn_ZedHusk') || ClassIsChildOf(default.Class, class'KFPawn_ZedStalker')) )
+        return default.Class;
+        
+    if( KFGameInfo(WI.Game) != None && `GetURI().bForceDisableQPs && ClassIsChildOf(default.Class, class'KFPawn_ZedFleshpoundMini') && !KFGameReplicationInfo(WI.GRI).IsBossWave() )
+        return KFGameInfo(WI.Game).GetAISpawnType(AT_Scrake);
+
+    if( KFGRI != None && !KFGRI.IsContaminationMode() )
+    {
+        if( default.ElitePawnClass.Length > 0 && default.DifficultySettings != None && fRand() < default.DifficultySettings.static.GetSpecialSpawnChance(KFGameReplicationInfo(WI.GRI)) )
+        {
+            if( KFGameInfo(WI.Game) != None && `GetURI().bForceDisableGasCrawlers && ClassIsChildOf(default.Class, class'KFPawn_ZedCrawler') && !ClassIsChildOf(default.Class, class'KFPawn_ZedCrawlerKing') )
+                return KFGameInfo(WI.Game).GetAISpawnType(AT_Stalker);
+            return default.ElitePawnClass[Rand(default.ElitePawnClass.Length)];
+        }
+    }
+        
+	return default.Class;
 }

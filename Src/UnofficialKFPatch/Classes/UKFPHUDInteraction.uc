@@ -1305,6 +1305,7 @@ exec function ThrowMoney(int Amount)
     if( ChatRep.CheckDoshSpam() )
         return;
 	ChatRep.ServerThrowMoney(Amount == 0 ? DoshThrowAmt : Amount);
+    ChatRep.TossMoney(Amount);
 }
 
 exec function SetDoshThrowAmount(int Amount)

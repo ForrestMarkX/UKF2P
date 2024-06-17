@@ -109,7 +109,7 @@ final function SetupMutator(const string Options)
     else if( bool(KFGI.GetIntOption(Options, FHUDCommandName, int(RepInfo.bAttemptToLoadFHUD))) )
 		KFGI.AddMutator(FHUDClassLocation, true);
         
-    if( bool(KFGI.GetIntOption(Options, YASCommandName, int(RepInfo.bAttemptToLoadYAS))) || MaxPlayers > 6 )
+    if( bool(KFGI.GetIntOption(Options, YASCommandName, int(RepInfo.bAttemptToLoadYAS))) )
 		KFGI.AddMutator(YASClassLocation, true);
     if( bool(KFGI.GetIntOption(Options, AALCommandName, int(RepInfo.bAttemptToLoadAAL))) )
 		KFGI.AddMutator(AALClassLocation, true);
@@ -151,6 +151,8 @@ final function SetupMutator(const string Options)
     RepInfo.CurrentAmmoCostMultiplier = `RoundFloatPrecision(FMax(KFGI.GetFloatOption(Options, "AmmoCostMultiplier", RepInfo.AmmoCostMultiplier), 1.f));
     RepInfo.bBypassGameConductor = bool(KFGI.GetIntOption(Options, "DisableGameConductor", int(RepInfo.bDisableGameConductor)));
     RepInfo.bShouldAllowDamagePopups = bool(KFGI.GetIntOption(Options, "AllowDamagePopups", int(RepInfo.bAllowDamagePopups)));
+    RepInfo.bShouldDisableCustomLoadingScreen = bool(KFGI.GetIntOption(Options, "DisableCustomLoadingScreen", int(RepInfo.bDisableCustomLoadingScreen)));
+    RepInfo.bShouldDisableTraderLocking = bool(KFGI.GetIntOption(Options, "DisableTraderLocking", int(RepInfo.bDisableTraderLocking)));
     /*RepInfo.bShouldAbsoluteTravel = bool(KFGI.GetIntOption(Options, "AbsoluteTravel", int(RepInfo.bAbsoluteTravel)));
     RepInfo.bShouldDisableCrossPerk = bool(KFGI.GetIntOption(Options, "DisableCrossPerk", int(RepInfo.bDisableCrossPerk)));
     RepInfo.bShouldDisableUpgrades = bool(KFGI.GetIntOption(Options, "DisableWeaponUpgrades", int(RepInfo.bDisableWeaponUpgrades)));*/
@@ -307,7 +309,7 @@ final function SetupMutator(const string Options)
         else ActiveEventIdx = CurrentActiveEventIdx-1;
         
         WeeklyGI.ActiveEventIdx = ActiveEventIdx;
-        WeeklyGI.OutbreakEvent.SetActiveEvent(WeeklyGI.ActiveEventIdx);
+        WeeklyGI.OutbreakEvent.SetActiveEvent(WeeklyGI.ActiveEventIdx, WeeklyGI);
         
         RepInfo.FunctionProxy.ForceUpdateWeeklyIndex(WeeklyGI.ActiveEventIdx);
     }

@@ -41,7 +41,7 @@ stripped final function context(KFGFxMenu_Trader) SetTraderItemDetailsEx(int Ite
 	local bool bCanAfford, bCanBuyItem, bCanCarry;
     local KFGFxObject_TraderItems TraderItems;
     
-    TraderItems = `GetURI().OriginalTraderItems;
+    TraderItems = `GetURI().bShouldDisableTraderLocking ? MyKFPC.GetPurchaseHelper().TraderItems : `GetURI().OriginalTraderItems;
     SelectedList = TL_Shop;
     
     if( ItemDetails != None && ShopContainer != None )
@@ -112,7 +112,7 @@ stripped final function context(KFGFxMenu_Trader) RefreshShopItemListEx( TabIndi
 {
     local KFGFxObject_TraderItems TraderItems;
     
-    TraderItems = `GetURI().OriginalTraderItems;
+    TraderItems = `GetURI().bShouldDisableTraderLocking ? MyKFPC.GetPurchaseHelper().TraderItems : `GetURI().OriginalTraderItems;
     if( ShopContainer != None && FilterContainer != None )
     {
         switch( TabIndex )
@@ -173,7 +173,7 @@ stripped final function context(KFGFxMenu_Trader) Callback_FavoriteItemEx()
 {
     local KFGFxObject_TraderItems TraderItems;
     
-    TraderItems = `GetURI().OriginalTraderItems;
+    TraderItems = `GetURI().bShouldDisableTraderLocking ? MyKFPC.GetPurchaseHelper().TraderItems : `GetURI().OriginalTraderItems;
     
     if( SelectedList == TL_Shop )
     {
@@ -237,7 +237,7 @@ stripped final function context(KFGFxMenu_Trader) Callback_BuyOrSellItemEx()
 	local SItemInformation ItemInfo;
     local KFGFxObject_TraderItems TraderItems;
     
-    TraderItems = `GetURI().OriginalTraderItems;
+    TraderItems = `GetURI().bShouldDisableTraderLocking ? MyKFPC.GetPurchaseHelper().TraderItems : `GetURI().OriginalTraderItems;
 	
 	if( bCanBuyOrSellItem )
 	{

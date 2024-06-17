@@ -31,12 +31,6 @@ var transient byte CurrentMaxPlayers, CurrentMaxMonsters, CurrentFakePlayers, Sa
 
 var transient OnlineSubsystemSteamworks OnlineSub;
 
-struct FDummyPRI
-{
-    var KFPlayerReplicationInfo OriginalPRI, DummyPRI;
-};
-var transient array<FDummyPRI> DummyPlayerPRIs;
-
 struct FDelayedMessage
 {
     var KFPlayerController PC;
@@ -117,10 +111,10 @@ function PreBeginPlay()
     KFGameInfo.GetTotalWaveCountScale = Functions.GetTotalWaveCountScale;
     OrgFunctions.GameTimer = KFGameInfo_Survival.Timer;
     KFGameInfo_Survival.Timer = Functions.GameTimer;
-    OrgFunctions.SetMonsterDefaults = KFGameInfo.SetMonsterDefaults;
-    KFGameInfo.SetMonsterDefaults = Functions.SetMonsterDefaults;
     OrgFunctions.GetSpecificBossClass = KFGameInfo.GetSpecificBossClass;
     KFGameInfo.GetSpecificBossClass = Functions.GetSpecificBossClass;
+    OrgFunctions.GameInfoTick = KFGameInfo.Tick;
+    KFGameInfo.Tick = Functions.GameInfoTick;
     OrgFunctions.GameTrySetNextWaveSpecial = KFGameInfo_Endless.TrySetNextWaveSpecial;
     KFGameInfo_Endless.TrySetNextWaveSpecial = Functions.GameTrySetNextWaveSpecial;
     OrgFunctions.GRIPostBeginPlay = KFGameReplicationInfo.PostBeginPlay;
@@ -193,8 +187,7 @@ function PreBeginPlay()
     OnlineSub = OnlineSubsystemSteamworks(class'GameEngine'.static.GetOnlineSubsystem());
     
     TimerHelper = Spawn(class'KFRealtimeTimerHelper');
-    TimerHelper.SetTimer(0.1f, false, 'DoTick', self);
-    
+
 	ConsoleCommand("SUPPRESS Log");
     ConsoleCommand("SUPPRESS DevNet");
     ConsoleCommand("SUPPRESS DevOnline");
@@ -862,7 +855,6 @@ function NotifyLogin(Controller NewPlayer)
 {
     local KFPlayerController PC;
     local int Index;
-    local KFPlayerReplicationInfo MRI;
     
     PC = KFPlayerController(NewPlayer);
     if( PC != None )
@@ -881,31 +873,12 @@ function NotifyLogin(Controller NewPlayer)
         PlayerConfigs[Index].SteamID = OnlineSub.UniqueNetIdToInt64(PC.PlayerReplicationInfo.UniqueId);
         SaveConfig();
     }
-    
-    MRI = WorldInfo.Spawn(class'KFPlayerReplicationInfo');
-    MRI.bIsInactive = true;
-    MRI.bOnlySpectator = true;
-    MRI.PlayerName = PC.PlayerReplicationInfo.PlayerName;
-    MRI.CurrentPerkClass = KFPlayerReplicationInfo(PC.PlayerReplicationInfo).CurrentPerkClass;
-    
-    WorldInfo.GRI.RemovePRI(MRI);
-    WorldInfo.GRI.AddPRI(MRI);
-    
-    MRI.bNetInitial = true;
-    
-    if( DummyPlayerPRIs.Find('OriginalPRI', KFPlayerReplicationInfo(NewPlayer.PlayerReplicationInfo)) == INDEX_NONE )
-    {
-        Index = DummyPlayerPRIs.Add(1);
-        DummyPlayerPRIs[Index].OriginalPRI = KFPlayerReplicationInfo(PC.PlayerReplicationInfo);
-        DummyPlayerPRIs[Index].DummyPRI = MRI;
-    }
 
     Super.NotifyLogin(NewPlayer);
 }
 
 function NotifyLogout(Controller Exiting)
 {
-    local int Index;
     local KFPlayerController PC;
 
     PC = KFPlayerController(Exiting);
@@ -917,13 +890,6 @@ function NotifyLogout(Controller Exiting)
         
     if( KFGI.NumPlayers <= 0 && !KFGI.bWaitingToStartMatch && KFGI.MyKFGRI.bTraderIsOpen )
         KFGameInfo_Survival(KFGI).EndOfMatch(false);
-        
-    Index = DummyPlayerPRIs.Find('OriginalPRI', KFPlayerReplicationInfo(Exiting.PlayerReplicationInfo));
-    if( Index != INDEX_NONE )
-    {
-        DummyPlayerPRIs[Index].DummyPRI.Destroy();
-        DummyPlayerPRIs.Remove(Index, 1);
-    }
         
     Super.NotifyLogout(Exiting);
 }
@@ -1325,11 +1291,8 @@ final function NotifyMatchStarted()
 	}
 }
 
-final function DoTick()
+final function TickActor(float DT)
 {
-    local float DT;
-    
-    DT = WorldInfo.DeltaSeconds;
     if( !bCleanedUp && WorldInfo.NextSwitchCountdown > 0.f && (WorldInfo.NextSwitchCountdown-(DT*4.f))<=0.f )
         Cleanup();
     if( DelayedMessages.Length > 0 )
@@ -1338,11 +1301,12 @@ final function DoTick()
             KFGI.BroadcastHandler.BroadcastText(DelayedMessages[0].PC.PlayerReplicationInfo, DelayedMessages[0].PC, DelayedMessages[0].S);
         DelayedMessages.Remove(0, 1);
     }
-    TimerHelper.SetTimer(DT, false, 'DoTick', self);
 }
 
 final function Cleanup()
 {
+    bCleanedUp = true;
+    
     KFDroppedPickup.Destroyed = OrgFunctions.PickupDestroyed;
     KFDroppedPickup.SetPickupMesh = OrgFunctions.SetPickupMesh;
     KFPawn_Monster.GetAIPawnClassToSpawn = OrgFunctions.GetAIPawnClassToSpawn;
@@ -1354,8 +1318,8 @@ final function Cleanup()
     KFGameInfo.GetGameInfoSpawnRateMod = OrgFunctions.GetGameInfoSpawnRateMod;
     KFGameInfo.GetTotalWaveCountScale = OrgFunctions.GetTotalWaveCountScale;
     KFGameInfo_Survival.Timer = OrgFunctions.GameTimer;
-    KFGameInfo.SetMonsterDefaults = OrgFunctions.SetMonsterDefaults;
     KFGameInfo.GetSpecificBossClass = OrgFunctions.GetSpecificBossClass;
+    KFGameInfo.Tick = OrgFunctions.GameInfoTick;
     KFGameInfo_Endless.TrySetNextWaveSpecial = OrgFunctions.GameTrySetNextWaveSpecial;
     KFGameReplicationInfo.PostBeginPlay = OrgFunctions.GRIPostBeginPlay;
     KFGameInfo_Survival.NotifyTraderOpened = OrgFunctions.NotifyTraderOpened;
@@ -1377,50 +1341,9 @@ final function Cleanup()
     Mutator.PreBeginPlay = OrgFunctions.MutPreBeginPlay;
 
     NetDriver = None;
-}
-
-function ScoreKill(Controller Killer, Controller Killed)
-{
-    local int Index;
-    local KFPlayerController PC, KillerPC;
-    local FPlayerConfig Info;
-    local KFAIController_Monster MAI;
-    local KFPlayerReplicationInfo DummyPRI;
     
-    KillerPC = KFPlayerController(Killer);
-    MAI = KFAIController_Monster(Killed);
-    
-    if( KillerPC != None && MAI != None && KFPawn_Monster(MAI.Pawn).bLargeZED )
-    {
-        Index = DummyPlayerPRIs.Find('OriginalPRI', KFPlayerReplicationInfo(KillerPC.PlayerReplicationInfo));
-        if( Index != INDEX_NONE )
-        {
-            DummyPRI = DummyPlayerPRIs[Index].DummyPRI;
-            DummyPRI.CurrentPerkClass = KFPlayerReplicationInfo(KillerPC.PlayerReplicationInfo).CurrentPerkClass;
-            DummyPRI.bForceNetUpdate = true;
-            DummyPRI.bNetDirty = true;
-            
-            foreach WorldInfo.AllControllers(class'KFPlayerController', PC)
-            {
-                if( PC != KillerPC && GetPlayerConfig(PC.PlayerReplicationInfo, Info) && Info.bEnableLargeKills )
-                    PC.ReceiveLocalizedMessage(class'KFLocalMessage_Game', KMT_Killed, MAI.PlayerReplicationInfo, DummyPRI, MAI.Pawn.Class);
-            }
-        }
-    }
-    
-    Super.ScoreKill(Killer, Killed);
-}
-
-final function SetMonsterDefaults(KFPawn_Monster P)
-{
-    local PlayerReplicationInfo MRI;
-
-    MRI = WorldInfo.Spawn(class'PlayerReplicationInfo');
-    MRI.bIsInactive = true;
-    MRI.PlayerName = P.GetLocalizedName();
-    P.PlayerReplicationInfo = MRI;
-    if( P.Controller != None )
-        P.Controller.PlayerReplicationInfo = MRI;
+    Destroy();
+    TimerHelper.Destroy();
 }
 
 defaultproperties

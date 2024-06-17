@@ -19,6 +19,7 @@ reliable server function ServerSetEnablePurchases(bool bEnalbe);
 function EnterZedTime();
 function CompleteZedTime();
 simulated function bool GetAllowSeasonalSkins();
+simulated event name GetSeasonalStateName();
 reliable server function ServerPause();
 reliable client function ClientWonGame( string MapName, byte Difficulty, byte GameLength, byte bCoop );
 reliable client function ClientGameOver(string MapName, byte Difficulty, byte GameLength, byte bCoop, byte FinalWaveNum);

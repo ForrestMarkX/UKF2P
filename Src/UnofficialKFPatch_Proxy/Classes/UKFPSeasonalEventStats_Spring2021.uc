@@ -53,9 +53,12 @@ simulated function OnBossDied()
 	}
 }
 
-simulated function OnZedKilled(class<KFPawn_Monster> MonsterClass, int Difficulty, class<DamageType> DT)
+simulated function OnZedKilled(class<KFPawn_Monster> MonsterClass, int Difficulty, class<DamageType> DT, bool bKiller)
 {
 	local int ObjIdx;
+    
+    if( !bKiller )
+        return;
 
 	ObjIdx = 2;
 	if( bObjectiveIsValidForMap[ObjIdx] != 0 && ClassIsChildOf(MonsterClass, class'KFPawn_ZedDAR') )

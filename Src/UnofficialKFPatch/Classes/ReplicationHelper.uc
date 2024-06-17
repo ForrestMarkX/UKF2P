@@ -74,9 +74,11 @@ struct FCompressedDamNumber
     var class<KFDamageType> Type;
     var class<KFPawn_Monster> Monster;
 };
-var repretry repnotify FCompressedDamNumber DamageNumbers[`MAX_DAMAGE_NUMS];
+var repnotify FCompressedDamNumber DamageNumbers[`MAX_DAMAGE_NUMS];
 var transient FCompressedDamNumber DamageNumbersRecieved[`MAX_DAMAGE_NUMS];
 var int NextDamageNumberIndex;
+
+var transient PerkAvailableData PerksAvailableData;
 
 replication
 {
@@ -600,78 +602,11 @@ simulated function bool CheckDoshSpam()
     return false;
 }
 
-simulated exec function TossMoney(int Amount)
+simulated function TossMoney(optional int Amount)
 {
     if( CheckDoshSpam() )
         return;
 	ServerThrowMoney(Amount == 0 ? UKFPInteraction.DoshThrowAmt : Amount);
-}
-
-simulated function bool ExecuteCommand(string Command)
-{
-	local int i, j, k;
-	local string Cmd,S,FirstEntry,LastEntry;
-    local array<string> Args, Commands;
-	local LocalPlayer LP;
-    
-	if( WorldInfo.NetMode == NM_DedicatedServer || (WorldInfo.NetMode == NM_ListenServer && !KFPC.IsLocalPlayerController()) )
-		return false;
-	
-	LP = LocalPlayer(KFPC.Player);
-    i = InStr(Command, "|");
-    if( i != INDEX_NONE )
-	{
-		ParseStringIntoArray(Command, Commands, "|", true);
-		bDoNotSaveConsoleHistory = true;
-		for( i=0; i<Commands.Length; i++ )
-			LP.ViewportClient.ViewportConsole.ConsoleCommand(`Trim(Commands[i]));
-		bDoNotSaveConsoleHistory = false;
-		return true;
-	}
-        
-	i = InStr(Command," ");
-	if( i==-1 )
-		Cmd = Locs(Command);
-	else
-	{
-		Cmd = Locs(Left(Command,i));
-        
-        S = Mid(Command,i+1);
-        Args = SplitString(S, " ");
-	}
-    
-    for( i=0; i<Args.Length; i++ )
-    {
-        FirstEntry = Left(Args[i], 1);
-        if( FirstEntry == "\"" || FirstEntry == "'" )
-        {
-            for( j=i; j<Args.Length; j++ )
-            {
-                LastEntry = Right(Args[j], 1);
-                if( (FirstEntry == "\"" && LastEntry == "\"") || (FirstEntry == "'" && LastEntry == "'") )
-                {
-                    for( k=j; k>i; k-- )
-                    {
-                        Args[i] @= Args[k];
-                        Args.Remove(k, 1);
-                    }
-                    
-                    if( FirstEntry == "\"" )
-                        Args[i] = Repl(Args[i], "\"", "");
-                    else if( FirstEntry == "'" )
-                        Args[i] = Repl(Args[i], "'", "");
-                }
-            }
-        }
-    }
-    
-    if( Cmd ~= "TossMoney" )
-	{
-        TossMoney(Args.Length > 0 ? int(Args[0]) : 0);
-		return true;
-	}
-	
-	return false;
 }
 
 static function string StripHTMLFromString(string S)
@@ -712,7 +647,7 @@ static function string StripHTMLFromString(string S)
     Index = InStr(S, "<font", false, true);
     while( Index != INDEX_NONE )
     {
-        Index2 = InStr(S, ">", false, true);
+        Index2 = InStr(S, ">", false, true, Index);
         if( Index2 != INDEX_NONE )
         {
             FontSect = Mid(S, Index, Index2-Index);
@@ -736,7 +671,7 @@ static function string StripHTMLFromString(string S)
     Index = InStr(S, "<img", false, true);
     while( Index != INDEX_NONE )
     {
-        Index2 = InStr(S, ">", false, true);
+        Index2 = InStr(S, ">", false, true, Index);
         if( Index2 != INDEX_NONE )
         {
             S = Left(S,Index)$Mid(S,Index2+1);
@@ -748,7 +683,7 @@ static function string StripHTMLFromString(string S)
     Index = InStr(S, "<p", false, true);
     while( Index != INDEX_NONE )
     {
-        Index2 = InStr(S, ">", false, true);
+        Index2 = InStr(S, ">", false, true, Index);
         if( Index2 != INDEX_NONE )
         {
             S = Left(S,Index)$Mid(S,Index2+1);
@@ -760,7 +695,7 @@ static function string StripHTMLFromString(string S)
     Index = InStr(S, "<span", false, true);
     while( Index != INDEX_NONE )
     {
-        Index2 = InStr(S, ">", false, true);
+        Index2 = InStr(S, ">", false, true, Index);
         if( Index2 != INDEX_NONE )
         {
             S = Left(S,Index)$Mid(S,Index2+1);
@@ -772,7 +707,7 @@ static function string StripHTMLFromString(string S)
     Index = InStr(S, "<textformat", false, true);
     while( Index != INDEX_NONE )
     {
-        Index2 = InStr(S, ">", false, true);
+        Index2 = InStr(S, ">", false, true, Index);
         if( Index2 != INDEX_NONE )
         {
             S = Left(S,Index)$Mid(S,Index2+1);
@@ -1068,7 +1003,7 @@ reliable client function ClientRecieveImportantData(bool bTraderMenu, byte MaxPl
     
     bImportantDataRecieved = true;
     
-    if( FunctionProxy != None || MainRepInfo.FunctionProxy != None )
+    if( FunctionProxy != None || (MainRepInfo != None && MainRepInfo.FunctionProxy != None) )
         return;
         
     if( default.StaticReference == None )
