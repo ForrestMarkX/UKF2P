@@ -5,6 +5,7 @@ Class xVotingHandler extends Info
 struct FGameModeOption
 {
 	var string GameName,GameShortName,GameClass,Mutators,Options,Prefix;
+    var byte CycleIndex;
 };
 var config array<FGameModeOption> GameModes;
 var config int LastVotedGameInfo,MaxMapsOnList;
@@ -51,7 +52,7 @@ function PostBeginPlay()
             if( MaxMapsOnList>0 && class'KFGameInfo'.default.GameMapCycles[i].Maps[j]~=MapFile ) // If we limit the maps count, remove current map.
                 continue;
                 
-            MapName = class'KFGameInfo'.default.GameMapCycles[i].Maps[j];
+            MapName = `Trim(class'KFGameInfo'.default.GameMapCycles[i].Maps[j]);
             if( Len(MapName) <= 0 )
                 continue;
                 
@@ -65,6 +66,7 @@ function PostBeginPlay()
             Maps[z].NumPlays = NumPl;
             Maps[z].History = n;
             Maps[z].MapTitle = S;
+            Maps[z].CycleIndex = i;
             ++z;
         }
     }
@@ -179,6 +181,9 @@ function NotifyLogin(Controller NewPlayer)
 
 function ClientDownloadInfo( xVotingReplication V )
 {
+    local int i;
+    local string Options;
+    
 	if( bMapvoteHasEnded )
 	{
 		V.DownloadStage = 255;
@@ -190,16 +195,28 @@ function ClientDownloadInfo( xVotingReplication V )
 	case 0: // Game modes.
 		if( V.DownloadIndex>=GameModes.Length )
 			break;
-        V.ClientReceiveGame(V.DownloadIndex,GameModes[V.DownloadIndex].GameName,GameModes[V.DownloadIndex].GameShortName,GameModes[V.DownloadIndex].Prefix,"?CurrentWeekly="$WorldInfo.Game.GetIntOption(GameModes[V.DownloadIndex].Options, "CurrentWeekly", KFGameEngine(class'Engine'.static.GetEngine()).GetWeeklyEventIndex())$"?Game="$WorldInfo.Game.ParseOption(GameModes[V.DownloadIndex].Options, "Game"));
+        Options = "?CurrentWeekly="$WorldInfo.Game.GetIntOption(GameModes[V.DownloadIndex].Options, "CurrentWeekly", KFGameEngine(class'Engine'.static.GetEngine()).GetWeeklyEventIndex())$"?Game="$WorldInfo.Game.ParseOption(GameModes[V.DownloadIndex].Options, "Game");
+        V.ClientReceiveGame(V.DownloadIndex,GameModes[V.DownloadIndex].GameName,GameModes[V.DownloadIndex].GameShortName,GameModes[V.DownloadIndex].Prefix,GameModes[V.DownloadIndex].CycleIndex,Options);
 		++V.DownloadIndex;
 		return;
 	case 1: // Maplist.
 		if( V.DownloadIndex>=Maps.Length )
 			break;
-		if( Maps[V.DownloadIndex].MapTitle=="" )
-			V.ClientReceiveMap(V.DownloadIndex,Maps[V.DownloadIndex].MapName,Maps[V.DownloadIndex].UpVotes,Maps[V.DownloadIndex].DownVotes,Maps[V.DownloadIndex].Sequence,Maps[V.DownloadIndex].NumPlays);
-		else V.ClientReceiveMap(V.DownloadIndex,Maps[V.DownloadIndex].MapName,Maps[V.DownloadIndex].UpVotes,Maps[V.DownloadIndex].DownVotes,Maps[V.DownloadIndex].Sequence,Maps[V.DownloadIndex].NumPlays,Maps[V.DownloadIndex].MapTitle);
-		++V.DownloadIndex;
+            
+        for( i=0; i<5; i++ )
+        {
+            if( Maps[V.DownloadIndex].MapTitle=="" )
+                V.ClientReceiveMap(V.DownloadIndex,Maps[V.DownloadIndex].MapName,Maps[V.DownloadIndex].UpVotes,Maps[V.DownloadIndex].DownVotes,Maps[V.DownloadIndex].Sequence,Maps[V.DownloadIndex].NumPlays,Maps[V.DownloadIndex].CycleIndex);
+            else V.ClientReceiveMap(V.DownloadIndex,Maps[V.DownloadIndex].MapName,Maps[V.DownloadIndex].UpVotes,Maps[V.DownloadIndex].DownVotes,Maps[V.DownloadIndex].Sequence,Maps[V.DownloadIndex].NumPlays,Maps[V.DownloadIndex].CycleIndex,Maps[V.DownloadIndex].MapTitle);
+            
+            V.DownloadIndex++;
+            if( V.DownloadIndex>=Maps.Length )
+            {
+                V.DownloadStage++;
+                break;
+            }
+		}
+        
 		return;
 	case 2: // Current votes.
 		if( V.DownloadIndex>=ActiveVotes.Length )
@@ -236,6 +253,11 @@ function ClientCastVote( xVotingReplication V, int GameIndex, int MapIndex, bool
 		V.PlayerOwner.ClientMessage("Error: Can't vote that map (wrong Prefix to that game mode)!");
 		return;
 	}
+    if( Maps[MapIndex].CycleIndex != GameModes[GameIndex].CycleIndex )
+    {
+        V.PlayerOwner.ClientMessage("Error: Can't vote that map (wrong Cycle Index to that game mode)!");
+        return;
+    }
 	if( V.CurrentVote[0]>=0 )
 		AddVote(-1,V.CurrentVote[1],V.CurrentVote[0]);
 	V.CurrentVote[0] = GameIndex;
@@ -401,7 +423,7 @@ function SwitchToLevel( int GameIndex, int MapIndex, bool bAdminForce )
 	S = Maps[MapIndex].MapName$" ("$GameModes[GameIndex].GameName$")";
 	for( i=(ActiveVoters.Length-1); i>=0; --i )
 	{
-		KFPlayerController(ActiveVoters[i].PlayerOwner).ShowConnectionProgressPopup(PMT_AdminMessage,"Switching to level:",S);
+		ActiveVoters[i].PlayerOwner.ShowConnectionProgressPopup(PMT_AdminMessage,"Switching to level:",S);
 		ActiveVoters[i].ClientNotifyVoteWin(GameIndex,MapIndex,bAdminForce);
 	}
 	
@@ -440,7 +462,7 @@ function ParseCommand( string Cmd, PlayerController PC )
 		CRI.WriteToChat("!RemoveMap <Mapname> - Remove map from mapvote");
 	}
 	else if( Cmd~="MapVote" )
-		ShowMapVote(PC);
+		ShowMapVote(PC, true);
 	else if( !PC.PlayerReplicationInfo.bAdmin && !PC.IsA('MessagingSpectator') )
 		return;
 	else if( Left(Cmd,7)~="AddMap " )
@@ -457,7 +479,7 @@ function ParseCommand( string Cmd, PlayerController PC )
 		else CRI.WriteToChat("Map '"$Cmd$"' not found!");
 	}
 }
-function ShowMapVote( PlayerController PC )
+function ShowMapVote( PlayerController PC, optional bool bFromChatCommand )
 {
 	local int i;
 
@@ -466,7 +488,7 @@ function ShowMapVote( PlayerController PC )
 	for( i=(ActiveVoters.Length-1); i>=0; --i )
 		if( ActiveVoters[i].PlayerOwner==PC )
 		{
-			ActiveVoters[i].ClientOpenMapvote(false);
+			ActiveVoters[i].ClientOpenMapvote(false, bFromChatCommand);
 			return;
 		}
 }

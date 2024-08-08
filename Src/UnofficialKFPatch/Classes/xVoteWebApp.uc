@@ -125,7 +125,8 @@ function handleMapVotes(WebAdminQuery q)
 			class'xVotingHandler'.Default.GameModes[i].Mutators = q.request.getVariable("MM",class'xVotingHandler'.Default.GameModes[i].GameName);
 			class'xVotingHandler'.Default.GameModes[i].Options = q.request.getVariable("OP",class'xVotingHandler'.Default.GameModes[i].GameName);
 			class'xVotingHandler'.Default.GameModes[i].Prefix = q.request.getVariable("PF",class'xVotingHandler'.Default.GameModes[i].GameName);
-			class'xVotingHandler'.Static.StaticSaveConfig();
+			class'xVotingHandler'.Default.GameModes[i].CycleIndex = byte(q.request.getVariable("CI",class'xVotingHandler'.Default.GameModes[i].GameName));
+            class'xVotingHandler'.Static.StaticSaveConfig();
 		}
 		EditSettingLine = -1;
 	}
@@ -172,18 +173,19 @@ function handleMapVotes(WebAdminQuery q)
 			AddInLineEditbox(q,class'xVotingHandler'.Default.GameModes[i].Mutators,MaxInt,"MM","List of mutators to run along with this game option (separated with commas)");
 			AddInLineEditbox(q,class'xVotingHandler'.Default.GameModes[i].Options,MaxInt,"OP","List of options to run along with this game option (separated with question mark)");
 			AddInLineEditbox(q,class'xVotingHandler'.Default.GameModes[i].Prefix,MaxInt,"PF","Maps prefix to filter out maps not wanted for this game mode");
-			q.response.SendText("</td><td><input class=\"button\" type=\"submit\" name=\"edit\" value=\"Save\"><input class=\"button\" type=\"submit\" name=\"edit"$i$"\" value=\"Delete\"></td></tr>");
+			AddConfigEditbox(q,"",class'xVotingHandler'.Default.GameModes[i].CycleIndex,3,"CI","What map cycle index to use for the vote",true,1.f,true,,255.f);
+            q.response.SendText("</td><td><input class=\"button\" type=\"submit\" name=\"edit\" value=\"Save\"><input class=\"button\" type=\"submit\" name=\"edit"$i$"\" value=\"Delete\"></td></tr>");
 		}
-		else
-		{
-			q.response.SendText("<tr><td>"$class'xVotingHandler'.Default.GameModes[i].GameName$
-								"</td><td>"$class'xVotingHandler'.Default.GameModes[i].GameShortName$
-								"</td><td>"$class'xVotingHandler'.Default.GameModes[i].GameClass$
-								"</td><td>"$class'xVotingHandler'.Default.GameModes[i].Mutators$
-								"</td><td>"$class'xVotingHandler'.Default.GameModes[i].Options$
-								"</td><td>"$class'xVotingHandler'.Default.GameModes[i].Prefix$
-								"</td><td><input class=\"button\" type=\"submit\" name=\"edit"$i$"\" value=\"Edit\"><input class=\"button\" type=\"submit\" name=\"edit"$i$"\" value=\"Delete\"></td></tr>");
-		}
+        else
+        {
+            q.response.SendText("<tr><td>"$class'xVotingHandler'.Default.GameModes[i].GameName$
+                                "</td><td>"$class'xVotingHandler'.Default.GameModes[i].GameShortName$
+                                "</td><td>"$class'xVotingHandler'.Default.GameModes[i].GameClass$
+                                "</td><td style=\"word-break:break-all;\">"$class'xVotingHandler'.Default.GameModes[i].Mutators$
+                                "</td><td style=\"word-break:break-all;\">"$class'xVotingHandler'.Default.GameModes[i].Options$
+                                "</td><td>"$class'xVotingHandler'.Default.GameModes[i].CycleIndex$
+                                "</td><td><input class=\"button\" type=\"submit\" name=\"edit"$i$"\" value=\"Edit\"><input class=\"button\" type=\"submit\" name=\"edit"$i$"\" value=\"Delete\"></td></tr>");
+        }
 	}
 	q.response.SendText("<tr><td><input class=\"button\" type=\"submit\" name=\"edit\" value=\"New\"></td></tr>");
 	q.response.SendText("</tbody></table></form>");

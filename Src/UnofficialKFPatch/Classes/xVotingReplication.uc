@@ -5,11 +5,13 @@ Class xVotingReplication extends ReplicationInfo;
 struct FGameTypeEntry
 {
 	var string GameName,GameShortName,Prefix,Options;
+    var byte CycleIndex;
 };
 struct FMapEntry
 {
 	var string MapName,MapTitle;
 	var int UpVotes,DownVotes,Sequence,NumPlays,History;
+    var byte CycleIndex;
 };
 struct FVotedMaps
 {
@@ -24,14 +26,14 @@ var array<FGameTypeEntry> GameModes;
 var array<FMapEntry> Maps;
 var array<FVotedMaps> ActiveVotes;
 
-var PlayerController PlayerOwner;
+var KFPlayerController PlayerOwner;
 var xVotingHandler VoteHandler;
 var byte DownloadStage;
 var int DownloadIndex,ClientCurrentGame;
 var int CurrentVote[2];
 var transient float RebunchTimer,NextVoteTimer,NextReplicationTick;
 var bool bClientConnected,bAllReceived,bClientRanked;
-var transient bool bListDirty;
+var transient bool bListDirty, bFromChatCommand, bWantsToShowRank;
 var xVotingReplication StaticReference;
 var FAdvancedTopVotes CurrentAdvancedTopVotes;
 
@@ -39,7 +41,7 @@ simulated function PostBeginPlay()
 {
     default.StaticReference = self;
     xVotingReplication(`FindDefaultObject(class'xVotingReplication')).StaticReference = self;
-	PlayerOwner = PlayerController(Owner);
+	PlayerOwner = KFPlayerController(Owner);
 	RebunchTimer = WorldInfo.TimeSeconds+5.f;
 }
 function Tick( float Delta )
@@ -77,20 +79,21 @@ unreliable client simulated function ClientVerify()
 simulated function PlayerController GetPlayer()
 {
 	if( PlayerOwner==None )
-		PlayerOwner = GetALocalPlayerController();
+		PlayerOwner = KFPlayerController(GetALocalPlayerController());
 	return PlayerOwner;
 }
-reliable client simulated function ClientReceiveGame( int Index, string GameName, string GameSName, string Prefix, string Options )
+reliable client simulated function ClientReceiveGame( int Index, string GameName, string GameSName, string Prefix, byte CycleIndex, string Options )
 {
 	if( GameModes.Length<=Index )
 		GameModes.Length = Index+1;
 	GameModes[Index].GameName = GameName;
 	GameModes[Index].GameShortName = GameSName;
 	GameModes[Index].Prefix = Prefix;
+	GameModes[Index].CycleIndex = CycleIndex;
 	GameModes[Index].Options = Options;
 	bListDirty = true;
 }
-reliable client simulated function ClientReceiveMap( int Index, string MapName, int UpVote, int DownVote, int Sequence, int NumPlays, optional string MapTitle )
+reliable client simulated function ClientReceiveMap( int Index, string MapName, int UpVote, int DownVote, int Sequence, int NumPlays, int CycleIndex, optional string MapTitle )
 {
 	if( Maps.Length<=Index )
 		Maps.Length = Index+1;
@@ -100,6 +103,7 @@ reliable client simulated function ClientReceiveMap( int Index, string MapName, 
 	Maps[Index].DownVotes = DownVote;
 	Maps[Index].Sequence = Sequence;
 	Maps[Index].NumPlays = NumPlays;
+    Maps[Index].CycleIndex = CycleIndex;
 	bListDirty = true;
 }
 function int MapVoteSort(FVotedMaps A, FVotedMaps B)
@@ -211,8 +215,10 @@ reliable client simulated function ClientNotifyVoteWin( int GameIndex, int MapIn
 		MapVoteMsg(Maps[MapIndex].MapTitle$" ("$GameModes[GameIndex].GameShortName$") has won mapvote, switching map...");
 	else MapVoteMsg("A map has won mapvote, switching map...");
 }
-reliable client simulated function ClientOpenMapvote( optional bool bShowRank )
+reliable client simulated function ClientOpenMapvote( optional bool bShowRank, optional bool bChatCommand )
 {
+    bFromChatCommand = bChatCommand;
+    bWantsToShowRank = bShowRank;
     if( bAllReceived )
         SetTimer(0.01f,false,'DelayedOpenMapvote'); // To prevent no-mouse issue when local server host opens it from chat.
     else SetTimer(0.1f,true,'WaitForMaps');
@@ -230,7 +236,66 @@ simulated function WaitForMaps()
 }
 simulated function DelayedOpenMapvote()
 {
-	KFPlayerController(PlayerOwner).ClientShowPostGameMenu();
+    if( bFromChatCommand )
+    {
+        PlayerOwner.MyGFxManager.OpenMenu(UI_PostGame, true);
+        PlayerOwner.MyHUD.bShowHUD = false;
+
+        HideUIElements();
+        `TimerHelper.SetTimer(0.1f, false, 'HideUIElements', self);
+        `TimerHelper.SetTimer(0.25f, false, 'HideUIElements', self);
+        `TimerHelper.SetTimer(1.f, false, 'HideUIElements', self);
+        
+        `TimerHelper.SetTimer(WorldInfo.DeltaSeconds, false, 'WaitForMenuClose', self);
+        
+        bFromChatCommand = false;
+    }
+    else PlayerOwner.ClientShowPostGameMenu();
+    
+    if( bWantsToShowRank )
+    {
+        PlayerOwner.MyGFxManager.DelayedOpenPopup(EConfirmation, EDPPID_Misc, "Map Review", "Did you like this map?", "Like", "Dislike", LikeMapCallback, DislikeMapCallback);
+        bWantsToShowRank = false;
+    }
+}
+simulated function WaitForMenuClose()
+{
+    if( PlayerOwner.MyGFxManager.CurrentMenuIndex != UI_PostGame )
+        ResetUIElements();
+    else `TimerHelper.SetTimer(WorldInfo.DeltaSeconds, false, 'WaitForMenuClose', self);
+}
+simulated function ResetUIElements()
+{
+    PlayerOwner.MyGFxManager.PartyWidget.SetVisible(true);
+    PlayerOwner.MyGFxManager.BackendStatusIndicatorWidget.SetVisible(true);
+    
+    `TimerHelper.ClearTimer('HideUIElements', self);
+    `TimerHelper.SetTimer(1.f, false, 'ResetMapText', self);
+}
+simulated function HideUIElements()
+{
+    PlayerOwner.MyGFxManager.PartyWidget.SetVisible(false);
+    PlayerOwner.MyGFxManager.BackendStatusIndicatorWidget.SetVisible(false);
+    
+    `TimerHelper.ClearTimer('ResetMapText', self);
+    
+    PlayerOwner.MyGFxManager.PostGameMenu.GetObject("nextMapText").SetVisible(false);
+    PlayerOwner.MyGFxManager.PostGameMenu.GetObject("nextMapTimerText").SetVisible(false);
+}
+simulated function ResetMapText()
+{
+    PlayerOwner.MyGFxManager.PostGameMenu.GetObject("nextMapText").SetVisible(true);
+    PlayerOwner.MyGFxManager.PostGameMenu.GetObject("nextMapTimerText").SetVisible(true);
+}
+
+function LikeMapCallback()
+{
+    ServerRankMap(true);
+}
+
+function DislikeMapCallback()
+{
+    ServerRankMap(false);
 }
 
 reliable server simulated function ServerCastVote( int GameIndex, int MapIndex, bool bAdminForce )

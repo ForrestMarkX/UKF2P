@@ -35,6 +35,9 @@ stripped final function context(KFGFxMenu_PostGameReport) Callback_MapVoteEx(int
     }
     else 
     {
+        if( RepInfo.GameModes[MapVoteIndex].GameName ~= " " )
+            return;
+            
         MVH.CurrentPageIndex = MapVoteIndex+1;
         MapVoteContainer.ActionScriptVoid("pageSelected");
         ResetSelection();

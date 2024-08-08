@@ -33,12 +33,14 @@ stripped function context(KFGFxPostGameContainer_MapVote.LocalizeText) LocalizeT
 stripped final function context(KFGFxPostGameContainer_MapVote) SetMapOptionsEx()
 {
 	local GFxObject MapList, MapObject;
-	local int i, WeeklyIndex;
+	local int i, j, WeeklyIndex;
     local xVotingReplication RepInfo;
     local name MapName;
-    local string Options;
-	local bool IsWeeklyMode, IsBrokenTrader, IsBossRush, IsGunGame, bShouldSkipMaps;
+    local string Options, MapString, Desirability;
+	local bool IsWeeklyMode, IsBrokenTrader, IsBossRush, IsGunGame, bShouldSkipMaps, IsHeader;
     local class<GameInfo> GC;
+    local float MapDesirability;
+    local Color DislikedColor, LikedColor;
     
     RepInfo = class'xVotingReplication'.default.StaticReference;
     if( RepInfo == None )
@@ -50,15 +52,28 @@ stripped final function context(KFGFxPostGameContainer_MapVote) SetMapOptionsEx(
         for( i=0; i<RepInfo.GameModes.Length; i++ )
         {
             MapObject = CreateObject("Object");
-            MapObject.SetString("label", RepInfo.GameModes[i].GameName @ "(" $ RepInfo.GameModes[i].GameShortName $ ")");
+            
+            IsHeader = RepInfo.GameModes[i].GameName ~= " ";
+            
+            MapObject.SetBool("isHeader", IsHeader);
+            MapObject.SetBool("isSelectableHeader", !IsHeader);
+            
+            if( IsHeader )
+                MapString = "<b><font color=\"#83C3FC\"><p align=\"center\">" $ RepInfo.GameModes[i].GameShortName $ "</b></p></font>";
+            else MapString = RepInfo.GameModes[i].GameName;
+            
+            MapObject.SetString("label", MapString);
             MapObject.SetInt("mapindex", i);
-            MapObject.SetBool("isGamemodeSelection", true);
+            MapObject.SetBool("isGamemodeSelection", !IsHeader);
             MapObject.SetString("textColor", "0xFBD2BF");
             MapList.SetElementObject(i, MapObject);
         }
     }
     else
     {
+        DislikedColor = MakeColor(255, 138, 138);
+        LikedColor = MakeColor(138, 255, 138);
+        
         GC = GetPC().WorldInfo.GRI.GameClass;
         if( GC == None )
             GC = class'GameInfo';
@@ -73,18 +88,46 @@ stripped final function context(KFGFxPostGameContainer_MapVote) SetMapOptionsEx(
         
         bShouldSkipMaps = IsWeeklyMode && (IsBrokenTrader || IsBossRush || IsGunGame);
         
+        j = 0;
         for( i=0; i<RepInfo.Maps.Length; i++ )
         {
             MapName = name(RepInfo.Maps[i].MapName);
             if( (bShouldSkipMaps && (MapName == MapBiolapse || MapName == MapNightmare || MapName == MapPowerCore || MapName == MapDescent || MapName == MapKrampus)) || (IsWeeklyMode && IsBossRush && MapName == MapSteam) )
                 continue;
                 
+            if( RepInfo.Maps[i].CycleIndex != RepInfo.GameModes[class'MapVoteHelper'.default.StaticReference.CurrentPageIndex-1].CycleIndex )
+                continue;
+                
+            IsHeader = !(Left(RepInfo.Maps[i].MapName, 3) ~= "KF-");
+                
+            MapString = class'KFCommon_LocalizedStrings'.static.GetFriendlyMapName(RepInfo.Maps[i].MapName);
+            if( IsHeader )
+            {
+                MapString = "<b><p align=\"center\">" $ MapString $ "</p></b>";
+                Desirability = "";
+            }
+            else
+            {
+                if( RepInfo.Maps[i].NumPlays == 0 )
+                    Desirability = "<font color=\"#FCF2A4\"><b>** NEW **</font></b>";
+                else
+                {
+                    MapDesirability = RepInfo.Maps[i].UpVotes + RepInfo.Maps[i].DownVotes;
+                    if( MapDesirability == 0 )
+                        MapDesirability = 1.f;
+                    else MapDesirability = float(RepInfo.Maps[i].UpVotes) / MapDesirability;
+                    
+                    Desirability = "<font color=\""$class'WebAdminUtils'.static.ColorToHTMLColor(LerpColor(DislikedColor, LikedColor, MapDesirability))$"\">" $ int(MapDesirability * 100.f) $ "% (" $ RepInfo.Maps[i].UpVotes $ "/" $ (RepInfo.Maps[i].UpVotes + RepInfo.Maps[i].DownVotes) $ ")</p></font>";
+                }
+            }
+                
 			MapObject = CreateObject("Object");
-			MapObject.SetString("label", class'KFCommon_LocalizedStrings'.static.GetFriendlyMapName(RepInfo.Maps[i].MapName) );
+			MapObject.SetString("label", MapString);
 			MapObject.SetString("mapSource", GetMapSource(RepInfo.Maps[i].MapName) );
+			MapObject.SetString("desirability", Desirability);
 			MapObject.SetInt("mapindex", i);
-            MapObject.SetBool("isHeader", !(Left(RepInfo.Maps[i].MapName, 3) ~= "KF-"));
-			MapList.SetElementObject(i, MapObject);
+            MapObject.SetBool("isHeader", IsHeader);
+			MapList.SetElementObject(j++, MapObject);
         }
     }
             

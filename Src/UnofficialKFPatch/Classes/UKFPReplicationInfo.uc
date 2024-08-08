@@ -1709,7 +1709,7 @@ function NotifyWaveUpdated()
     
     WorldInfo.ForceGarbageCollection();
 
-    if( KFGIE != None && KFGRIE != None )
+    if( KFGIE != None && KFGRIE != None && !KFGIE.IsUnrankedGame() )
     {
         if( !KFGRI.bWaveIsActive )
             bStartSpecialWave = TrySetNextWaveSpecial();
@@ -1734,7 +1734,7 @@ function NotifyWaveEnded()
 {
     local int i;
     
-    if( KFGIE != None && KFGRI.WaveNum == 1 && !KFGIE.bIsInHoePlus && (Caps(CurrentAllowedOutbreaks) != default.DefaultAllowedOutbreaks || Caps(CurrentAllowedSpecialWaves) != default.DefaultAllowedSpecialWaves) )
+    if( KFGIE != None && !KFGIE.IsUnrankedGame() && KFGRI.WaveNum == 1 && !KFGIE.bIsInHoePlus && (Caps(CurrentAllowedOutbreaks) != default.DefaultAllowedOutbreaks || Caps(CurrentAllowedSpecialWaves) != default.DefaultAllowedSpecialWaves) )
     {
         KFGIE.SpecialWaveStart = 2;
         KFGIE.OutbreakWaveStart = 2;
