@@ -63,7 +63,7 @@ stripped function context(KFGFxMenu_PostGameReport.Callback_TopMapClicked) Callb
 stripped final function context(KFGFxMenu_PostGameReport) Callback_TopMapClickedEx(int MapVoteIndex, bool bDoubleClick)
 {
     local string SearchString;
-	local int GameIndex, SearchIndex;
+	local int GameIndex, SearchIndex, i;
     local xVotingReplication RepInfo;
     
     RepInfo = class'xVotingReplication'.default.StaticReference;
@@ -104,5 +104,11 @@ stripped final function context(KFGFxMenu_PostGameReport) Callback_TopMapClicked
 			break;
 	}
     
-    RepInfo.ServerCastVote(GameIndex, RepInfo.Maps.Find('MapName', SearchString), false);
+    for( i=0; i<RepInfo.Maps.Length; i++ )
+    {
+        if( RepInfo.Maps[i].CycleIndex == RepInfo.GameModes[GameIndex].CycleIndex && RepInfo.Maps[i].MapName ~= SearchString )
+            break;
+    }
+    
+    RepInfo.ServerCastVote(GameIndex, i, false);
 }
