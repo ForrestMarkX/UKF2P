@@ -249,7 +249,7 @@ simulated function ReplicatedEvent(name VarName)
             S $= "<font color=\"#81ABC0\">Quarterpounds</font> are "$(DynamicMOTD.bNoQPSpawns ? "<font color=\"#FF0000\">Disabled</font>" : "<font color=\"#00FF00\">Enabled</font>")$"!\n";
             S $= "<font color=\"#81ABC0\">Gas Crawlers</font> are "$(DynamicMOTD.bNoGasCrawlers ? "<font color=\"#FF0000\">Disabled</font>" : "<font color=\"#00FF00\">Enabled</font>")$"!\n";
             S $= "<font color=\"#81ABC0\">Game Conductor</font> is "$(DynamicMOTD.bBypassGameConductor ? "<font color=\"#FF0000\">Disabled</font>" : "<font color=\"#00FF00\">Enabled</font>")$"!\n";
-            S $= "<font color=\"#81ABC0\">ZED Time</font> is "$(DynamicMOTD.bHasDisabledZEDTime ? "<font color=\"#FF0000\">Enabled</font>" : "<font color=\"#FF0000\">Disabled</font>")$"!\n";
+            S $= "<font color=\"#81ABC0\">ZED Time</font> is "$(DynamicMOTD.bHasDisabledZEDTime ? "<font color=\"#FF0000\">Disabled</font>" : "<font color=\"#FF0000\">Enabled</font>")$"!\n";
             if( DynamicMOTD.bShouldDisableUpgrades )
                 S $= "<font color=\"#81ABC0\">Weapon Upgrades</font> are <font color=\"#FF0000\">Disabled</font>!\n";
             if( DynamicMOTD.bShouldDisableCrossPerk )
