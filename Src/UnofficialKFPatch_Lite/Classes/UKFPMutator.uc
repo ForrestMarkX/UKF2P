@@ -20,10 +20,10 @@ var const private bool bWhitelistBypass, bIgnoreWhitelist;
 var config byte ForcedMaxPlayers, MaxMonsters, FakePlayers;
 var config float DoshKillMultiplier, SpawnRateMultiplier, WaveCountMultiplier;
 var config int PickupLifespan, CurrentNetDriverIndex, MaxDoshSpamAmount, iConfigVersion;
-var config bool bAllowDynamicMOTD, bDropAllWepsOnDeath, bServerHidden, bBroadcastPickups, bNoEDARSpawns, bNoQPSpawns, bNoGasCrawlers, bNoRageSpawns, bDisableGameConductor;
+var config bool bDisableZEDTime, bAllowDynamicMOTD, bDropAllWepsOnDeath, bServerHidden, bBroadcastPickups, bNoEDARSpawns, bNoQPSpawns, bNoGasCrawlers, bNoRageSpawns, bDisableGameConductor;
 var config string AllowedBosses, AllowedOutbreaks, AllowedSpecialWaves, AllowedPerks;
 
-var transient bool bCurrentAllowDynamicMOTD, bServerDropAllWepsOnDeath, bCleanedUp, bToBroadcastPickups, bForceDisableEDARs, bForceDisableQPs, bForceDisableGasCrawlers, bForceDisableRageSpawns, bBypassGameConductor, bForceResetInterpActors;
+var transient bool bHasDisabledZEDTime, bCurrentAllowDynamicMOTD, bServerDropAllWepsOnDeath, bCleanedUp, bToBroadcastPickups, bForceDisableEDARs, bForceDisableQPs, bForceDisableGasCrawlers, bForceDisableRageSpawns, bBypassGameConductor, bForceResetInterpActors;
 var transient int CurrentPickupLifespan, CurrentMaxDoshSpamAmount;
 var transient float CurrentDoshKillMultiplier, CurrentSpawnRateMultiplier, CurrentWaveCountMultiplier;
 var transient string CurrentAllowedBosses, CurrentAllowedOutbreaks, CurrentAllowedSpecialWaves, CurrentAllowedPerks;
@@ -260,6 +260,7 @@ final function SetupMutator(const string Options)
     bServerDropAllWepsOnDeath = bool(KFGI.GetIntOption(Options, "DropAllWepsOnDeath", int(bDropAllWepsOnDeath)));
     CurrentMaxDoshSpamAmount = KFGI.GetIntOption(Options, "MaxDoshSpam", MaxDoshSpamAmount);
     bCurrentAllowDynamicMOTD = bool(KFGI.GetIntOption(Options, "UseDynamicMOTD", int(bAllowDynamicMOTD)));
+    bHasDisabledZEDTime = bool(KFGI.GetIntOption(Options, "DisableZEDTime", int(bDisableZEDTime)));
     
     CurrentAllowedBosses = KFGI.ParseOption(Options, "BossList");
     if( CurrentAllowedBosses == "" )
@@ -806,6 +807,8 @@ final function string GetServerMOTD(string MOTD)
             S $= "Gas Crawlers are Disabled!\n";
         if( bBypassGameConductor )
             S $= "Game Conductor is Disabled!\n";
+        if( bHasDisabledZEDTime )
+            S $= "ZED Time is Disabled!\n";
         S $= "Dosh Kill Scale = "$FormatFloat(CurrentDoshKillMultiplier)$"!\n";
         S $= "Spawn Rate Scale = "$FormatFloat(CurrentSpawnRateMultiplier)$"!\n";
         S $= "Wave Count Scale = "$FormatFloat(CurrentWaveCountMultiplier)$"!\n";
@@ -1289,6 +1292,18 @@ final function NotifyMatchStarted()
 		NetDriver.NetServerLobbyTickRate = FMax(NetDriver.default.NetServerLobbyTickRate, 5);
 		NetDriver.SaveConfig();
 	}
+}
+
+function ModifyZedTime( out float out_TimeSinceLastEvent, out float out_ZedTimeChance, out float out_Duration )
+{
+    Super.ModifyZedTime(out_TimeSinceLastEvent, out_ZedTimeChance, out_Duration);
+    
+    if( bHasDisabledZEDTime )
+    {
+        out_TimeSinceLastEvent = WorldInfo.TimeSeconds;
+        out_ZedTimeChance = 0.f;
+        out_Duration = 0.f;
+    }
 }
 
 final function TickActor(float DT)

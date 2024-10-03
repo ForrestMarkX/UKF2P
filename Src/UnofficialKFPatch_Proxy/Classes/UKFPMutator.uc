@@ -153,6 +153,8 @@ final function SetupMutator(const string Options)
     RepInfo.bShouldAllowDamagePopups = bool(KFGI.GetIntOption(Options, "AllowDamagePopups", int(RepInfo.bAllowDamagePopups)));
     RepInfo.bShouldDisableCustomLoadingScreen = bool(KFGI.GetIntOption(Options, "DisableCustomLoadingScreen", int(RepInfo.bDisableCustomLoadingScreen)));
     RepInfo.bShouldDisableTraderLocking = bool(KFGI.GetIntOption(Options, "DisableTraderLocking", int(RepInfo.bDisableTraderLocking)));
+    RepInfo.bHasDisabledRanking = bool(KFGI.GetIntOption(Options, "DisableMapRanking", int(RepInfo.bDisableMapRanking)));
+    RepInfo.bHasDisabledZEDTime = bool(KFGI.GetIntOption(Options, "DisableZEDTime", int(RepInfo.bDisableZEDTime)));
     /*RepInfo.bShouldAbsoluteTravel = bool(KFGI.GetIntOption(Options, "AbsoluteTravel", int(RepInfo.bAbsoluteTravel)));
     RepInfo.bShouldDisableCrossPerk = bool(KFGI.GetIntOption(Options, "DisableCrossPerk", int(RepInfo.bDisableCrossPerk)));
     RepInfo.bShouldDisableUpgrades = bool(KFGI.GetIntOption(Options, "DisableWeaponUpgrades", int(RepInfo.bDisableWeaponUpgrades)));*/
@@ -335,6 +337,18 @@ final function SetupMutator(const string Options)
         RepInfo.ReplicatedEvent('CurrentForcedSeasonalEventDate');
         RepInfo.ReplicatedEvent('bNoEventSkins');
         RepInfo.ReplicatedEvent('DynamicMOTD');
+    }
+}
+
+function ModifyZedTime( out float out_TimeSinceLastEvent, out float out_ZedTimeChance, out float out_Duration )
+{
+    Super.ModifyZedTime(out_TimeSinceLastEvent, out_ZedTimeChance, out_Duration);
+    
+    if( RepInfo.bHasDisabledZEDTime )
+    {
+        out_TimeSinceLastEvent = WorldInfo.TimeSeconds;
+        out_ZedTimeChance = 0.f;
+        out_Duration = 0.f;
     }
 }
 

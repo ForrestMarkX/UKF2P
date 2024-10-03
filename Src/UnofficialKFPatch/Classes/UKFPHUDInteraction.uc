@@ -1390,7 +1390,7 @@ exec function PingLocation()
     
     foreach KFPlayerOwner.TraceActors(Class'Actor', HitActor, HitLocation, HitNormal, TraceEnd, TraceStart, vect(8, 8, 8), HitInfo, KFPlayerOwner.TRACEFLAG_Bullet)
     {
-        if( KFPawn_Human(HitActor) != None || KFWeldableComponent(HitActor) != None || (KFPawn_Monster(HitActor) != None && (!KFPawn_Monster(HitActor).default.bLargeZed || ChatRep.CheckZEDCloaking(KFPawn_Monster(HitActor)))) || (KFPawn(HitActor) != None && !KFPawn(HitActor).IsAliveAndWell()) )
+        if( KFPawn_Human(HitActor) != None || KFWeldableComponent(HitActor) != None || (KFPawn_Monster(HitActor) != None && ((!KFPawn_Monster(HitActor).default.bLargeZed && KFPawn_ZedHusk(HitActor) == None) || ChatRep.CheckZEDCloaking(KFPawn_Monster(HitActor)))) || (KFPawn(HitActor) != None && !KFPawn(HitActor).IsAliveAndWell()) )
             continue;
         
         bHitWorld = HitInfo.LevelIndex != INDEX_NONE || HitActor.bWorldGeometry;

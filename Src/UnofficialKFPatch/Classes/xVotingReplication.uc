@@ -254,6 +254,8 @@ simulated function DelayedOpenMapvote()
     
     if( bWantsToShowRank )
     {
+        if( `GetURI().bHasDisabledRanking )
+            return;
         PlayerOwner.MyGFxManager.DelayedOpenPopup(EConfirmation, EDPPID_Misc, "Map Review", "Did you like this map?", "Like", "Dislike", LikeMapCallback, DislikeMapCallback);
         bWantsToShowRank = false;
     }

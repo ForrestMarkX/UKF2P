@@ -106,7 +106,7 @@ stripped final function context(KFGFxPostGameContainer_MapVote) SetMapOptionsEx(
                 MapString = "<b><p align=\"center\">" $ MapString $ "</p></b>";
                 Desirability = "";
             }
-            else
+            else if( !`GetURI().bHasDisabledRanking )
             {
                 if( RepInfo.Maps[i].NumPlays == 0 )
                     Desirability = "<font color=\"#FCF2A4\"><b>** NEW **</font></b>";
@@ -120,6 +120,7 @@ stripped final function context(KFGFxPostGameContainer_MapVote) SetMapOptionsEx(
                     Desirability = "<font color=\""$class'WebAdminUtils'.static.ColorToHTMLColor(LerpColor(DislikedColor, LikedColor, MapDesirability))$"\">" $ int(MapDesirability * 100.f) $ "% (" $ RepInfo.Maps[i].UpVotes $ "/" $ (RepInfo.Maps[i].UpVotes + RepInfo.Maps[i].DownVotes) $ ")</p></font>";
                 }
             }
+            else Desirability = "";
                 
 			MapObject = CreateObject("Object");
 			MapObject.SetString("label", MapString);

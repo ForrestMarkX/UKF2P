@@ -136,8 +136,8 @@ var config string AllowedBosses, AllowedOutbreaks, AllowedSpecialWaves, AllowedP
 var transient string CurrentAllowedBosses, CurrentAllowedOutbreaks, CurrentAllowedSpecialWaves, CurrentAllowedPerks;
 var string DefaultAllowedOutbreaks, DefaultAllowedSpecialWaves;
 
-var config bool bDisableTraderLocking, bDisableCustomLoadingScreen, bAllowDamagePopups, bUseEnhancedTraderMenu, bEnforceVanilla, bUseNormalSummerSCAnims, bAllowGamemodeVotes, bAttemptToLoadFHUD, bAttemptToLoadFHUDExt, bAttemptToLoadYAS, bAttemptToLoadAAL, bAttemptToLoadCVC, bAttemptToLoadLTI, bServerHidden, bNoEventZEDSkins, bNoEDARSpawns, bNoQPSpawns, bNoGasCrawlers, bNoRageSpawns, bNoPingsAllowed, bBroadcastPickups, bUseDynamicMOTD, bDisableTP, bDisallowHandChanges, bDropAllWepsOnDeath, bDisableGameConductor, bDisableCrossPerk, bDisableWeaponUpgrades;
-var transient bool bShouldDisableTraderLocking, bShouldDisableCustomLoadingScreen, LastHeadshot, bShouldAllowDamagePopups, bShouldUseEnhancedTraderMenu, bLTILoaded, CurrentNormalSummerSCAnims, bForceResetInterpActors, bDisallowHandSwap, bPlayingEmote, bHandledTravel, bServerIsHidden, bNoPings, bToBroadcastPickups, bServerDisableTP, bForceDisableEDARs, bForceDisableQPs, bForceDisableGasCrawlers, bForceDisableRageSpawns, bServerDropAllWepsOnDeath, bBypassGameConductor, bShouldDisableCrossPerk, bShouldDisableUpgrades;
+var config bool bDisableZEDTime, bDisableMapRanking, bDisableTraderLocking, bDisableCustomLoadingScreen, bAllowDamagePopups, bUseEnhancedTraderMenu, bEnforceVanilla, bUseNormalSummerSCAnims, bAllowGamemodeVotes, bAttemptToLoadFHUD, bAttemptToLoadFHUDExt, bAttemptToLoadYAS, bAttemptToLoadAAL, bAttemptToLoadCVC, bAttemptToLoadLTI, bServerHidden, bNoEventZEDSkins, bNoEDARSpawns, bNoQPSpawns, bNoGasCrawlers, bNoRageSpawns, bNoPingsAllowed, bBroadcastPickups, bUseDynamicMOTD, bDisableTP, bDisallowHandChanges, bDropAllWepsOnDeath, bDisableGameConductor, bDisableCrossPerk, bDisableWeaponUpgrades;
+var transient bool bHasDisabledZEDTime, bHasDisabledRanking, bShouldDisableTraderLocking, bShouldDisableCustomLoadingScreen, LastHeadshot, bShouldAllowDamagePopups, bShouldUseEnhancedTraderMenu, bLTILoaded, CurrentNormalSummerSCAnims, bForceResetInterpActors, bDisallowHandSwap, bPlayingEmote, bHandledTravel, bServerIsHidden, bNoPings, bToBroadcastPickups, bServerDisableTP, bForceDisableEDARs, bForceDisableQPs, bForceDisableGasCrawlers, bForceDisableRageSpawns, bServerDropAllWepsOnDeath, bBypassGameConductor, bShouldDisableCrossPerk, bShouldDisableUpgrades;
 var transient repnotify bool bNoEventSkins, bServerEnforceVanilla;
 var transient byte RepMaxPlayers;
 
@@ -150,7 +150,7 @@ var array<StaticMesh> WeaponPickupMeshes;
 
 struct FDynamicMOTDInfo
 {
-    var bool bYASLoaded, bAALLoaded, bCVCLoaded, bLTILoaded, bFHUDLoaded, bNoEventSkins, bNoPings, bToBroadcastPickups, bDisableTP, bDisallowHandSwap, bUseNormalSummerSCAnims, bEnforceVanilla, bDropAllWepsOnDeath, bNoEDARs, bNoQPSpawns, bNoGasCrawlers, bNoRageSpawns, bBypassGameConductor, bShouldUseEnhancedTraderMenu, bShouldDisableUpgrades, bShouldDisableCrossPerk, bShouldAllowDamagePopups;
+    var bool bYASLoaded, bAALLoaded, bCVCLoaded, bLTILoaded, bFHUDLoaded, bNoEventSkins, bNoPings, bToBroadcastPickups, bDisableTP, bDisallowHandSwap, bUseNormalSummerSCAnims, bEnforceVanilla, bDropAllWepsOnDeath, bNoEDARs, bNoQPSpawns, bNoGasCrawlers, bNoRageSpawns, bBypassGameConductor, bShouldUseEnhancedTraderMenu, bShouldDisableUpgrades, bShouldDisableCrossPerk, bShouldAllowDamagePopups, bHasDisabledZEDTime;
     var byte CurrentMaxPlayers, CurrentMaxMonsters, CurrentFakePlayers, MaxDoshSpamAmount, BossData, OutbreakData;
     var int CurrentPickupLifespan, BitData[4];
 };
@@ -160,7 +160,7 @@ var string DynamicMOTDString;
 replication
 {
     if( bNetInitial )
-        InitialWeeklyIndex, InitialSeasonalEventDate, CurrentForcedSeasonalEventDate, bServerEnforceVanilla, bServerDropAllWepsOnDeath, bLTILoaded, bShouldDisableUpgrades, bShouldDisableCrossPerk, bShouldDisableCustomLoadingScreen, bShouldDisableTraderLocking;
+        InitialWeeklyIndex, InitialSeasonalEventDate, CurrentForcedSeasonalEventDate, bServerEnforceVanilla, bServerDropAllWepsOnDeath, bLTILoaded, bShouldDisableUpgrades, bShouldDisableCrossPerk, bShouldDisableCustomLoadingScreen, bShouldDisableTraderLocking, bHasDisabledRanking;
     if( true )
         KFGRI, KFGRIE, bServerIsHidden, bNoEventSkins, bNoPings, DynamicMOTD, bServerDisableTP, CurrentMapName, bDisallowHandSwap, CurrentMaxDoshSpamAmount;
 }
@@ -249,6 +249,7 @@ simulated function ReplicatedEvent(name VarName)
             S $= "<font color=\"#81ABC0\">Quarterpounds</font> are "$(DynamicMOTD.bNoQPSpawns ? "<font color=\"#FF0000\">Disabled</font>" : "<font color=\"#00FF00\">Enabled</font>")$"!\n";
             S $= "<font color=\"#81ABC0\">Gas Crawlers</font> are "$(DynamicMOTD.bNoGasCrawlers ? "<font color=\"#FF0000\">Disabled</font>" : "<font color=\"#00FF00\">Enabled</font>")$"!\n";
             S $= "<font color=\"#81ABC0\">Game Conductor</font> is "$(DynamicMOTD.bBypassGameConductor ? "<font color=\"#FF0000\">Disabled</font>" : "<font color=\"#00FF00\">Enabled</font>")$"!\n";
+            S $= "<font color=\"#81ABC0\">ZED Time</font> is "$(DynamicMOTD.bHasDisabledZEDTime ? "<font color=\"#FF0000\">Enabled</font>" : "<font color=\"#FF0000\">Disabled</font>")$"!\n";
             if( DynamicMOTD.bShouldDisableUpgrades )
                 S $= "<font color=\"#81ABC0\">Weapon Upgrades</font> are <font color=\"#FF0000\">Disabled</font>!\n";
             if( DynamicMOTD.bShouldDisableCrossPerk )
@@ -340,11 +341,12 @@ simulated function WaitForGRIData()
 
 simulated function PreBeginPlay()
 {
-    local int Index;
+    local int Index, i;
     local FAchCollectibleOverride AchID;
     local KFGameInfo_WeeklySurvival WeeklyGI;
     local KFWeaponAttachment Attachment;
     local KFMuzzleFlash MuzzleFlash;
+    local string WSDownloader;
     
     MuzzleFlash = new class'KFMuzzleFlash' (KFMuzzleFlash(DynamicLoadObject("WEP_TommyGun_ARCH.Wep_TommyGun_MuzzleFlash_3P", class'KFMuzzleFlash')));
     MuzzleFlash.MuzzleFlash.ParticleSystemTemplate = ParticleSystem'UKFP_TommyGun_EMIT.FX_Wep_MuzzleFlash_TommyGun';
@@ -596,10 +598,23 @@ simulated function PreBeginPlay()
 		
 		NetDriver.NetServerLobbyTickRate = FMax(NetDriver.default.NetServerLobbyTickRate, 5);
 		
-        Index = NetDriver.DownloadManagers.Find("OnlineSubsystemSteamworks.SteamWorkshopDownload");
+        WSDownloader = "OnlineSubsystemSteamworks.SteamWorkshopDownload";
+        Index = NetDriver.DownloadManagers.Find(WSDownloader);
 		if( Index == INDEX_NONE )
 		{
-			NetDriver.DownloadManagers.InsertItem(0, "OnlineSubsystemSteamworks.SteamWorkshopDownload");
+            for( i=0; i<NetDriver.DownloadManagers.Length; i++ )
+            {
+                if( NetDriver.DownloadManagers[i] ~= "Engine.ChannelDownload" )
+                {
+                    NetDriver.DownloadManagers.InsertItem(i, WSDownloader);
+                    break;
+                }
+            }
+            
+            Index = NetDriver.DownloadManagers.Find(WSDownloader);
+            if( Index == INDEX_NONE )
+                NetDriver.DownloadManagers.AddItem(WSDownloader);
+                
 			NetDriver.SaveConfig();
 		}
         
@@ -1705,17 +1720,17 @@ function ForceUpdateEndlessDecent()
 
 function NotifyWaveUpdated()
 {
-    local bool bStartSpecialWave;
+    //local bool bStartSpecialWave;
     
     WorldInfo.ForceGarbageCollection();
 
-    if( KFGIE != None && KFGRIE != None && !KFGIE.IsUnrankedGame() )
+    /*if( KFGIE != None && KFGRIE != None && !KFGIE.IsUnrankedGame() )
     {
         if( !KFGRI.bWaveIsActive )
             bStartSpecialWave = TrySetNextWaveSpecial();
         else if( bStartSpecialWave && KFGRIE.CurrentWeeklyMode != INDEX_NONE )
             KFGIE.StartOutbreakRound(KFGRIE.CurrentWeeklyMode);
-    }
+    }*/
 }
 
 function NotifyWaveStarted()
@@ -1734,13 +1749,13 @@ function NotifyWaveEnded()
 {
     local int i;
     
-    if( KFGIE != None && !KFGIE.IsUnrankedGame() && KFGRI.WaveNum == 1 && !KFGIE.bIsInHoePlus && (Caps(CurrentAllowedOutbreaks) != default.DefaultAllowedOutbreaks || Caps(CurrentAllowedSpecialWaves) != default.DefaultAllowedSpecialWaves) )
+    /*if( KFGIE != None && !KFGIE.IsUnrankedGame() && KFGRI.WaveNum == 1 && !KFGIE.bIsInHoePlus && (Caps(CurrentAllowedOutbreaks) != default.DefaultAllowedOutbreaks || Caps(CurrentAllowedSpecialWaves) != default.DefaultAllowedSpecialWaves) )
     {
         KFGIE.SpecialWaveStart = 2;
         KFGIE.OutbreakWaveStart = 2;
         while( !KFGIE.bIsInHoePlus )
             KFGIE.IncrementDifficulty();
-    }
+    }*/
     
     PlayersDiedThisWaveOld = PlayersDiedThisWave;
     PlayersDiedThisWave.Length = 0;
@@ -2001,6 +2016,9 @@ function int GetRandomEnabledSpecialWave(optional out array<byte> IDs)
     local array<string> SpecialWaveList;
     local int i;
     
+    if( Caps(CurrentAllowedSpecialWaves) == default.DefaultAllowedSpecialWaves )
+        return KFGIE.EndlessDifficulty.GetSpecialWaveType();
+    
     SpecialWaveList = SplitString(CurrentAllowedSpecialWaves, ",", true);
     if( SpecialWaveList.Length <= 0 )
         return INDEX_NONE;
@@ -2066,9 +2084,10 @@ function int GetRandomEnabledSpecialWave(optional out array<byte> IDs)
         }
     }
     
-    if( IDs.Length > 0 )
-        return IDs[Rand(IDs.Length)];
-    
+    i = KFGIE.EndlessDifficulty.GetSpecialWaveType();
+    if( IDs.Find(i) != INDEX_NONE )
+        return i;
+
     return INDEX_NONE;
 }
 

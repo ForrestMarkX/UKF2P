@@ -77,6 +77,8 @@ function Init()
         KFGameInfo_Survival.ForceChangeLevel = KFGameInfo_SurvivalProxy.ForceChangeLevel;
         KFGameInfo_WeeklySurvivalOriginal.UsesModifiedDifficulty = KFGameInfo_WeeklySurvival.UsesModifiedDifficulty;
         KFGameInfo_WeeklySurvival.UsesModifiedDifficulty = KFGameInfo_WeeklySurvivalProxy.UsesModifiedDifficulty;
+        KFGameInfo_EndlessOriginal.TrySetNextWaveSpecial = KFGameInfo_Endless.TrySetNextWaveSpecial;
+        KFGameInfo_Endless.TrySetNextWaveSpecial = KFGameInfo_EndlessProxy.TrySetNextWaveSpecial;
         KFGameReplicationInfoOriginal.PostBeginPlay = KFGameReplicationInfo.PostBeginPlay;
         KFGameReplicationInfo.PostBeginPlay = KFGameReplicationInfoProxy.PostBeginPlay;
         KFPlayerControllerOriginal.EnterZedTime = KFPlayerController.EnterZedTime;
@@ -499,6 +501,7 @@ function Cleanup()
         KFGameInfo_Survival.TryRestartGame = KFGameInfo_SurvivalOriginal.TryRestartGame;
         KFGameInfo_Survival.ForceChangeLevel = KFGameInfo_SurvivalOriginal.ForceChangeLevel;
         KFGameInfo_WeeklySurvival.UsesModifiedDifficulty = KFGameInfo_WeeklySurvivalOriginal.UsesModifiedDifficulty;
+        KFGameInfo_Endless.TrySetNextWaveSpecial = KFGameInfo_EndlessOriginal.TrySetNextWaveSpecial;
         KFGameReplicationInfo.PostBeginPlay = KFGameReplicationInfoOriginal.PostBeginPlay;
         KFPlayerController.EnterZedTime = KFPlayerControllerOriginal.EnterZedTime;
         KFPlayerController.CompleteZedTime = KFPlayerControllerOriginal.CompleteZedTime;
