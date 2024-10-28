@@ -20,10 +20,10 @@ var const private bool bWhitelistBypass, bIgnoreWhitelist;
 var config byte ForcedMaxPlayers, MaxMonsters, FakePlayers;
 var config float DoshKillMultiplier, SpawnRateMultiplier, WaveCountMultiplier;
 var config int PickupLifespan, CurrentNetDriverIndex, MaxDoshSpamAmount, iConfigVersion;
-var config bool bDisableZEDTime, bAllowDynamicMOTD, bDropAllWepsOnDeath, bServerHidden, bBroadcastPickups, bNoEDARSpawns, bNoQPSpawns, bNoGasCrawlers, bNoRageSpawns, bDisableGameConductor;
+var config bool bLinuxHack, bDisableZEDTime, bAllowDynamicMOTD, bDropAllWepsOnDeath, bServerHidden, bBroadcastPickups, bNoEDARSpawns, bNoQPSpawns, bNoGasCrawlers, bNoRageSpawns, bDisableGameConductor;
 var config string AllowedBosses, AllowedOutbreaks, AllowedSpecialWaves, AllowedPerks;
 
-var transient bool bHasDisabledZEDTime, bCurrentAllowDynamicMOTD, bServerDropAllWepsOnDeath, bCleanedUp, bToBroadcastPickups, bForceDisableEDARs, bForceDisableQPs, bForceDisableGasCrawlers, bForceDisableRageSpawns, bBypassGameConductor, bForceResetInterpActors;
+var transient bool bUsingLinuxHack, bHasDisabledZEDTime, bCurrentAllowDynamicMOTD, bServerDropAllWepsOnDeath, bCleanedUp, bToBroadcastPickups, bForceDisableEDARs, bForceDisableQPs, bForceDisableGasCrawlers, bForceDisableRageSpawns, bBypassGameConductor, bForceResetInterpActors;
 var transient int CurrentPickupLifespan, CurrentMaxDoshSpamAmount;
 var transient float CurrentDoshKillMultiplier, CurrentSpawnRateMultiplier, CurrentWaveCountMultiplier;
 var transient string CurrentAllowedBosses, CurrentAllowedOutbreaks, CurrentAllowedSpecialWaves, CurrentAllowedPerks;
@@ -261,6 +261,7 @@ final function SetupMutator(const string Options)
     CurrentMaxDoshSpamAmount = KFGI.GetIntOption(Options, "MaxDoshSpam", MaxDoshSpamAmount);
     bCurrentAllowDynamicMOTD = bool(KFGI.GetIntOption(Options, "UseDynamicMOTD", int(bAllowDynamicMOTD)));
     bHasDisabledZEDTime = bool(KFGI.GetIntOption(Options, "DisableZEDTime", int(bDisableZEDTime)));
+    bUsingLinuxHack = bool(KFGI.GetIntOption(Options, "LinuxCrashHack", int(bLinuxHack)));
     
     CurrentAllowedBosses = KFGI.ParseOption(Options, "BossList");
     if( CurrentAllowedBosses == "" )
@@ -1322,38 +1323,56 @@ final function Cleanup()
 {
     bCleanedUp = true;
     
-    KFDroppedPickup.Destroyed = OrgFunctions.PickupDestroyed;
-    KFDroppedPickup.SetPickupMesh = OrgFunctions.SetPickupMesh;
-    KFPawn_Monster.GetAIPawnClassToSpawn = OrgFunctions.GetAIPawnClassToSpawn;
-    KFAIController_ZedFleshpound.SpawnEnraged = OrgFunctions.SpawnEnraged;
-    KFAISpawnManager.GetMaxMonsters = OrgFunctions.GetMaxMonsters;
-    KFGameDifficultyInfo.GetNumPlayersModifier = OrgFunctions.GetNumPlayersModifier;
-    KFGameInfo.ModifyAIDoshValueForPlayerCount = OrgFunctions.ModifyAIDoshValueForPlayerCount;
-    KFGameInfo.GetAdjustedAIDoshValue = OrgFunctions.GetAdjustedAIDoshValue;
-    KFGameInfo.GetGameInfoSpawnRateMod = OrgFunctions.GetGameInfoSpawnRateMod;
-    KFGameInfo.GetTotalWaveCountScale = OrgFunctions.GetTotalWaveCountScale;
-    KFGameInfo_Survival.Timer = OrgFunctions.GameTimer;
-    KFGameInfo.GetSpecificBossClass = OrgFunctions.GetSpecificBossClass;
-    KFGameInfo.Tick = OrgFunctions.GameInfoTick;
-    KFGameInfo_Endless.TrySetNextWaveSpecial = OrgFunctions.GameTrySetNextWaveSpecial;
-    KFGameReplicationInfo.PostBeginPlay = OrgFunctions.GRIPostBeginPlay;
-    KFGameInfo_Survival.NotifyTraderOpened = OrgFunctions.NotifyTraderOpened;
-    KFGameInfo_Survival.NotifyTraderClosed = OrgFunctions.NotifyTraderClosed;
-    PlayerController.ServerSay = OrgFunctions.ServerSay;
-    PlayerController.ServerTeamSay = OrgFunctions.ServerTeamSay;
-    KFGameInfo_Survival.StartMatch = OrgFunctions.StartMatch;
-    Actor.FellOutOfWorld = OrgFunctions.ActorFellOutOfWorld;
-    DroppedPickup.Landed = OrgFunctions.PickupLanded;
-    KFPlayerReplicationInfo.PostBeginPlay = OrgFunctions.PRIPostBeginPlay;
-    KFPawn.JumpOffPawn = OrgFunctions.JumpOffPawn;
-    KFAIController.FindNewEnemy = OrgFunctions.FindNewEnemy;
-    KFInventoryManager.DiscardInventory = OrgFunctions.DiscardInventory;
-    KFInventoryManager.ServerThrowMoney = OrgFunctions.ServerThrowMoney;
-    KFGameInfo.GetFriendlyNameForCurrentGameMode = OrgFunctions.GetFriendlyNameForCurrentGameMode;
-    KFGameInfo.GetGameModeNumFromClass = OrgFunctions.GetGameModeNumFromClass;
-    KFGameInfo.GetGameModeFriendlyNameFromClass = OrgFunctions.GetGameModeFriendlyNameFromClass;
-    KFGameInfo.CreateOutbreakEvent = OrgFunctions.CreateOutbreakEvent;
-    Mutator.PreBeginPlay = OrgFunctions.MutPreBeginPlay;
+    if( !bUsingLinuxHack )
+    {
+        KFDroppedPickup.Destroyed = OrgFunctions.PickupDestroyed;
+        KFDroppedPickup.SetPickupMesh = OrgFunctions.SetPickupMesh;
+        KFPawn_Monster.GetAIPawnClassToSpawn = OrgFunctions.GetAIPawnClassToSpawn;
+        KFAIController_ZedFleshpound.SpawnEnraged = OrgFunctions.SpawnEnraged;
+        KFAISpawnManager.GetMaxMonsters = OrgFunctions.GetMaxMonsters;
+        KFGameDifficultyInfo.GetNumPlayersModifier = OrgFunctions.GetNumPlayersModifier;
+        KFGameInfo.ModifyAIDoshValueForPlayerCount = OrgFunctions.ModifyAIDoshValueForPlayerCount;
+        KFGameInfo.GetAdjustedAIDoshValue = OrgFunctions.GetAdjustedAIDoshValue;
+        KFGameInfo.GetGameInfoSpawnRateMod = OrgFunctions.GetGameInfoSpawnRateMod;
+        KFGameInfo.GetTotalWaveCountScale = OrgFunctions.GetTotalWaveCountScale;
+        KFGameInfo_Survival.Timer = OrgFunctions.GameTimer;
+        KFGameInfo.GetSpecificBossClass = OrgFunctions.GetSpecificBossClass;
+        KFGameInfo.Tick = OrgFunctions.GameInfoTick;
+        KFGameInfo_Endless.TrySetNextWaveSpecial = OrgFunctions.GameTrySetNextWaveSpecial;
+        KFGameReplicationInfo.PostBeginPlay = OrgFunctions.GRIPostBeginPlay;
+        KFGameInfo_Survival.NotifyTraderOpened = OrgFunctions.NotifyTraderOpened;
+        KFGameInfo_Survival.NotifyTraderClosed = OrgFunctions.NotifyTraderClosed;
+        PlayerController.ServerSay = OrgFunctions.ServerSay;
+        PlayerController.ServerTeamSay = OrgFunctions.ServerTeamSay;
+        KFGameInfo_Survival.StartMatch = OrgFunctions.StartMatch;
+        Actor.FellOutOfWorld = OrgFunctions.ActorFellOutOfWorld;
+        DroppedPickup.Landed = OrgFunctions.PickupLanded;
+        KFPlayerController.MixerGiveAmmo = OrgFunctions.MixerGiveAmmo;
+        KFPlayerController.MixerGiveArmor = OrgFunctions.MixerGiveArmor;
+        KFPlayerController.MixerGiveDosh = OrgFunctions.MixerGiveDosh;
+        KFPlayerController.MixerGiveGrenades = OrgFunctions.MixerGiveGrenades;
+        KFPlayerController.MixerHealUser = OrgFunctions.MixerHealUser;
+        KFPlayerController.MixerCauseZedTime = OrgFunctions.MixerCauseZedTime;
+        KFPlayerController.MixerEnrageZeds = OrgFunctions.MixerEnrageZeds;
+        KFPlayerController.MixerPukeUser = OrgFunctions.MixerPukeUser;
+        KFPlayerController.MixerSpawnZed = OrgFunctions.MixerSpawnZed;
+        KFPlayerController.SkipLobby = OrgFunctions.SkipLobby;
+        KFPlayerController.ServerSetEnablePurchases = OrgFunctions.ServerSetEnablePurchases;
+        KFPlayerReplicationInfo.PostBeginPlay = OrgFunctions.PRIPostBeginPlay;
+        KFPlayerReplicationInfo.ServerStartKickVote = OrgFunctions.ServerStartKickVote;
+        KFPlayerReplicationInfo.ServerCastKickVote = OrgFunctions.ServerCastKickVote;
+        KFPlayerReplicationInfo.ServerRequestSkipTraderVote = OrgFunctions.ServerRequestSkipTraderVote;
+        KFPlayerReplicationInfo.ServerCastSkipTraderVote = OrgFunctions.ServerCastSkipTraderVote;
+        KFPawn.JumpOffPawn = OrgFunctions.JumpOffPawn;
+        KFAIController.FindNewEnemy = OrgFunctions.FindNewEnemy;
+        KFInventoryManager.DiscardInventory = OrgFunctions.DiscardInventory;
+        KFInventoryManager.ServerThrowMoney = OrgFunctions.ServerThrowMoney;
+        KFGameInfo.GetFriendlyNameForCurrentGameMode = OrgFunctions.GetFriendlyNameForCurrentGameMode;
+        KFGameInfo.GetGameModeNumFromClass = OrgFunctions.GetGameModeNumFromClass;
+        KFGameInfo.GetGameModeFriendlyNameFromClass = OrgFunctions.GetGameModeFriendlyNameFromClass;
+        KFGameInfo.CreateOutbreakEvent = OrgFunctions.CreateOutbreakEvent;
+        Mutator.PreBeginPlay = OrgFunctions.MutPreBeginPlay;
+    }
 
     NetDriver = None;
     

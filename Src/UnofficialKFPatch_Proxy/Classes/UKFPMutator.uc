@@ -155,6 +155,7 @@ final function SetupMutator(const string Options)
     RepInfo.bShouldDisableTraderLocking = bool(KFGI.GetIntOption(Options, "DisableTraderLocking", int(RepInfo.bDisableTraderLocking)));
     RepInfo.bHasDisabledRanking = bool(KFGI.GetIntOption(Options, "DisableMapRanking", int(RepInfo.bDisableMapRanking)));
     RepInfo.bHasDisabledZEDTime = bool(KFGI.GetIntOption(Options, "DisableZEDTime", int(RepInfo.bDisableZEDTime)));
+    RepInfo.bUsingLinuxHack = bool(KFGI.GetIntOption(Options, "LinuxCrashHack", int(RepInfo.bLinuxHack)));
     /*RepInfo.bShouldAbsoluteTravel = bool(KFGI.GetIntOption(Options, "AbsoluteTravel", int(RepInfo.bAbsoluteTravel)));
     RepInfo.bShouldDisableCrossPerk = bool(KFGI.GetIntOption(Options, "DisableCrossPerk", int(RepInfo.bDisableCrossPerk)));
     RepInfo.bShouldDisableUpgrades = bool(KFGI.GetIntOption(Options, "DisableWeaponUpgrades", int(RepInfo.bDisableWeaponUpgrades)));*/
