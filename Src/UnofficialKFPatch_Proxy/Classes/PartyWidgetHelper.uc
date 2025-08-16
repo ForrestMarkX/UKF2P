@@ -2,7 +2,7 @@ class PartyWidgetHelper extends Object;
 
 var PartyWidgetHelper StaticReference;
 var byte LobbyCurrentPage, LobbyMaxPage;
-var string CycleListString;
+var localized string CycleListString;
 
 final function Init()
 {

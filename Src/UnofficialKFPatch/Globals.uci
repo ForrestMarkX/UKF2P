@@ -56,3 +56,46 @@
 `define Broadcast(S, HexClr) class'UKFPReplicationInfo'.default.StaticReference.Broadcast(`S, `HexClr)
 
 `define MAX_DAMAGE_NUMS 64
+
+`define MOTD_HEADER 0
+`define MOTD_YAS 1
+`define MOTD_AAL 2
+`define MOTD_CVC 3
+`define MOTD_LTI 4
+`define MOTD_FHUD 5
+`define MOTD_SKINS 6
+`define MOTD_PINGS 7
+`define MOTD_PICKUPS 8
+`define MOTD_DAMAGEPOPUPS 9
+`define MOTD_MAXPLAYERS 10
+`define MOTD_FAKEPLAYERS 11
+`define MOTD_MAXMONSTERS 12
+`define MOTD_MAXDOSHSPAM 13
+`define MOTD_THIRDPERSON 14
+`define MOTD_HANDSWAP 15
+`define MOTD_SUMMERSCFIX 16
+`define MOTD_PICKUPLIFE 17
+`define MOTD_DROPALLPICKUPS 18
+`define MOTD_TRADERMENU 19
+`define MOTD_EDARS 20
+`define MOTD_RAGESPAWNS 21
+`define MOTD_QPS 22
+`define MOTD_GASCRAWLERS 23
+`define MOTD_GAMECONDUCTOR 24
+`define MOTD_ZEDTIME 25
+`define MOTD_OPENTRADER 26
+`define MOTD_UPGRADES 27
+`define MOTD_CROSSPERK 28
+`define MOTD_DOSHKILL 29
+`define MOTD_SPAWNRATE 30
+`define MOTD_WAVECOUNT 31
+`define MOTD_AMMOCOST 32
+`define MOTD_XPMULT 33
+`define MOTD_BOSSES 34
+`define MOTD_PERKS 35
+`define MOTD_WEEKLIES 36
+`define MOTD_SPECIALWAVES 37
+`define MOTD_VANILLAMODE 38
+`define MOTD_DLCLOCK 39
+
+`define MOTD_MAX 40

@@ -84,16 +84,16 @@ function PostBeginPlay()
 
 function SetupBroadcast()
 {
-	local xVoteBroadcast B;
+	//local xVoteBroadcast B;
 	local WebServer W;
 	local WebAdmin A;
 	local xVoteWebApp xW;
 	local byte i;
 	
-	B = Spawn(class'xVoteBroadcast');
+	/*B = Spawn(class'xVoteBroadcast');
 	B.Handler = Self;
 	B.NextBroadcaster = WorldInfo.Game.BroadcastHandler;
-	WorldInfo.Game.BroadcastHandler = B;
+	WorldInfo.Game.BroadcastHandler = B;*/
 
     foreach AllActors(class'WebServer',W)
         break;

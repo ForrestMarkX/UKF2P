@@ -78,6 +78,36 @@ final function GenerateMutatorEntry(name ClassName, string ClassPath)
     }
 }
 
+function Mutate(string MutateString, PlayerController Sender)
+{
+    local array<string> Args;
+    local string Msg;
+    local byte MaxPlayers;
+    local ReplicationHelper CRI;
+    
+    Super.Mutate(MutateString, Sender);
+    
+    Args = SplitString(MutateString, " ");
+    Msg = Args[0];
+    Args.Remove(0, 1);
+
+    if( (Msg ~= "changeslots" || Msg ~= "cs") && Args.Length > 0 && Sender.PlayerReplicationInfo.bAdmin )
+    {
+        MaxPlayers = Max(int(Args[0]), 1);
+        
+        KFGI.MaxPlayers = MaxPlayers;
+        KFGI.MaxPlayersAllowed = MaxPlayers;
+        
+        RepInfo.RepMaxPlayers = MaxPlayers;
+        RepInfo.DynamicMOTD.CurrentMaxPlayers = MaxPlayers;
+        RepInfo.bForceNetUpdate = true;
+        RepInfo.bNetDirty = true;
+        
+        foreach RepInfo.ChatArray(CRI)
+            CRI.OnMaxPlayersUpdated(Sender.PlayerReplicationInfo, MaxPlayers);
+    }
+}
+
 final function SetupMutator(const string Options)
 {
     local KFGameInfo_WeeklySurvival WeeklyGI;
@@ -122,6 +152,17 @@ final function SetupMutator(const string Options)
     if( InOpt != "" )
         class'GameReplicationInfo'.default.ServerName = InOpt;
         
+    if( bool(KFGI.GetIntOption(Options, "AllowMapSpecificSeasonalZEDs", 0)) )
+    {
+        i = RepInfo.MapTypes.Find('MapName', WorldInfo.GetMapName(true));
+        if( i != INDEX_NONE )
+        {
+            if( KFGI.ParseOption(Options, "SeasonalSkinsIndex") != "" )
+                KFGI.SeasonalSkinsIndex = GetSeasonalID(RepInfo.MapTypes[i].Type);
+            else RepInfo.ForcedSeasonalID = GetSeasonalID(RepInfo.MapTypes[i].Type);
+        }
+    }
+
     if( bool(KFGI.GetIntOption(Options, HideCommandName, int(RepInfo.bServerHidden))) )
     {
         RepInfo.bServerIsHidden = true;
@@ -155,10 +196,10 @@ final function SetupMutator(const string Options)
     RepInfo.bShouldDisableTraderLocking = bool(KFGI.GetIntOption(Options, "DisableTraderLocking", int(RepInfo.bDisableTraderLocking)));
     RepInfo.bHasDisabledRanking = bool(KFGI.GetIntOption(Options, "DisableMapRanking", int(RepInfo.bDisableMapRanking)));
     RepInfo.bHasDisabledZEDTime = bool(KFGI.GetIntOption(Options, "DisableZEDTime", int(RepInfo.bDisableZEDTime)));
-    RepInfo.bUsingLinuxHack = bool(KFGI.GetIntOption(Options, "LinuxCrashHack", int(RepInfo.bLinuxHack)));
-    /*RepInfo.bShouldAbsoluteTravel = bool(KFGI.GetIntOption(Options, "AbsoluteTravel", int(RepInfo.bAbsoluteTravel)));
+    RepInfo.bUsingOpenTraderCommand = bool(KFGI.GetIntOption(Options, "AllowOpenTraderCommand", int(RepInfo.bAllowOpenTraderCommand)));
+    RepInfo.XPMultiplier = FClamp(KFGI.GetFloatOption(Options, "XPMultiplier", KFGI.XPMultiplier), 0.1f, 2.f);
     RepInfo.bShouldDisableCrossPerk = bool(KFGI.GetIntOption(Options, "DisableCrossPerk", int(RepInfo.bDisableCrossPerk)));
-    RepInfo.bShouldDisableUpgrades = bool(KFGI.GetIntOption(Options, "DisableWeaponUpgrades", int(RepInfo.bDisableWeaponUpgrades)));*/
+    RepInfo.bShouldDisableUpgrades = bool(KFGI.GetIntOption(Options, "DisableWeaponUpgrades", int(RepInfo.bDisableWeaponUpgrades)));
     RepInfo.bServerEnforceVanilla = bool(KFGI.GetIntOption(Options, "EnforceVanilla", int(RepInfo.bEnforceVanilla)));
 	if( RepInfo.bServerEnforceVanilla )
 	{
@@ -177,6 +218,7 @@ final function SetupMutator(const string Options)
 		RepInfo.bServerDropAllWepsOnDeath = bool(KFGI.GetIntOption(Options, "DropAllWepsOnDeath", int(RepInfo.bDropAllWepsOnDeath)));
 	}
     RepInfo.PingSpamTime = KFGI.GetFloatOption(Options, "PingSpamTime", RepInfo.PingSpamTime);
+    RepInfo.bShouldDisableTraderDLCLocking = bool(KFGI.GetIntOption(Options, "DisableTraderDLCLock", int(RepInfo.bDisableTraderDLCLocking)));
     
     RepInfo.CurrentAllowedBosses = KFGI.ParseOption(Options, "BossList");
     if( RepInfo.CurrentAllowedBosses == "" )
@@ -196,6 +238,8 @@ final function SetupMutator(const string Options)
         
     if( bool(KFGI.GetIntOption(Options, UseDynamicMOTDCommandName, int(RepInfo.bUseDynamicMOTD))) )
     {
+        RepInfo.bShouldUseDynamicMOTD = true;
+        
 		foreach DynamicActors(class'Mutator', Mut)
 		{
 			if( !RepInfo.DynamicMOTD.bYASLoaded && Mut.Class.GetPackageName() == 'YAS' )
@@ -228,15 +272,17 @@ final function SetupMutator(const string Options)
         RepInfo.DynamicMOTD.bShouldAllowDamagePopups = RepInfo.bShouldAllowDamagePopups;
         RepInfo.DynamicMOTD.bNoQPSpawns = RepInfo.bForceDisableQPs;
         RepInfo.DynamicMOTD.bNoGasCrawlers = RepInfo.bForceDisableGasCrawlers;
-        
-        /*RepInfo.DynamicMOTD.bShouldDisableCrossPerk = RepInfo.bShouldDisableCrossPerk;
-        RepInfo.DynamicMOTD.bShouldDisableUpgrades = RepInfo.bShouldDisableUpgrades;*/
-        
-        // Bitwise stupidry ahead
-        // Probably not needed but I want to make completely sure and incase if I add more variables I have the extra space in the struct
-
-        RepInfo.DynamicMOTD.BitData[0] = Clamp(int(`RoundFloatPrecision(RepInfo.CurrentDoshKillMultiplier, 2) * 100.f), 0, 0xFF) << 8 | Clamp(int(`RoundFloatPrecision(RepInfo.CurrentSpawnRateMultiplier, 2) * 100.f), 0, 0xFF);
-        RepInfo.DynamicMOTD.BitData[1] = Clamp(int(`RoundFloatPrecision(RepInfo.CurrentWaveCountMultiplier, 2) * 100.f), 0, 0xFFFF) << 16 | Clamp(int(`RoundFloatPrecision(RepInfo.CurrentAmmoCostMultiplier, 2) * 100.f), 0, 0xFFFF);
+        RepInfo.DynamicMOTD.bUsingOpenTraderCommand = RepInfo.bUsingOpenTraderCommand;
+        RepInfo.DynamicMOTD.bHasDisabledZEDTime = RepInfo.bHasDisabledZEDTime;
+        RepInfo.DynamicMOTD.bEnforceVanilla = RepInfo.bServerEnforceVanilla;
+        RepInfo.DynamicMOTD.XPMultiplier = RepInfo.XPMultiplier;
+        RepInfo.DynamicMOTD.bShouldDisableCrossPerk = RepInfo.bShouldDisableCrossPerk;
+        RepInfo.DynamicMOTD.bShouldDisableUpgrades = RepInfo.bShouldDisableUpgrades;
+        RepInfo.DynamicMOTD.CurrentDoshKillMultiplier = RepInfo.CurrentDoshKillMultiplier;
+        RepInfo.DynamicMOTD.CurrentSpawnRateMultiplier = RepInfo.CurrentSpawnRateMultiplier;
+        RepInfo.DynamicMOTD.CurrentWaveCountMultiplier = RepInfo.CurrentWaveCountMultiplier;
+        RepInfo.DynamicMOTD.CurrentAmmoCostMultiplier = RepInfo.CurrentAmmoCostMultiplier;
+        RepInfo.DynamicMOTD.bShouldDisableTraderDLCLocking = RepInfo.bShouldDisableTraderDLCLocking;
 
         PCC = class<KFPlayerController>(KFGI.PlayerControllerClass);
         
@@ -256,7 +302,7 @@ final function SetupMutator(const string Options)
             for( i=0; i<PCC.default.PerkList.Length && i<32; i++ )
             {
                 if( PerkList.Find(i) != INDEX_NONE )
-                    RepInfo.DynamicMOTD.BitData[2] = RepInfo.DynamicMOTD.BitData[2] | (1 << (i+1));
+                    RepInfo.DynamicMOTD.PerkData = RepInfo.DynamicMOTD.PerkData | (1 << (i+1));
             }
         }
 
@@ -281,7 +327,7 @@ final function SetupMutator(const string Options)
                 for( i=0; i<AT_MAX && i<32; i++ )
                 {
                     if( IDs.Find(i) != INDEX_NONE )
-                        RepInfo.DynamicMOTD.BitData[3] = RepInfo.DynamicMOTD.BitData[3] | (1 << (i+1));
+                        RepInfo.DynamicMOTD.SpecialWaveData = RepInfo.DynamicMOTD.SpecialWaveData | (1 << (i+1));
                 }
             }
         }
@@ -339,6 +385,33 @@ final function SetupMutator(const string Options)
         RepInfo.ReplicatedEvent('bNoEventSkins');
         RepInfo.ReplicatedEvent('DynamicMOTD');
     }
+}
+
+final function SeasonalEventIndex GetSeasonalID(string ID)
+{
+    switch(Caps(ID))
+    {
+        case "NONE":
+        case "REGULAR":
+        case "DEFAULT":
+            return SEI_None;
+        case "SPRING":
+            return SEI_Spring;
+        case "SLIDESHOW":
+        case "SUMMERSLIDESHOW":
+        case "SUMMER SLIDESHOW":
+        case "SUMMER":
+            return SEI_Summer;
+        case "HALLOWEEN":
+        case "FALL":
+            return SEI_Fall;
+        case "XMAS":
+        case "CHRISTMAS":
+        case "WINTER":
+            return SEI_Winter;
+    }
+    
+    return SEI_None;
 }
 
 function ModifyZedTime( out float out_TimeSinceLastEvent, out float out_ZedTimeChance, out float out_Duration )

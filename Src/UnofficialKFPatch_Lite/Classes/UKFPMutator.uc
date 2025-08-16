@@ -18,12 +18,12 @@ var transient array<KFPlayerController> PlayersDiedThisWave, PlayersDiedThisWave
 var const private bool bWhitelistBypass, bIgnoreWhitelist;
 
 var config byte ForcedMaxPlayers, MaxMonsters, FakePlayers;
-var config float DoshKillMultiplier, SpawnRateMultiplier, WaveCountMultiplier;
+var config float DoshKillMultiplier, SpawnRateMultiplier, WaveCountMultiplier, XPMultiplier;
 var config int PickupLifespan, CurrentNetDriverIndex, MaxDoshSpamAmount, iConfigVersion;
-var config bool bLinuxHack, bDisableZEDTime, bAllowDynamicMOTD, bDropAllWepsOnDeath, bServerHidden, bBroadcastPickups, bNoEDARSpawns, bNoQPSpawns, bNoGasCrawlers, bNoRageSpawns, bDisableGameConductor;
+var config bool bAllowOpenTraderCommand, bDisableZEDTime, bAllowDynamicMOTD, bDropAllWepsOnDeath, bServerHidden, bBroadcastPickups, bNoEDARSpawns, bNoQPSpawns, bNoGasCrawlers, bNoRageSpawns, bDisableGameConductor;
 var config string AllowedBosses, AllowedOutbreaks, AllowedSpecialWaves, AllowedPerks;
 
-var transient bool bUsingLinuxHack, bHasDisabledZEDTime, bCurrentAllowDynamicMOTD, bServerDropAllWepsOnDeath, bCleanedUp, bToBroadcastPickups, bForceDisableEDARs, bForceDisableQPs, bForceDisableGasCrawlers, bForceDisableRageSpawns, bBypassGameConductor, bForceResetInterpActors;
+var transient bool bUsingOpenTraderCommand, bHasDisabledZEDTime, bCurrentAllowDynamicMOTD, bServerDropAllWepsOnDeath, bCleanedUp, bToBroadcastPickups, bForceDisableEDARs, bForceDisableQPs, bForceDisableGasCrawlers, bForceDisableRageSpawns, bBypassGameConductor, bForceResetInterpActors;
 var transient int CurrentPickupLifespan, CurrentMaxDoshSpamAmount;
 var transient float CurrentDoshKillMultiplier, CurrentSpawnRateMultiplier, CurrentWaveCountMultiplier;
 var transient string CurrentAllowedBosses, CurrentAllowedOutbreaks, CurrentAllowedSpecialWaves, CurrentAllowedPerks;
@@ -100,7 +100,7 @@ function PreBeginPlay()
     OrgFunctions.GetMaxMonsters = KFAISpawnManager.GetMaxMonsters;
     KFAISpawnManager.GetMaxMonsters = Functions.GetMaxMonsters;
     OrgFunctions.GetNumPlayersModifier = KFGameDifficultyInfo.GetNumPlayersModifier;
-    KFGameDifficultyInfo.GetNumPlayersModifier = Functions.GetNumPlayersModifier;
+    KFGameDifficultyInfo.GetNumPlayersModifier = Functions.GetNumPlayersModifier; // Below Here
     OrgFunctions.ModifyAIDoshValueForPlayerCount = KFGameInfo.ModifyAIDoshValueForPlayerCount;
     KFGameInfo.ModifyAIDoshValueForPlayerCount = Functions.ModifyAIDoshValueForPlayerCount;
     OrgFunctions.GetAdjustedAIDoshValue = KFGameInfo.GetAdjustedAIDoshValue;
@@ -181,8 +181,8 @@ function PreBeginPlay()
     KFGameInfo.GetGameModeFriendlyNameFromClass = Functions.GetGameModeFriendlyNameFromClass;
     OrgFunctions.CreateOutbreakEvent = KFGameInfo.CreateOutbreakEvent;
     KFGameInfo.CreateOutbreakEvent = Functions.CreateOutbreakEvent;
-    OrgFunctions.MutPreBeginPlay = Mutator.PreBeginPlay;
-    Mutator.PreBeginPlay = Functions.MutPreBeginPlay;
+    /*OrgFunctions.MutPreBeginPlay = Mutator.PreBeginPlay;
+    Mutator.PreBeginPlay = Functions.MutPreBeginPlay;*/
 
     OnlineSub = OnlineSubsystemSteamworks(class'GameEngine'.static.GetOnlineSubsystem());
     
@@ -261,8 +261,9 @@ final function SetupMutator(const string Options)
     CurrentMaxDoshSpamAmount = KFGI.GetIntOption(Options, "MaxDoshSpam", MaxDoshSpamAmount);
     bCurrentAllowDynamicMOTD = bool(KFGI.GetIntOption(Options, "UseDynamicMOTD", int(bAllowDynamicMOTD)));
     bHasDisabledZEDTime = bool(KFGI.GetIntOption(Options, "DisableZEDTime", int(bDisableZEDTime)));
-    bUsingLinuxHack = bool(KFGI.GetIntOption(Options, "LinuxCrashHack", int(bLinuxHack)));
-    
+    bUsingOpenTraderCommand = bool(KFGI.GetIntOption(Options, "AllowOpenTraderCommand", int(bAllowOpenTraderCommand)));
+    XPMultiplier = KFGI.GetFloatOption(Options, "XPMultiplier", XPMultiplier);
+
     CurrentAllowedBosses = KFGI.ParseOption(Options, "BossList");
     if( CurrentAllowedBosses == "" )
         CurrentAllowedBosses = AllowedBosses;
@@ -810,6 +811,8 @@ final function string GetServerMOTD(string MOTD)
             S $= "Game Conductor is Disabled!\n";
         if( bHasDisabledZEDTime )
             S $= "ZED Time is Disabled!\n";
+        if( bUsingOpenTraderCommand )
+            S $= "Open Trader is Enabled!\n";
         S $= "Dosh Kill Scale = "$FormatFloat(CurrentDoshKillMultiplier)$"!\n";
         S $= "Spawn Rate Scale = "$FormatFloat(CurrentSpawnRateMultiplier)$"!\n";
         S $= "Wave Count Scale = "$FormatFloat(CurrentWaveCountMultiplier)$"!\n";
@@ -1282,6 +1285,14 @@ final function bool ProcessChatMessage(string Msg, PlayerController Sender, opti
         KFGI.BroadcastHandler.BroadcastText(KFPC.PlayerReplicationInfo, KFPC, "Showing Large Kills in the kill feed was set to"@(PlayerConfigs[Index].bEnableLargeKills ? "true" : "false")$".");
         return true;
     }
+    else if( Msg ~= "ot" )
+    {
+        if( !bUsingOpenTraderCommand || KFGI.IsWaveActive() )
+            return true;
+        KFPC.ServerSetEnablePurchases(true);
+        KFPC.ClientOpenTraderMenu(true);
+        return true;
+    }
     
     return false;
 }
@@ -1323,7 +1334,7 @@ final function Cleanup()
 {
     bCleanedUp = true;
     
-    if( !bUsingLinuxHack )
+    if( WorldInfo.NetMode != NM_DedicatedServer )
     {
         KFDroppedPickup.Destroyed = OrgFunctions.PickupDestroyed;
         KFDroppedPickup.SetPickupMesh = OrgFunctions.SetPickupMesh;
@@ -1371,7 +1382,7 @@ final function Cleanup()
         KFGameInfo.GetGameModeNumFromClass = OrgFunctions.GetGameModeNumFromClass;
         KFGameInfo.GetGameModeFriendlyNameFromClass = OrgFunctions.GetGameModeFriendlyNameFromClass;
         KFGameInfo.CreateOutbreakEvent = OrgFunctions.CreateOutbreakEvent;
-        Mutator.PreBeginPlay = OrgFunctions.MutPreBeginPlay;
+        //Mutator.PreBeginPlay = OrgFunctions.MutPreBeginPlay;
     }
 
     NetDriver = None;

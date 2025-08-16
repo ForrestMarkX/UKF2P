@@ -2,6 +2,7 @@ class UKFPReplicationInfo extends ReplicationInfo
     config(UnofficialPatch);
 
 const HelpURL = "https://steamcommunity.com/sharedfiles/filedetails/?id=2875577642";
+const MaxLocalizedMOTDStrings = 39;
 
 var UKFPReplicationInfo StaticReference;
 var ProxyInfo FunctionProxy;
@@ -136,10 +137,22 @@ var config string AllowedBosses, AllowedOutbreaks, AllowedSpecialWaves, AllowedP
 var transient string CurrentAllowedBosses, CurrentAllowedOutbreaks, CurrentAllowedSpecialWaves, CurrentAllowedPerks;
 var string DefaultAllowedOutbreaks, DefaultAllowedSpecialWaves;
 
-var config bool bLinuxHack, bDisableZEDTime, bDisableMapRanking, bDisableTraderLocking, bDisableCustomLoadingScreen, bAllowDamagePopups, bUseEnhancedTraderMenu, bEnforceVanilla, bUseNormalSummerSCAnims, bAllowGamemodeVotes, bAttemptToLoadFHUD, bAttemptToLoadFHUDExt, bAttemptToLoadYAS, bAttemptToLoadAAL, bAttemptToLoadCVC, bAttemptToLoadLTI, bServerHidden, bNoEventZEDSkins, bNoEDARSpawns, bNoQPSpawns, bNoGasCrawlers, bNoRageSpawns, bNoPingsAllowed, bBroadcastPickups, bUseDynamicMOTD, bDisableTP, bDisallowHandChanges, bDropAllWepsOnDeath, bDisableGameConductor, bDisableCrossPerk, bDisableWeaponUpgrades;
-var transient bool bUsingLinuxHack, bHasDisabledZEDTime, bHasDisabledRanking, bShouldDisableTraderLocking, bShouldDisableCustomLoadingScreen, LastHeadshot, bShouldAllowDamagePopups, bShouldUseEnhancedTraderMenu, bLTILoaded, CurrentNormalSummerSCAnims, bForceResetInterpActors, bDisallowHandSwap, bPlayingEmote, bHandledTravel, bServerIsHidden, bNoPings, bToBroadcastPickups, bServerDisableTP, bForceDisableEDARs, bForceDisableQPs, bForceDisableGasCrawlers, bForceDisableRageSpawns, bServerDropAllWepsOnDeath, bBypassGameConductor, bShouldDisableCrossPerk, bShouldDisableUpgrades;
+var config bool bAllowOpenTraderCommand, bDisableZEDTime, bDisableMapRanking, bDisableTraderLocking, bDisableCustomLoadingScreen, bAllowDamagePopups, bUseEnhancedTraderMenu, bEnforceVanilla, bUseNormalSummerSCAnims, bAllowGamemodeVotes, bAttemptToLoadFHUD, bAttemptToLoadFHUDExt, bAttemptToLoadYAS, bAttemptToLoadAAL, bAttemptToLoadCVC, bAttemptToLoadLTI, bServerHidden, bNoEventZEDSkins, bNoEDARSpawns, bNoQPSpawns, bNoGasCrawlers, bNoRageSpawns, bNoPingsAllowed, bBroadcastPickups, bUseDynamicMOTD, bDisableTP, bDisallowHandChanges, bDropAllWepsOnDeath, bDisableGameConductor, bDisableCrossPerk, bDisableWeaponUpgrades, bDisableTraderDLCLocking;
+var transient bool bShouldUseDynamicMOTD, bUpdatedMOTD, bUsingOpenTraderCommand, bHasDisabledZEDTime, bHasDisabledRanking, bShouldDisableTraderLocking, bShouldDisableCustomLoadingScreen, LastHeadshot, bShouldAllowDamagePopups, bShouldUseEnhancedTraderMenu, bLTILoaded, CurrentNormalSummerSCAnims, bForceResetInterpActors, bDisallowHandSwap, bPlayingEmote, bHandledTravel, bServerIsHidden, bNoPings, bToBroadcastPickups, bServerDisableTP, bForceDisableEDARs, bForceDisableQPs, bForceDisableGasCrawlers, bForceDisableRageSpawns, bServerDropAllWepsOnDeath, bBypassGameConductor, bShouldDisableCrossPerk, bShouldDisableUpgrades, bShouldDisableTraderDLCLocking;
 var transient repnotify bool bNoEventSkins, bServerEnforceVanilla;
 var transient byte RepMaxPlayers;
+
+struct MapSeasonalInfo
+{
+    var string MapName, Type;
+
+    structdefaultproperties
+    {
+        Type="None"
+    }
+};
+var config array<MapSeasonalInfo> MapTypes;
+var int ForcedSeasonalID;
 
 var array< class<KFWeapon> > WeaponExploitFix;
 
@@ -150,30 +163,32 @@ var array<StaticMesh> WeaponPickupMeshes;
 
 struct FDynamicMOTDInfo
 {
-    var bool bYASLoaded, bAALLoaded, bCVCLoaded, bLTILoaded, bFHUDLoaded, bNoEventSkins, bNoPings, bToBroadcastPickups, bDisableTP, bDisallowHandSwap, bUseNormalSummerSCAnims, bEnforceVanilla, bDropAllWepsOnDeath, bNoEDARs, bNoQPSpawns, bNoGasCrawlers, bNoRageSpawns, bBypassGameConductor, bShouldUseEnhancedTraderMenu, bShouldDisableUpgrades, bShouldDisableCrossPerk, bShouldAllowDamagePopups, bHasDisabledZEDTime;
-    var byte CurrentMaxPlayers, CurrentMaxMonsters, CurrentFakePlayers, MaxDoshSpamAmount, BossData, OutbreakData;
-    var int CurrentPickupLifespan, BitData[4];
+    var bool bYASLoaded, bAALLoaded, bCVCLoaded, bLTILoaded, bFHUDLoaded, bNoEventSkins, bNoPings, bToBroadcastPickups, bDisableTP, bDisallowHandSwap, bUseNormalSummerSCAnims, bEnforceVanilla, bDropAllWepsOnDeath, bNoEDARs, bNoQPSpawns, bNoGasCrawlers, bNoRageSpawns, bBypassGameConductor, bShouldUseEnhancedTraderMenu, bShouldDisableUpgrades, bShouldDisableCrossPerk, bShouldAllowDamagePopups, bHasDisabledZEDTime, bUsingOpenTraderCommand, bShouldDisableTraderDLCLocking;
+    var byte CurrentMaxPlayers, CurrentMaxMonsters, CurrentFakePlayers, MaxDoshSpamAmount, BossData, OutbreakData, PerkData, SpecialWaveData;
+    var int CurrentPickupLifespan;
+    var float CurrentDoshKillMultiplier, CurrentSpawnRateMultiplier, CurrentWaveCountMultiplier, CurrentAmmoCostMultiplier, XPMultiplier;
 };
-var repnotify FDynamicMOTDInfo DynamicMOTD;
-var string DynamicMOTDString;
+var FDynamicMOTDInfo DynamicMOTD;
+
+struct FLocalizedMOTD
+{
+    var string Name, Extra;
+};
+var localized array<FLocalizedMOTD> LocalizedMOTD;
+var localized string EnabledString, DisabledString;
 
 replication
 {
     if( bNetInitial )
-        InitialWeeklyIndex, InitialSeasonalEventDate, CurrentForcedSeasonalEventDate, bServerEnforceVanilla, bServerDropAllWepsOnDeath, bLTILoaded, bShouldDisableUpgrades, bShouldDisableCrossPerk, bShouldDisableCustomLoadingScreen, bShouldDisableTraderLocking, bHasDisabledRanking;
+        InitialWeeklyIndex, InitialSeasonalEventDate, CurrentForcedSeasonalEventDate, bServerEnforceVanilla, bServerDropAllWepsOnDeath, bLTILoaded, bShouldDisableUpgrades, bShouldDisableCrossPerk, bShouldDisableCustomLoadingScreen, bShouldDisableTraderLocking, bHasDisabledRanking, bShouldUseDynamicMOTD, bShouldDisableTraderDLCLocking;
     if( true )
-        KFGRI, KFGRIE, bServerIsHidden, bNoEventSkins, bNoPings, DynamicMOTD, bServerDisableTP, CurrentMapName, bDisallowHandSwap, CurrentMaxDoshSpamAmount;
+        KFGRI, KFGRIE, bServerIsHidden, bNoEventSkins, bNoPings, bServerDisableTP, CurrentMapName, bDisallowHandSwap, CurrentMaxDoshSpamAmount, ForcedSeasonalID;
 }
 
 simulated function ReplicatedEvent(name VarName)
 {
-    local string S, BossList, SpecialWaveList, OutbreakList, PerkList;
     local ReplicationHelper CRI;
     local KFPlayerController PC;
-    local int i;
-    local class<KFGameInfo> KFGameClass;
-    local class<KFGameInfo_Endless> EndlessGameClass;
-    local KFWeeklyOutbreakInformation WeeklyInfo;
     
     PC = KFPlayerController(GetALocalPlayerController());
     switch( VarName )
@@ -200,134 +215,6 @@ simulated function ReplicatedEvent(name VarName)
             if( PC != None )
                 PC.UpdateSeasonalState();
             break;
-        case 'DynamicMOTD':
-            if( KFGRI == None || KFGRI.GameClass == None )
-            {
-                SetTimer(WorldInfo.DeltaSeconds, false, 'WaitForGRIData');
-                break;
-            }
-            
-            KFGameClass = class<KFGameInfo>(KFGRI.GameClass);
-            if( KFGameClass == None )
-                KFGameClass = class'KFGameInfo';
-            
-            S = "\n\n\n-- <font color=\"#FFFF00\">Unofficial Killing Floor 2 Settings</font> --\n\n";
-            if( DynamicMOTD.bYASLoaded )
-                S $= "<font color=\"#81ABC0\">Yet Another Scoreboard</font> is <font color=\"#00FF00\">Loaded</font>!\n";
-            if( DynamicMOTD.bAALLoaded )
-                S $= "<font color=\"#81ABC0\">Auto Admin Login</font> is <font color=\"#00FF00\">Loaded</font>!\n";
-            if( DynamicMOTD.bCVCLoaded )
-                S $= "<font color=\"#81ABC0\">Controlled Vote Collector</font> is <font color=\"#00FF00\">Loaded</font>!\n";
-            if( DynamicMOTD.bLTILoaded )
-                S $= "<font color=\"#81ABC0\">Looted Trader Inventory</font> is <font color=\"#00FF00\">Loaded</font>!\n";
-            if( DynamicMOTD.bFHUDLoaded )
-                S $= "<font color=\"#81ABC0\">Friendly HUD</font> is <font color=\"#00FF00\">Loaded</font>!\n";
-            if( DynamicMOTD.bNoEventSkins )
-                S $= "<font color=\"#81ABC0\">Event Skins</font> are <font color=\"#FF0000\">disabled</font>!\n";
-            if( DynamicMOTD.bNoPings )
-                S $= "<font color=\"#81ABC0\">Pings</font> are <font color=\"#FF0000\">disabled</font>!\n";
-            if( DynamicMOTD.bToBroadcastPickups )
-                S $= "<font color=\"#81ABC0\">Pickups</font> are <font color=\"#00FF00\">broadcasted</font>!\n";
-            if( DynamicMOTD.bShouldAllowDamagePopups )
-                S $= "<font color=\"#81ABC0\">Damage Popups</font> are <font color=\"#00FF00\">enabled</font>!\n";
-            if( DynamicMOTD.CurrentMaxPlayers > 0 )
-                S $= "<font color=\"#81ABC0\">Max Players</font> is set to <font color=\"#00FFFF\">"$DynamicMOTD.CurrentMaxPlayers$"</font>!\n";
-            if( DynamicMOTD.CurrentFakePlayers > 0 )
-                S $= "<font color=\"#81ABC0\">Fake Players</font> is set to <font color=\"#00FFFF\">"$DynamicMOTD.CurrentFakePlayers$"</font>!\n";
-            if( DynamicMOTD.CurrentMaxMonsters > 0 )
-                S $= "<font color=\"#81ABC0\">Max Monsters</font> is set to <font color=\"#00FFFF\">"$DynamicMOTD.CurrentMaxMonsters$"</font>!\n";
-            if( DynamicMOTD.MaxDoshSpamAmount > 0 )
-                S $= "<font color=\"#81ABC0\">Max Dosh Spam Amount</font> is set to <font color=\"#00FFFF\">"$DynamicMOTD.MaxDoshSpamAmount$"!\n";
-            S $= "<font color=\"#81ABC0\">Third Person</font> is "$(DynamicMOTD.bDisableTP ? "<font color=\"#FF0000\">Disabled</font>" : "<font color=\"#00FF00\">Enabled</font>")$"!\n";
-            S $= "<font color=\"#81ABC0\">Hand Swapping</font> is "$(DynamicMOTD.bDisallowHandSwap ? "<font color=\"#FF0000\">Disabled</font>" : "<font color=\"#00FF00\">Enabled</font>")$"!\n";
-            S $= "<font color=\"#81ABC0\">Summer Scrake Animation Fix</font> is "$(DynamicMOTD.bUseNormalSummerSCAnims ? "<font color=\"#FF0000\">Disabled</font>" : "<font color=\"#00FF00\">Enabled</font>")$"!\n";
-            S $= "<font color=\"#81ABC0\">Pickup Lifespan</font> is set to <font color=\"#00FFFF\">"$(DynamicMOTD.CurrentPickupLifespan > 0 ? string(DynamicMOTD.CurrentPickupLifespan) : Chr(0x221E))$"</font>!\n";
-            S $= "<font color=\"#81ABC0\">Drop All Weapons on Death</font> is "$(DynamicMOTD.bDropAllWepsOnDeath ? "<font color=\"#FF0000\">Enabled</font>" : "<font color=\"#00FF00\">Disabled</font>")$"!\n";
-            S $= "<font color=\"#81ABC0\">Enhanced Trader Menu</font> is "$(DynamicMOTD.bShouldUseEnhancedTraderMenu ? "<font color=\"#FF0000\">Enabled</font>" : "<font color=\"#00FF00\">Disabled</font>")$"!\n";
-            S $= "<font color=\"#81ABC0\">EDARs</font> are "$(DynamicMOTD.bNoEDARs ? "<font color=\"#FF0000\">Disabled</font>" : "<font color=\"#00FF00\">Enabled</font>")$"!\n";
-            S $= "<font color=\"#81ABC0\">Rage Spawns</font> are "$(DynamicMOTD.bNoRageSpawns ? "<font color=\"#FF0000\">Disabled</font>" : "<font color=\"#00FF00\">Enabled</font>")$"!\n";
-            S $= "<font color=\"#81ABC0\">Quarterpounds</font> are "$(DynamicMOTD.bNoQPSpawns ? "<font color=\"#FF0000\">Disabled</font>" : "<font color=\"#00FF00\">Enabled</font>")$"!\n";
-            S $= "<font color=\"#81ABC0\">Gas Crawlers</font> are "$(DynamicMOTD.bNoGasCrawlers ? "<font color=\"#FF0000\">Disabled</font>" : "<font color=\"#00FF00\">Enabled</font>")$"!\n";
-            S $= "<font color=\"#81ABC0\">Game Conductor</font> is "$(DynamicMOTD.bBypassGameConductor ? "<font color=\"#FF0000\">Disabled</font>" : "<font color=\"#00FF00\">Enabled</font>")$"!\n";
-            S $= "<font color=\"#81ABC0\">ZED Time</font> is "$(DynamicMOTD.bHasDisabledZEDTime ? "<font color=\"#FF0000\">Disabled</font>" : "<font color=\"#FF0000\">Enabled</font>")$"!\n";
-            if( DynamicMOTD.bShouldDisableUpgrades )
-                S $= "<font color=\"#81ABC0\">Weapon Upgrades</font> are <font color=\"#FF0000\">Disabled</font>!\n";
-            if( DynamicMOTD.bShouldDisableCrossPerk )
-                S $= "<font color=\"#81ABC0\">Cross Perk</font> is <font color=\"#FF0000\">Disabled</font>!\n";
-            S $= "<font color=\"#81ABC0\">Dosh Kill Multiplier</font> is set to <font color=\"#00FFFF\">"$`FormatFloat(float((DynamicMOTD.BitData[0] >> 8) & 0xFF) / 100.f)$"</font>!\n";
-            S $= "<font color=\"#81ABC0\">Spawn Rate Multiplier</font> is set to <font color=\"#00FFFF\">"$`FormatFloat(float(DynamicMOTD.BitData[0] & 0xFF) / 100.f)$"</font>!\n";
-            S $= "<font color=\"#81ABC0\">Wave Count Multiplier</font> is set to <font color=\"#00FFFF\">"$`FormatFloat(float((DynamicMOTD.BitData[1] >> 16) & 0xFFFF) / 100.f)$"</font>!\n";
-            S $= "<font color=\"#81ABC0\">Ammo Cost Multiplier</font> is set to <font color=\"#00FFFF\">"$`FormatFloat(float(DynamicMOTD.BitData[1] & 0xFFFF) / 100.f)$"</font>!\n";
-
-            if( DynamicMOTD.BossData > 0 )
-            {
-                for( i=0; i<KFGameClass.default.AIBossClassList.Length && i<8; i++ )
-                {
-                    if( ((DynamicMOTD.BossData >> (i+1)) & 1) == 1 )
-                        BossList $= (BossList != "" ? ", " : "") $ KFGameClass.default.AIBossClassList[i].static.GetLocalizedName();
-                }
-                
-                if( BossList != "" )
-                    S $= "<font color=\"#81ABC0\">Bosses Allowed</font> [ <font color=\"#00FFFF\">" $ BossList $ "</font> ]\n";
-            }
-            
-            if( DynamicMOTD.BitData[2] > 0 )
-            {
-                for( i=0; i<PC.default.PerkList.Length && i<32; i++ )
-                {
-                    if( ((DynamicMOTD.BitData[2] >> (i+1)) & 1) == 1 )
-                        PerkList $= (PerkList != "" ? ", " : "") $ class'KFPlayerController'.default.PerkList[i].PerkClass.default.PerkName;
-                }
-                
-                if( PerkList != "" )
-                    S $= "<font color=\"#81ABC0\">Perks Allowed</font> [ <font color=\"#00FFFF\">" $ PerkList $ "</font> ]\n";
-            }
-
-            EndlessGameClass = class<KFGameInfo_Endless>(KFGameClass);
-            if( EndlessGameClass != None )
-            {
-                if( DynamicMOTD.OutbreakData > 0 )
-                {
-                    for( i=0; i<EndlessGameClass.default.OutbreakEventClass.default.SetEvents.Length && i<8; i++ )
-                    {
-                        if( ((DynamicMOTD.OutbreakData >> (i+1)) & 1) == 1 )
-                        {
-                            WeeklyInfo = class'KFMission_LocalizedStrings'.static.GetWeeklyOutbreakInfoByIndex(i);
-                            OutbreakList $= (OutbreakList != "" ? ", " : "") $ WeeklyInfo.FriendlyName;
-                        }
-                    }
-                }
-                else OutbreakList = "None";
-                
-                if( OutbreakList != "" )
-                    S $= "<font color=\"#81ABC0\">Weekly Outbreaks Allowed</font> [ <font color=\"#00FFFF\">" $ OutbreakList $ "</font> ]\n";
-                
-                if( DynamicMOTD.BitData[3] > 0 )
-                {
-                    for( i=0; i<AT_MAX && i<32; i++ )
-                    {
-                        if( ((DynamicMOTD.BitData[3] >> (i+1)) & 1) == 1 )
-                            SpecialWaveList $= (SpecialWaveList != "" ? ", " : "") $ KFGameClass.default.AIClassList[i].static.GetLocalizedName();
-                    }
-                }
-                else SpecialWaveList = "None";
-                
-                if( SpecialWaveList != "" )
-                    S $= "<font color=\"#81ABC0\">Special Waves Allowed</font> [ <font color=\"#00FFFF\">" $ SpecialWaveList $ "</font> ]\n";
-            }
-
-            if( DynamicMOTD.bEnforceVanilla )
-                S $= "<font color=\"#00FF00\"><b>Vanilla Mode is Enforced!</b></font>\n";
-
-            CRI = `GetChatRep();
-            if( CRI != None && CRI.bMOTDReceived )
-            {
-                CRI.ServerMOTD $= S;
-                CRI.ShowMOTD();
-            }
-            else DynamicMOTDString = S;
-
-            break;
         default:
             Super.ReplicatedEvent(VarName);
             break;
@@ -347,6 +234,7 @@ simulated function PreBeginPlay()
     local KFWeaponAttachment Attachment;
     local KFMuzzleFlash MuzzleFlash;
     local string WSDownloader;
+    local MapSeasonalInfo MapInfo;
     
     MuzzleFlash = new class'KFMuzzleFlash' (KFMuzzleFlash(DynamicLoadObject("WEP_TommyGun_ARCH.Wep_TommyGun_MuzzleFlash_3P", class'KFMuzzleFlash')));
     MuzzleFlash.MuzzleFlash.ParticleSystemTemplate = ParticleSystem'UKFP_TommyGun_EMIT.FX_Wep_MuzzleFlash_TommyGun';
@@ -393,6 +281,81 @@ simulated function PreBeginPlay()
         AllowedOutbreaks = default.DefaultAllowedOutbreaks;
         AllowedSpecialWaves = default.DefaultAllowedSpecialWaves;
         AllowedPerks = "BZ,CO,SU,FM,DO,FB,GS,SS,SW,SV";
+        iConfigVersion++;
+    }
+    
+    if( iConfigVersion <= 2 )
+    {
+        if( MapTypes.Find('MapName', "KF-KrampusLair") == INDEX_NONE )
+        {
+            MapInfo.MapName = "KF-KrampusLair";
+            MapInfo.Type = "XMas";
+            MapTypes.AddItem(MapInfo);
+        }
+        
+        if( MapTypes.Find('MapName', "KF-TragicKingdom") == INDEX_NONE )
+        {
+            MapInfo.MapName = "KF-TragicKingdom";
+            MapInfo.Type = "Summer";
+            MapTypes.AddItem(MapInfo);
+        }
+        
+        if( MapTypes.Find('MapName', "KF-Airship") == INDEX_NONE )
+        {
+            MapInfo.MapName = "KF-Airship";
+            MapInfo.Type = "Summer";
+            MapTypes.AddItem(MapInfo);
+        }
+        
+        if( MapTypes.Find('MapName', "KF-SantasWorkshop") == INDEX_NONE )
+        {
+            MapInfo.MapName = "KF-SantasWorkshop";
+            MapInfo.Type = "XMas";
+            MapTypes.AddItem(MapInfo);
+        }
+        
+        if( MapTypes.Find('MapName', "KF-SteamFortress") == INDEX_NONE )
+        {
+            MapInfo.MapName = "KF-SteamFortress";
+            MapInfo.Type = "Summer";
+            MapTypes.AddItem(MapInfo);
+        }
+        
+        if( MapTypes.Find('MapName', "KF-MonsterBall") == INDEX_NONE )
+        {
+            MapInfo.MapName = "KF-MonsterBall";
+            MapInfo.Type = "Halloween";
+            MapTypes.AddItem(MapInfo);
+        }
+        
+        if( MapTypes.Find('MapName', "KF-AshwoodAsylum") == INDEX_NONE )
+        {
+            MapInfo.MapName = "KF-AshwoodAsylum";
+            MapInfo.Type = "Halloween";
+            MapTypes.AddItem(MapInfo);
+        }
+        
+        if( MapTypes.Find('MapName', "KF-Sanitarium") == INDEX_NONE )
+        {
+            MapInfo.MapName = "KF-Sanitarium";
+            MapInfo.Type = "Halloween";
+            MapTypes.AddItem(MapInfo);
+        }
+        
+        if( MapTypes.Find('MapName', "KF-HellmarkStation") == INDEX_NONE )
+        {
+            MapInfo.MapName = "KF-HellmarkStation";
+            MapInfo.Type = "Halloween";
+            MapTypes.AddItem(MapInfo);
+        }
+        
+        if( MapTypes.Find('MapName', "KF-Elysium") == INDEX_NONE )
+        {
+            MapInfo.MapName = "KF-Elysium";
+            MapInfo.Type = "Halloween";
+            MapTypes.AddItem(MapInfo);
+        }
+        
         iConfigVersion++;
     }
 	
@@ -700,11 +663,7 @@ simulated function Cleanup()
     if( bCleanedUp )
         return;
       
-    if( !bUsingLinuxHack )
-    {
-        FunctionProxy.Cleanup();
-        FunctionProxy = None;
-    }
+    FunctionProxy.Cleanup();
 
     if( WorldInfo.NetMode == NM_DedicatedServer || WorldInfo.NetMode == NM_ListenServer )
     {
@@ -721,11 +680,12 @@ simulated function Cleanup()
 function bool ProcessChatMessage(string Msg, PlayerController Sender, optional bool bTeamMessage)
 {
     local KFPlayerController KFPC;
+    local Mutator M;
     
     KFPC = KFPlayerController(Sender);
     if( KFPC == None )
         return false;
-
+        
     if( Msg ~= "join" )
     {
         PlayerChangeSpec(KFPC, false);
@@ -735,12 +695,39 @@ function bool ProcessChatMessage(string Msg, PlayerController Sender, optional b
     {
         if( !KFPC.PlayerReplicationInfo.bAdmin && (KFPC.PlayerReplicationInfo.bOnlySpectator || KFGRI.bWaveIsActive) )
         {
-            WriteToClient(KFPC, KFGRI.bWaveIsActive ? "Can't do that during a wave!" : "Say !join to unspectate", "FF0000");
+            KFPC.ReceiveLocalizedMessage(class'UKFPLocalMessage', KFGRI.bWaveIsActive ? UKFP_NotWave : UKFP_JoinCommand);
             return false;
         }
         PlayerChangeSpec(KFPC, true);
         return true;
     }
+    else if( Msg ~= "ot" )
+    {
+        if( !bUsingOpenTraderCommand || MyKFGI.IsWaveActive() )
+            return true;
+        KFPC.ServerSetEnablePurchases(true);
+        KFPC.ClientOpenTraderMenu(true);
+        return true;
+    }
+    else if( Left(Msg, 11) ~= "changeslots" || Left(Msg, 2) ~= "cs" )
+    {
+        if( !KFPC.PlayerReplicationInfo.bAdmin )
+            return false;
+            
+        // Prevents rogue mutators from blocking this command or breaking it - FMX
+        for( M=MyKFGI.BaseMutator; M!=None; M=M.NextMutator )
+        {
+            if( M.IsA('UKFPMutator') )
+                break;
+        }
+            
+        if( M != None )
+            M.Mutate(Msg, KFPC);
+        
+        return false;
+    }
+    else if( VotingHandler != None )
+        VotingHandler.ParseCommand(Msg, KFPC);
     
     return false;
 }
@@ -787,7 +774,7 @@ simulated function bool ClientProcessChatMessage(string Msg, PlayerController Se
     else if( Msg ~= "dp" )
     {
         CRI.UKFPInteraction.bDropProtection = !CRI.UKFPInteraction.bDropProtection;
-        CRI.WriteToChat(CRI.UKFPInteraction.bDropProtection ? "Players can no longer pickup your weapons!" : "Players can pickup your weapons again!", CRI.UKFPInteraction.bDropProtection ? "00FF00" : "FF0000");
+        KFPC.ReceiveLocalizedMessage(class'UKFPLocalMessage', CRI.UKFPInteraction.bDropProtection ? UKFP_PickupDisabled : UKFP_PickupEnabled);
         CRI.UKFPInteraction.SaveConfig();
         CRI.ServerSetDropProtection(CRI.UKFPInteraction.bDropProtection);
         return true;
@@ -811,14 +798,14 @@ function PlayerChangeSpec( KFPlayerController PC, bool bSpectator )
         
 	if( bSpectator==PC.PlayerReplicationInfo.bOnlySpectator || CRI.NextSpectateChange>WorldInfo.TimeSeconds )
     {
-        WriteToClient(PC, "Can't change spectate mode."@((bSpectator==PC.PlayerReplicationInfo.bOnlySpectator) ? "Already a spectator!" : "You must wait before trying to change again!"), "FF0000");
+        PC.ReceiveLocalizedMessage(class'UKFPLocalMessage', (bSpectator==PC.PlayerReplicationInfo.bOnlySpectator) ? UKFP_AlreadySpectator : UKFP_WaitForSpectator);
 		return;
     }
         
 	CRI.NextSpectateChange = WorldInfo.TimeSeconds+0.5;
 
 	if( WorldInfo.Game.AtCapacity(bSpectator,PC.PlayerReplicationInfo.UniqueId) )
-		WriteToClient(PC, "Can't change spectate mode because game is at its maximum capacity.", "FF0000");
+        PC.ReceiveLocalizedMessage(class'UKFPLocalMessage', UKFP_SpectatorMaxCapacity);
 	else if( bSpectator )
 	{
 		if( PC.PlayerReplicationInfo.Team!=None )
@@ -829,7 +816,7 @@ function PlayerChangeSpec( KFPlayerController PC, bool bSpectator )
 		PC.Reset();
 		--WorldInfo.Game.NumPlayers;
 		++WorldInfo.Game.NumSpectators;
-		WorldInfo.Game.Broadcast(PC,PC.PlayerReplicationInfo.GetHumanReadableName()@"became a spectator");
+        PC.BroadcastLocalizedMessage(class'UKFPLocalMessage', UKFP_PlayerBecameSpectator, PC.PlayerReplicationInfo);
         if( MyKFGI.bWaitingToStartMatch )
         {
             CRI.ForceCloseMenus(true);
@@ -845,14 +832,14 @@ function PlayerChangeSpec( KFPlayerController PC, bool bSpectator )
 		if( !WorldInfo.Game.ChangeTeam(PC,WorldInfo.Game.PickTeam(0,PC,PC.PlayerReplicationInfo.UniqueId),false) )
 		{
 			PC.PlayerReplicationInfo.bOnlySpectator = true;
-			WriteToClient(PC, "Can't become an active player, failed to set a team.", "FF0000");
+            PC.ReceiveLocalizedMessage(class'UKFPLocalMessage', UKFP_SpectatorFailed);
 			return;
 		}
 		++WorldInfo.Game.NumPlayers;
 		--WorldInfo.Game.NumSpectators;
 		PC.Reset();
-		WorldInfo.Game.Broadcast(PC,PC.PlayerReplicationInfo.GetHumanReadableName()@"became an active player");
-        PC.PlayerReplicationInfo.bReadyToPlay = true;
+        PC.BroadcastLocalizedMessage(class'UKFPLocalMessage', UKFP_SpectatorBecamePlayer, PC.PlayerReplicationInfo);
+		PC.PlayerReplicationInfo.bReadyToPlay = true;
         if( PlayersDiedThisWave.Find(PC) == INDEX_NONE )
         {
             if( PC.Pawn == None || KFPawn_Customization(PC.Pawn) != None )
@@ -1307,20 +1294,18 @@ simulated function byte GetZEDSeasonalIndex()
     GRI = KFGameReplicationInfo(WorldInfo.GRI);
     PC = KFPlayerController(GetALocalPlayerController());
     SeasonalID = class'KFGameEngine'.static.GetSeasonalEventIDForZedSkins();
-    
+
     KFMI = KFMapInfo(WorldInfo.GetMapInfo());
     if( KFMI != None )
         KFMI.ModifySeasonalEventId(SeasonalID);
         
     bAllowSeasonalSkins = (PC != None && PC.GetAllowSeasonalSkins()) || GRI.bAllowSeasonalSkins;
-
-    if( SeasonalID == SEI_None )
-    {
-        if( !bAllowSeasonalSkins )
-            SeasonalID = SEI_None;
-        else if( GRI.SeasonalSkinsIndex != -1 )
-            SeasonalID = GRI.SeasonalSkinsIndex;
-    }
+    if( !bAllowSeasonalSkins )
+        SeasonalID = SEI_None;
+    else if( ForcedSeasonalID != -1 )
+        SeasonalID = ForcedSeasonalID;
+    else if( GRI.SeasonalSkinsIndex != -1 )
+        SeasonalID = GRI.SeasonalSkinsIndex;
     
     return SeasonalID;
 }
@@ -1414,7 +1399,7 @@ function PlayerReplicationInfo FindPRIFromDrop(KFDroppedPickup Drop, out int Ind
 
 function bool OverridePickupQuery(Pawn Other, class<Inventory> ItemClass, Actor Pickup, out byte bAllowPickup)
 {
-    local string WeaponName, SteamID, OwnerName, S;
+    local string WeaponName, SteamID, OwnerName;
     local int SellPrice, Index, i;
     local byte ItemIndex;
     local KFGameReplicationInfo GRI;
@@ -1485,13 +1470,9 @@ function bool OverridePickupQuery(Pawn Other, class<Inventory> ItemClass, Actor 
     WeaponName = WeaponDef.static.GetItemName();
     SellPrice = InvMan.GetAdjustedSellPriceFor(Item);
 
-    S = "<font color=\"#FFFF00\" face=\"MIcon\">"$`GetMIconChar("alert-box")@"</font> %p picked up %o's %w("$Chr(208)$"%$).";
-    S = Repl(S, "%p", "<font color=\"#C00101\">"$Other.PlayerReplicationInfo.PlayerName)$"</font>";
-    S = Repl(S, "%o", "<font color=\"#01C001\">"$OwnerName)$"</font>";
-    S = Repl(S, "%w", "<font color=\"#0160C0\">"$WeaponName)$"</font>";
-    S = Repl(S, "%$", "<font color=\"#C0C001\">"$SellPrice)$"</font>";
-    Broadcast(S, "FFFF00");
-    
+    foreach ChatArray(CRI)
+        CRI.OnPickupBroadcasted(Other.PlayerReplicationInfo, WeaponName, OwnerName, SellPrice);
+
     return false;
 }
 
@@ -2250,6 +2231,8 @@ defaultproperties
     
     NetPriority=4
     NetUpdateFrequency=20
+    
+    ForcedSeasonalID=-1
     
     Begin Object Class=class'KFGFxObject_TraderItems' Name=OriginalTraderItems_0
         ObjectArchetype=KFGFxObject_TraderItems'GP_Trader_ARCH.DefaultTraderItems'

@@ -68,7 +68,8 @@ stripped final function context(KFGFxTraderContainer_ItemDetails) SetGenericItem
     local bool bStatUpgraded, bUsePerc;
     
     KFW = class<KFWeapon>(DynamicLoadObject(TraderItem.WeaponDef.default.WeaponClassPath, class'Class'));
-    SecondaryFireIcon = KFW.default.SecondaryAmmoTexture != class'KFWeapon'.default.SecondaryAmmoTexture ? KFW.default.SecondaryAmmoTexture : KFW.default.FireModeIconPaths[1];
+    if( KFW != None )
+        SecondaryFireIcon = KFW.default.SecondaryAmmoTexture != class'KFWeapon'.default.SecondaryAmmoTexture ? KFW.default.SecondaryAmmoTexture : KFW.default.FireModeIconPaths[1];
 
  	ItemData.SetString("type", TraderItem.WeaponDef.static.GetItemName());
  	ItemData.SetString("name", TraderItem.WeaponDef.static.GetItemCategory());
@@ -83,7 +84,7 @@ stripped final function context(KFGFxTraderContainer_ItemDetails) SetGenericItem
 		CurrentPerk.ModifyMagSizeAndNumber(None, FinalMagazineCapacity, TraderItem.AssociatedPerkClasses,, TraderItem.ClassName);
 		CurrentPerk.ModifyMaxSpareAmmoAmount(None, FinalMaxSpareAmmoCount, TraderItem);
 
-        if( KFW.default.WeaponFireTypes[1] != EWFT_None )
+        if( KFW != None && KFW.default.WeaponFireTypes[1] != EWFT_None )
         {
             FinalSecondaryMagazineCapacity = KFW.default.MagazineCapacity[1];
             FinalMaxSecondarySpareAmmoCount = KFW.default.SpareAmmoCapacity[1];
@@ -97,7 +98,7 @@ stripped final function context(KFGFxTraderContainer_ItemDetails) SetGenericItem
 		FinalMaxSpareAmmoCount = TraderItem.MaxSpareAmmo;
 		FinalMagazineCapacity = TraderItem.MagazineCapacity;
         
-        if( KFW.default.WeaponFireTypes[1] != EWFT_None )
+        if( KFW != None && KFW.default.WeaponFireTypes[1] != EWFT_None )
         {
             FinalSecondaryMagazineCapacity = KFW.default.MagazineCapacity[1];
             FinalMaxSecondarySpareAmmoCount = KFW.default.SpareAmmoCapacity[1];
@@ -110,44 +111,47 @@ stripped final function context(KFGFxTraderContainer_ItemDetails) SetGenericItem
         ItemData.SetString("ammoCapacity", string(FinalMaxSpareAmmoCount));
     else ItemData.SetString("ammoCapacity", FinalMagazineCapacity$"/"$FinalMaxSpareAmmoCount);
     
-    if( UpgradeLevel != INDEX_NONE )
+    if( KFW != None )
     {
-        UpgradeMagazineCapacity = KFW.static.GetUpgradedStatValue(FinalMagazineCapacity, EWUS_MagCapacity0, UpgradeLevel);
-        UpgradeMaxSpareAmmoCount = KFW.static.GetUpgradedStatValue(FinalMaxSpareAmmoCount, EWUS_SpareCapacity0, UpgradeLevel);
-        if( FinalMagazineCapacity != UpgradeMagazineCapacity || FinalMaxSpareAmmoCount != UpgradeMaxSpareAmmoCount )
-            ItemData.SetString("primaryAmmoUpgrade", UpgradeMagazineCapacity$"/"$UpgradeMaxSpareAmmoCount);
-        else ItemData.SetString("primaryAmmoUpgrade", "");
-    }
-    else ItemData.SetString("primaryAmmoUpgrade", "");
-
-    ItemData.SetString("primaryAmmoIcon", "img://"$PathName(KFW.default.FireModeIconPaths[0]));
-    
-    if( KFW.default.WeaponFireTypes[1] != EWFT_None )
-    {
-        if( FinalSecondaryMagazineCapacity > 0 || FinalMaxSecondarySpareAmmoCount > 0 )
+        if( UpgradeLevel != INDEX_NONE )
         {
-            if( FinalMaxSecondarySpareAmmoCount <= 0 && FinalSecondaryMagazineCapacity > 0 )
-                ItemData.SetString("secondaryAmmoCapacity", "("$FinalSecondaryMagazineCapacity$")");
-            else if( FinalSecondaryMagazineCapacity <= 0 && FinalMaxSecondarySpareAmmoCount > 0 )
-                ItemData.SetString("secondaryAmmoCapacity", "("$FinalMaxSecondarySpareAmmoCount$")");
-            else ItemData.SetString("secondaryAmmoCapacity", "("$FinalSecondaryMagazineCapacity$"/"$FinalMaxSecondarySpareAmmoCount$")");
-            
-            if( UpgradeLevel != INDEX_NONE )
-            {
-                UpgradeSecondaryMagazineCapacity = KFW.static.GetUpgradedStatValue(FinalSecondaryMagazineCapacity, EWUS_MagCapacity1, UpgradeLevel);
-                UpgradeMaxSecondarySpareAmmoCount = KFW.static.GetUpgradedStatValue(FinalMaxSecondarySpareAmmoCount, EWUS_SpareCapacity1, UpgradeLevel);
-                if( FinalSecondaryMagazineCapacity != UpgradeSecondaryMagazineCapacity || FinalMaxSecondarySpareAmmoCount != UpgradeMaxSecondarySpareAmmoCount )
-                    ItemData.SetString("secondaryAmmoUpgrade", "("$UpgradeSecondaryMagazineCapacity$"/"$UpgradeMaxSecondarySpareAmmoCount$")");
-                else ItemData.SetString("secondaryAmmoUpgrade", "");
-            }
+            UpgradeMagazineCapacity = KFW.static.GetUpgradedStatValue(FinalMagazineCapacity, EWUS_MagCapacity0, UpgradeLevel);
+            UpgradeMaxSpareAmmoCount = KFW.static.GetUpgradedStatValue(FinalMaxSpareAmmoCount, EWUS_SpareCapacity0, UpgradeLevel);
+            if( FinalMagazineCapacity != UpgradeMagazineCapacity || FinalMaxSpareAmmoCount != UpgradeMaxSpareAmmoCount )
+                ItemData.SetString("primaryAmmoUpgrade", UpgradeMagazineCapacity$"/"$UpgradeMaxSpareAmmoCount);
+            else ItemData.SetString("primaryAmmoUpgrade", "");
         }
-        ItemData.SetString("secondaryAmmoIcon", "img://"$PathName(SecondaryFireIcon));
-    }
-    else ItemData.SetString("secondaryAmmoUpgrade", "");
+        else ItemData.SetString("primaryAmmoUpgrade", "");
 
-    ItemData.SetInt("weight", KFW.default.InventorySize);
-    if( UpgradeLevel > INDEX_NONE )
-        ItemData.SetInt("upgradeWeight", TraderItem.WeaponUpgradeWeight[UpgradeLevel]);
+        ItemData.SetString("primaryAmmoIcon", "img://"$PathName(KFW.default.FireModeIconPaths[0]));
+        
+        if( KFW.default.WeaponFireTypes[1] != EWFT_None )
+        {
+            if( FinalSecondaryMagazineCapacity > 0 || FinalMaxSecondarySpareAmmoCount > 0 )
+            {
+                if( FinalMaxSecondarySpareAmmoCount <= 0 && FinalSecondaryMagazineCapacity > 0 )
+                    ItemData.SetString("secondaryAmmoCapacity", "("$FinalSecondaryMagazineCapacity$")");
+                else if( FinalSecondaryMagazineCapacity <= 0 && FinalMaxSecondarySpareAmmoCount > 0 )
+                    ItemData.SetString("secondaryAmmoCapacity", "("$FinalMaxSecondarySpareAmmoCount$")");
+                else ItemData.SetString("secondaryAmmoCapacity", "("$FinalSecondaryMagazineCapacity$"/"$FinalMaxSecondarySpareAmmoCount$")");
+                
+                if( UpgradeLevel != INDEX_NONE )
+                {
+                    UpgradeSecondaryMagazineCapacity = KFW.static.GetUpgradedStatValue(FinalSecondaryMagazineCapacity, EWUS_MagCapacity1, UpgradeLevel);
+                    UpgradeMaxSecondarySpareAmmoCount = KFW.static.GetUpgradedStatValue(FinalMaxSecondarySpareAmmoCount, EWUS_SpareCapacity1, UpgradeLevel);
+                    if( FinalSecondaryMagazineCapacity != UpgradeSecondaryMagazineCapacity || FinalMaxSecondarySpareAmmoCount != UpgradeMaxSecondarySpareAmmoCount )
+                        ItemData.SetString("secondaryAmmoUpgrade", "("$UpgradeSecondaryMagazineCapacity$"/"$UpgradeMaxSecondarySpareAmmoCount$")");
+                    else ItemData.SetString("secondaryAmmoUpgrade", "");
+                }
+            }
+            ItemData.SetString("secondaryAmmoIcon", "img://"$PathName(SecondaryFireIcon));
+        }
+        else ItemData.SetString("secondaryAmmoUpgrade", "");
+
+        ItemData.SetInt("weight", KFW.default.InventorySize);
+        if( UpgradeLevel > INDEX_NONE )
+            ItemData.SetInt("upgradeWeight", TraderItem.WeaponUpgradeWeight[UpgradeLevel]);
+    }
 
 	ItemData.SetBool("bIsFavorite", MyTraderMenu.GetIsFavorite(TraderItem.ClassName));
 
@@ -164,7 +168,8 @@ stripped final function context(KFGFxTraderContainer_ItemDetails) SetGenericItem
     {
         StatsObject = CreateObject("Object");
         StatsObject.SetString("firemodeName", class'KFGFxHUD_WeaponSelectWidget'.default.PrimaryString);
-        StatsObject.SetString("firemodeIcon", "img://"$PathName(KFW.default.FireModeIconPaths[0]));
+        if( KFW != None )
+            StatsObject.SetString("firemodeIcon", "img://"$PathName(KFW.default.FireModeIconPaths[0]));
 
         StatIndex = 0;
         for( i=0; i<TraderItem.WeaponStats.Length && i<6; i++ )
@@ -172,7 +177,7 @@ stripped final function context(KFGFxTraderContainer_ItemDetails) SetGenericItem
             if( TraderItem.WeaponStats[i].StatValue <= 0 || TraderItem.WeaponStats[i].StatType == TWS_HealAmount || TraderItem.WeaponStats[i].StatType == TWS_RechargeTime || TraderItem.WeaponStats[i].StatType == TWS_Block || TraderItem.WeaponStats[i].StatType == TWS_Parry )
                 continue;
 
-            if( TraderItem.WeaponStats[i].StatType == TWS_Damage )
+            if( KFW != None && TraderItem.WeaponStats[i].StatType == TWS_Damage )
             {
                 DamageType = class<KFDamageType>(KFW.default.InstantHitDamageTypes[0]);
                 if( DamageType != None )
@@ -193,7 +198,7 @@ stripped final function context(KFGFxTraderContainer_ItemDetails) SetGenericItem
             StatObject = CreateObject("Object");
             StatObject.SetString("statTitle", AfflictionType $ GetLocalizedStatString(TraderItem.WeaponStats[i].StatType));
             StatObject.SetInt("statValue", TraderItem.WeaponStats[i].StatValue);
-            if( UpgradeLevel > INDEX_NONE )
+            if( KFW != None && UpgradeLevel > INDEX_NONE )
             {
                 switch( TraderItem.WeaponStats[i].StatType )
                 {
@@ -226,7 +231,7 @@ stripped final function context(KFGFxTraderContainer_ItemDetails) SetGenericItem
         StatsObject = CreateObject("Object");
         StatsObject.SetString("firemodeName", class'KFGFxHUD_WeaponSelectWidget'.default.SecondaryString);
 
-        if( KFW.default.WeaponFireTypes[1] != EWFT_None )
+        if( KFW != None && KFW.default.WeaponFireTypes[1] != EWFT_None )
         {
             SecondaryFireDamage = CalcSecondaryWeaponDamage(KFW);
             

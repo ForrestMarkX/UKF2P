@@ -44,7 +44,13 @@ var transient ESeasonalEventType SavedSeasonalEventDate;
 var transient ProxyInfo FunctionProxy;
 var transient array<Object> FlipHelpers;
 
+var localized string IntroString, HelpString;
+var localized string MaxPlayersString;
+var localized string PickupBroadcastString;
+
 var string ServerMOTD;
+var transient string DynamicMOTDString;
+var transient byte CurrentMOTDIndex;
 
 struct FBindPages
 {
@@ -146,6 +152,8 @@ simulated function PostBeginPlay()
         if( KFPC == None )
             KFPC = KFPlayerController(GetALocalPlayerController());
             
+        SetOwner(KFPC);
+            
         KFPC.bShortConnectTimeOut = true;
         PRI = KFPC.PlayerReplicationInfo;
         OldDrawCrosshair = KFHudBase(KFPC.myHUD).bDrawCrosshair;
@@ -208,8 +216,8 @@ simulated function InitializeHUD()
     UpdateRhythmCounter();
     
     KFPC.MyGFxManager.PartyWidget.PartyChatWidget.SetVisible(true);
-    
-    WriteToChat("<font color=\"#00FF00\" face=\"MIcon\">"$`GetMIconChar("gamepad-variant")$"</font> <font color=\"#FFFFFF\">[UKFP] This server is running Unofficial KF2 Patch by</font> <font color=\"#FFFF00\"><b>Forrest Mark X</b></font>\n<font color=\"#00A2E8\" face=\"MIcon\">"$`GetMIconChar("information")$"</font> <font color=\"#FFFFFF\">Type !UKFPhelp for a list of changes</font>", "FFFF00");
+
+    WriteToChat("<font color=\"#00FF00\" face=\"MIcon\">"$`GetMIconChar("gamepad-variant")$"</font> <font color=\"#FFFFFF\">"$Repl(IntroString, "%s", "<font color=\"#FFFF00\"><b>Forrest Mark X</b></font>")$"</font>\n<font color=\"#00A2E8\" face=\"MIcon\">"$`GetMIconChar("information")$"</font> <font color=\"#FFFFFF\">"$Repl(HelpString, "%s", "!UKFPhelp")$"</font>", "FFFF00");
 }
 
 simulated function UpdateRhythmCounter()
@@ -251,8 +259,8 @@ reliable client private function ClientPing()
     {
         UKFPInteraction.bHasPacketLoss = false;
         UKFPInteraction.CurrentPacketLossAlpha = 0;
-        if( KFPC.MyGFxManager != None && KFPC.MyGFxManager.PartyWidget != None )
-            KFPC.MyGFxManager.PartyWidget.UpdateReadyButtonVisibility();
+        /*if( KFPC.MyGFxManager != None && KFPC.MyGFxManager.PartyWidget != None )
+            KFPC.MyGFxManager.PartyWidget.UpdateReadyButtonVisibility();*/
     }
     bSentServerPing = false;
 }
@@ -262,8 +270,8 @@ simulated private function PingFailure()
     if( UKFPInteraction != None )
     {
         UKFPInteraction.bHasPacketLoss = true;
-        if( KFPC.MyGFxManager != None && KFPC.MyGFxManager.PartyWidget != None )
-            KFPC.MyGFxManager.PartyWidget.UpdateReadyButtonVisibility();
+        /*if( KFPC.MyGFxManager != None && KFPC.MyGFxManager.PartyWidget != None )
+            KFPC.MyGFxManager.PartyWidget.UpdateReadyButtonVisibility();*/
     }
 }
 
@@ -515,7 +523,7 @@ function SendMOTD()
     
 	S = MyKFGI.ServerMOTD;
     StrLen = Len(S);
-    
+
 	while( StrLen>510 )
 	{
 		ReceiveServerMOTD(Left(S,500),false);
@@ -527,20 +535,339 @@ function SendMOTD()
 
 reliable client function ReceiveServerMOTD( string S, bool bFinal )
 {
-    local UKFPReplicationInfo UKFRep;
-    
 	ServerMOTD $= S;
     bMOTDReceived = bFinal;
     if( bFinal )
     {
-        UKFRep = MainRepInfo;
-        if( UKFRep == None )
-            UKFRep = `GetURI();
-            
-        if( UKFRep != None && UKFRep.DynamicMOTDString != "" )
-            ServerMOTD $= UKFRep.DynamicMOTDString;
+        if( DynamicMOTDString != "" )
+        {
+            DynamicMOTDString = "\n\n\n-- <font color=\"#FFFF00\">"$MainRepInfo.LocalizedMOTD[`MOTD_HEADER].Name$"</font> --\n\n" $ DynamicMOTDString;
+            ServerMOTD $= DynamicMOTDString;
+        }
+        else ServerStartDynamicMOTD();
             
         ShowMOTD();
+    }
+}
+
+reliable server function ServerStartDynamicMOTD()
+{
+    if( MainRepInfo.bShouldUseDynamicMOTD )
+    {
+        CurrentMOTDIndex = 1;
+        SetTimer(WorldInfo.DeltaSeconds*2.f, false, 'SetupDynamicMOTD');
+    }
+}
+
+function SetupDynamicMOTD()
+{
+    switch( CurrentMOTDIndex )
+    {
+        case `MOTD_YAS:
+            ReceiveDynamicMOTD(CurrentMOTDIndex++, MainRepInfo.DynamicMOTD.bYASLoaded);
+            break;
+        case `MOTD_AAL:
+            ReceiveDynamicMOTD(CurrentMOTDIndex++, MainRepInfo.DynamicMOTD.bAALLoaded);
+            break;
+        case `MOTD_CVC:
+            ReceiveDynamicMOTD(CurrentMOTDIndex++, MainRepInfo.DynamicMOTD.bCVCLoaded);
+            break;
+        case `MOTD_LTI:
+            ReceiveDynamicMOTD(CurrentMOTDIndex++, MainRepInfo.DynamicMOTD.bLTILoaded);
+            break;
+        case `MOTD_FHUD:
+            ReceiveDynamicMOTD(CurrentMOTDIndex++, MainRepInfo.DynamicMOTD.bFHUDLoaded);
+            break;
+        case `MOTD_SKINS:
+            ReceiveDynamicMOTD(CurrentMOTDIndex++, MainRepInfo.DynamicMOTD.bNoEventSkins);
+            break;
+        case `MOTD_PINGS:
+            ReceiveDynamicMOTD(CurrentMOTDIndex++, MainRepInfo.DynamicMOTD.bNoPings);
+            break;
+        case `MOTD_PICKUPS:
+            ReceiveDynamicMOTD(CurrentMOTDIndex++, MainRepInfo.DynamicMOTD.bToBroadcastPickups);
+            break;
+        case `MOTD_DAMAGEPOPUPS:
+            ReceiveDynamicMOTD(CurrentMOTDIndex++, MainRepInfo.DynamicMOTD.bShouldAllowDamagePopups);
+            break;
+        case `MOTD_MAXPLAYERS:
+            ReceiveDynamicMOTD(CurrentMOTDIndex++, MainRepInfo.DynamicMOTD.CurrentMaxPlayers);
+            break;
+        case `MOTD_FAKEPLAYERS:
+            ReceiveDynamicMOTD(CurrentMOTDIndex++, MainRepInfo.DynamicMOTD.CurrentFakePlayers);
+            break;
+        case `MOTD_MAXMONSTERS:
+            ReceiveDynamicMOTD(CurrentMOTDIndex++, MainRepInfo.DynamicMOTD.CurrentMaxMonsters);
+            break;
+        case `MOTD_MAXDOSHSPAM:
+            ReceiveDynamicMOTD(CurrentMOTDIndex++, MainRepInfo.DynamicMOTD.MaxDoshSpamAmount);
+            break;
+        case `MOTD_THIRDPERSON:
+            ReceiveDynamicMOTD(CurrentMOTDIndex++, MainRepInfo.DynamicMOTD.bDisableTP);
+            break;
+        case `MOTD_HANDSWAP:
+            ReceiveDynamicMOTD(CurrentMOTDIndex++, MainRepInfo.DynamicMOTD.bDisallowHandSwap);
+            break;
+        case `MOTD_SUMMERSCFIX:
+            ReceiveDynamicMOTD(CurrentMOTDIndex++, MainRepInfo.DynamicMOTD.bUseNormalSummerSCAnims);
+            break;
+        case `MOTD_PICKUPLIFE:
+            ReceiveDynamicMOTD(CurrentMOTDIndex++, MainRepInfo.DynamicMOTD.CurrentPickupLifespan);
+            break;
+        case `MOTD_DROPALLPICKUPS:
+            ReceiveDynamicMOTD(CurrentMOTDIndex++, MainRepInfo.DynamicMOTD.bDropAllWepsOnDeath);
+            break;
+        case `MOTD_TRADERMENU:
+            ReceiveDynamicMOTD(CurrentMOTDIndex++, MainRepInfo.DynamicMOTD.bShouldUseEnhancedTraderMenu);
+            break;
+        case `MOTD_EDARS:
+            ReceiveDynamicMOTD(CurrentMOTDIndex++, MainRepInfo.DynamicMOTD.bNoEDARs);
+            break;
+        case `MOTD_RAGESPAWNS:
+            ReceiveDynamicMOTD(CurrentMOTDIndex++, MainRepInfo.DynamicMOTD.bNoRageSpawns);
+            break;
+        case `MOTD_QPS:
+            ReceiveDynamicMOTD(CurrentMOTDIndex++, MainRepInfo.DynamicMOTD.bNoQPSpawns);
+            break;
+        case `MOTD_GASCRAWLERS:
+            ReceiveDynamicMOTD(CurrentMOTDIndex++, MainRepInfo.DynamicMOTD.bNoGasCrawlers);
+            break;
+        case `MOTD_GAMECONDUCTOR:
+            ReceiveDynamicMOTD(CurrentMOTDIndex++, MainRepInfo.DynamicMOTD.bBypassGameConductor);
+            break;
+        case `MOTD_ZEDTIME:
+            ReceiveDynamicMOTD(CurrentMOTDIndex++, MainRepInfo.DynamicMOTD.bHasDisabledZEDTime);
+            break;
+        case `MOTD_OPENTRADER:
+            ReceiveDynamicMOTD(CurrentMOTDIndex++, MainRepInfo.DynamicMOTD.bUsingOpenTraderCommand);
+            break;
+        case `MOTD_UPGRADES:
+            ReceiveDynamicMOTD(CurrentMOTDIndex++, MainRepInfo.DynamicMOTD.bShouldDisableUpgrades);
+            break;
+        case `MOTD_CROSSPERK:
+            ReceiveDynamicMOTD(CurrentMOTDIndex++, MainRepInfo.DynamicMOTD.bShouldDisableCrossPerk);
+            break;
+        case `MOTD_DOSHKILL:
+            ReceiveDynamicMOTD(CurrentMOTDIndex++, MainRepInfo.DynamicMOTD.CurrentDoshKillMultiplier);
+            break;
+        case `MOTD_SPAWNRATE:
+            ReceiveDynamicMOTD(CurrentMOTDIndex++, MainRepInfo.DynamicMOTD.CurrentSpawnRateMultiplier);
+            break;
+        case `MOTD_WAVECOUNT:
+            ReceiveDynamicMOTD(CurrentMOTDIndex++, MainRepInfo.DynamicMOTD.CurrentWaveCountMultiplier);
+            break;
+        case `MOTD_AMMOCOST:
+            ReceiveDynamicMOTD(CurrentMOTDIndex++, MainRepInfo.DynamicMOTD.CurrentAmmoCostMultiplier);
+            break;
+        case `MOTD_XPMULT:
+            ReceiveDynamicMOTD(CurrentMOTDIndex++, MainRepInfo.DynamicMOTD.XPMultiplier);
+            break;
+        case `MOTD_BOSSES:
+            ReceiveDynamicMOTD(CurrentMOTDIndex++, MainRepInfo.DynamicMOTD.BossData);
+            break;
+        case `MOTD_PERKS:
+            ReceiveDynamicMOTD(CurrentMOTDIndex++, MainRepInfo.DynamicMOTD.PerkData);
+            break;
+        case `MOTD_WEEKLIES:
+            ReceiveDynamicMOTD(CurrentMOTDIndex++, MainRepInfo.DynamicMOTD.OutbreakData);
+            break;
+        case `MOTD_SPECIALWAVES:
+            ReceiveDynamicMOTD(CurrentMOTDIndex++, MainRepInfo.DynamicMOTD.SpecialWaveData);
+            break;
+        case `MOTD_VANILLAMODE:
+            ReceiveDynamicMOTD(CurrentMOTDIndex++, MainRepInfo.DynamicMOTD.bEnforceVanilla);
+            break;
+        case `MOTD_DLCLOCK:
+            ReceiveDynamicMOTD(CurrentMOTDIndex++, MainRepInfo.DynamicMOTD.bShouldDisableTraderDLCLocking);
+            break;
+        default:
+            ReceiveDynamicMOTD(CurrentMOTDIndex, 0);
+            return;
+    }
+    
+    SetTimer(WorldInfo.DeltaSeconds*2.f, false, 'SetupDynamicMOTD');
+}
+
+reliable client function ReceiveDynamicMOTD(byte Index, coerce float Value)
+{
+    local string BossList, SpecialWaveList, OutbreakList, PerkList;
+    local int i;
+    local class<KFGameInfo> KFGameClass;
+    local class<KFGameInfo_Endless> EndlessGameClass;
+    local KFWeeklyOutbreakInformation WeeklyInfo;
+    local KFPlayerController PC;
+
+    PC = KFPlayerController(Owner);
+
+    KFGameClass = class<KFGameInfo>(WorldInfo.GRI.GameClass);
+    if( KFGameClass == None )
+        KFGameClass = class'KFGameInfo';
+    
+    switch( Index )
+    {
+        case `MOTD_YAS:
+            DynamicMOTDString $= "<font color=\"#81ABC0\">"$MainRepInfo.LocalizedMOTD[`MOTD_YAS].Name$"</font>: <font color=\"#00FF00\">"$MainRepInfo.LocalizedMOTD[`MOTD_YAS].Extra$"</font>!\n";
+            break;
+        case `MOTD_AAL:
+            DynamicMOTDString $= "<font color=\"#81ABC0\">"$MainRepInfo.LocalizedMOTD[`MOTD_AAL].Name$"</font>: <font color=\"#00FF00\">"$MainRepInfo.LocalizedMOTD[`MOTD_AAL].Extra$"</font>!\n";
+            break;
+        case `MOTD_CVC:
+            DynamicMOTDString $= "<font color=\"#81ABC0\">"$MainRepInfo.LocalizedMOTD[`MOTD_CVC].Name$"</font>: <font color=\"#00FF00\">"$MainRepInfo.LocalizedMOTD[`MOTD_CVC].Extra$"</font>!\n";
+            break;
+        case `MOTD_LTI:
+            DynamicMOTDString $= "<font color=\"#81ABC0\">"$MainRepInfo.LocalizedMOTD[`MOTD_LTI].Name$"</font>: <font color=\"#00FF00\">"$MainRepInfo.LocalizedMOTD[`MOTD_LTI].Extra$"</font>!\n";
+            break;
+        case `MOTD_FHUD:
+            DynamicMOTDString $= "<font color=\"#81ABC0\">"$MainRepInfo.LocalizedMOTD[`MOTD_FHUD].Name$"</font>: <font color=\"#00FF00\">"$MainRepInfo.LocalizedMOTD[`MOTD_FHUD].Extra$"</font>!\n";
+            break;
+        case `MOTD_SKINS:
+            DynamicMOTDString $= "<font color=\"#81ABC0\">"$MainRepInfo.LocalizedMOTD[`MOTD_SKINS].Name$"</font>: <font color=\"#00FF00\">"$MainRepInfo.LocalizedMOTD[`MOTD_SKINS].Extra$"</font>!\n";
+            break;
+        case `MOTD_PINGS:
+            DynamicMOTDString $= "<font color=\"#81ABC0\">"$MainRepInfo.LocalizedMOTD[`MOTD_PINGS].Name$"</font>: <font color=\"#00FF00\">"$MainRepInfo.LocalizedMOTD[`MOTD_PINGS].Extra$"</font>!\n";
+            break;
+        case `MOTD_PICKUPS:
+            DynamicMOTDString $= "<font color=\"#81ABC0\">"$MainRepInfo.LocalizedMOTD[`MOTD_PICKUPS].Name$"</font>: <font color=\"#00FF00\">"$MainRepInfo.LocalizedMOTD[`MOTD_PICKUPS].Extra$"</font>!\n";
+            break;
+        case `MOTD_DAMAGEPOPUPS:
+            DynamicMOTDString $= "<font color=\"#81ABC0\">"$MainRepInfo.LocalizedMOTD[`MOTD_DAMAGEPOPUPS].Name$"</font>: <font color=\"#00FF00\">"$MainRepInfo.LocalizedMOTD[`MOTD_DAMAGEPOPUPS].Extra$"</font>!\n";
+            break;
+        case `MOTD_MAXPLAYERS:
+            DynamicMOTDString $= "<font color=\"#81ABC0\">"$MainRepInfo.LocalizedMOTD[`MOTD_MAXPLAYERS].Name$"</font>: <font color=\"#00FFFF\">"$Value$"</font>!\n";
+            break;
+        case `MOTD_FAKEPLAYERS:
+            DynamicMOTDString $= "<font color=\"#81ABC0\">"$MainRepInfo.LocalizedMOTD[`MOTD_FAKEPLAYERS].Name$"</font>: <font color=\"#00FFFF\">"$Value$"</font>!\n";
+            break;
+        case `MOTD_MAXMONSTERS:
+            DynamicMOTDString $= "<font color=\"#81ABC0\">"$MainRepInfo.LocalizedMOTD[`MOTD_MAXMONSTERS].Name$"</font>: <font color=\"#00FFFF\">"$Value$"</font>!\n";
+            break;
+        case `MOTD_MAXDOSHSPAM:
+            DynamicMOTDString $= "<font color=\"#81ABC0\">"$MainRepInfo.LocalizedMOTD[`MOTD_MAXDOSHSPAM].Name$"</font>: <font color=\"#00FFFF\">"$Value$"!\n";
+            break;
+        case `MOTD_THIRDPERSON:
+            DynamicMOTDString $= "<font color=\"#81ABC0\">"$MainRepInfo.LocalizedMOTD[`MOTD_THIRDPERSON].Name$"</font>: "$(Value == 1.f ? "<font color=\"#FF0000\">"$MainRepInfo.DisabledString$"</font>" : "<font color=\"#00FF00\">"$MainRepInfo.EnabledString$"</font>")$"!\n";
+            break;
+        case `MOTD_HANDSWAP:
+            DynamicMOTDString $= "<font color=\"#81ABC0\">"$MainRepInfo.LocalizedMOTD[`MOTD_HANDSWAP].Name$"</font>: "$(Value == 1.f ? "<font color=\"#FF0000\">"$MainRepInfo.DisabledString$"</font>" : "<font color=\"#00FF00\">"$MainRepInfo.EnabledString$"</font>")$"!\n";
+            break;
+        case `MOTD_SUMMERSCFIX:
+            DynamicMOTDString $= "<font color=\"#81ABC0\">"$MainRepInfo.LocalizedMOTD[`MOTD_SUMMERSCFIX].Name$"</font>: "$(Value == 1.f ? "<font color=\"#FF0000\">"$MainRepInfo.DisabledString$"</font>" : "<font color=\"#00FF00\">"$MainRepInfo.EnabledString$"</font>")$"!\n";
+            break;
+        case `MOTD_PICKUPLIFE:
+            DynamicMOTDString $= "<font color=\"#81ABC0\">"$MainRepInfo.LocalizedMOTD[`MOTD_PICKUPLIFE].Name$"</font>: <font color=\"#00FFFF\">"$(Value > 0 ? string(Value) : Chr(0x221E))$"</font>!\n";
+            break;
+        case `MOTD_DROPALLPICKUPS:
+            DynamicMOTDString $= "<font color=\"#81ABC0\">"$MainRepInfo.LocalizedMOTD[`MOTD_DROPALLPICKUPS].Name$"</font>: "$(Value == 0.f ? "<font color=\"#FF0000\">"$MainRepInfo.DisabledString$"</font>" : "<font color=\"#00FF00\">"$MainRepInfo.EnabledString$"</font>")$"!\n";
+            break;
+        case `MOTD_TRADERMENU:
+            DynamicMOTDString $= "<font color=\"#81ABC0\">"$MainRepInfo.LocalizedMOTD[`MOTD_TRADERMENU].Name$"</font>: "$(Value == 0.f ? "<font color=\"#FF0000\">"$MainRepInfo.DisabledString$"</font>" : "<font color=\"#00FF00\">"$MainRepInfo.EnabledString$"</font>")$"!\n";
+            break;
+        case `MOTD_EDARS:
+            DynamicMOTDString $= "<font color=\"#81ABC0\">"$MainRepInfo.LocalizedMOTD[`MOTD_EDARS].Name$"</font>: "$(Value == 1.f ? "<font color=\"#FF0000\">"$MainRepInfo.DisabledString$"</font>" : "<font color=\"#00FF00\">"$MainRepInfo.EnabledString$"</font>")$"!\n";
+            break;
+        case `MOTD_RAGESPAWNS:
+            DynamicMOTDString $= "<font color=\"#81ABC0\">"$MainRepInfo.LocalizedMOTD[`MOTD_RAGESPAWNS].Name$"</font>: "$(Value == 1.f ? "<font color=\"#FF0000\">"$MainRepInfo.DisabledString$"</font>" : "<font color=\"#00FF00\">"$MainRepInfo.EnabledString$"</font>")$"!\n";
+            break;
+        case `MOTD_QPS:
+            DynamicMOTDString $= "<font color=\"#81ABC0\">"$MainRepInfo.LocalizedMOTD[`MOTD_QPS].Name$"</font>: "$(Value == 1.f ? "<font color=\"#FF0000\">"$MainRepInfo.DisabledString$"</font>" : "<font color=\"#00FF00\">"$MainRepInfo.EnabledString$"</font>")$"!\n";
+            break;
+        case `MOTD_GASCRAWLERS:
+            DynamicMOTDString $= "<font color=\"#81ABC0\">"$MainRepInfo.LocalizedMOTD[`MOTD_GASCRAWLERS].Name$"</font>: "$(Value == 1.f ? "<font color=\"#FF0000\">"$MainRepInfo.DisabledString$"</font>" : "<font color=\"#00FF00\">"$MainRepInfo.EnabledString$"</font>")$"!\n";
+            break;
+        case `MOTD_GAMECONDUCTOR:
+            DynamicMOTDString $= "<font color=\"#81ABC0\">"$MainRepInfo.LocalizedMOTD[`MOTD_GAMECONDUCTOR].Name$"</font>: "$(Value == 1.f ? "<font color=\"#FF0000\">"$MainRepInfo.DisabledString$"</font>" : "<font color=\"#00FF00\">"$MainRepInfo.EnabledString$"</font>")$"!\n";
+            break;
+        case `MOTD_ZEDTIME:
+            DynamicMOTDString $= "<font color=\"#81ABC0\">"$MainRepInfo.LocalizedMOTD[`MOTD_ZEDTIME].Name$"</font>: "$(Value == 1.f ? "<font color=\"#FF0000\">"$MainRepInfo.DisabledString$"</font>" : "<font color=\"#00FF00\">"$MainRepInfo.EnabledString$"</font>")$"!\n";
+            break;
+        case `MOTD_OPENTRADER:
+            DynamicMOTDString $= "<font color=\"#81ABC0\">"$MainRepInfo.LocalizedMOTD[`MOTD_OPENTRADER].Name$"</font>: "$(Value == 0.f ? "<font color=\"#FF0000\">"$MainRepInfo.DisabledString$"</font>" : "<font color=\"#00FF00\">"$MainRepInfo.EnabledString$"</font>")$"!\n";
+            break;
+        case `MOTD_UPGRADES:
+            DynamicMOTDString $= "<font color=\"#81ABC0\">"$MainRepInfo.LocalizedMOTD[`MOTD_UPGRADES].Name$"</font>: <font color=\"#FF0000\">"$MainRepInfo.DisabledString$"</font>!\n";
+            break;
+        case `MOTD_CROSSPERK:
+            DynamicMOTDString $= "<font color=\"#81ABC0\">"$MainRepInfo.LocalizedMOTD[`MOTD_CROSSPERK].Name$"</font>: <font color=\"#FF0000\">"$MainRepInfo.DisabledString$"</font>!\n";
+            break;
+        case `MOTD_DOSHKILL:
+            DynamicMOTDString $= "<font color=\"#81ABC0\">"$MainRepInfo.LocalizedMOTD[`MOTD_DOSHKILL].Name$"</font>: <font color=\"#00FFFF\">"$Value$"</font>!\n";
+            break;
+        case `MOTD_SPAWNRATE:
+            DynamicMOTDString $= "<font color=\"#81ABC0\">"$MainRepInfo.LocalizedMOTD[`MOTD_SPAWNRATE].Name$"</font>: <font color=\"#00FFFF\">"$Value$"</font>!\n";
+            break;
+        case `MOTD_WAVECOUNT:
+            DynamicMOTDString $= "<font color=\"#81ABC0\">"$MainRepInfo.LocalizedMOTD[`MOTD_WAVECOUNT].Name$"</font>: <font color=\"#00FFFF\">"$Value$"</font>!\n";
+            break;
+        case `MOTD_AMMOCOST:
+            DynamicMOTDString $= "<font color=\"#81ABC0\">"$MainRepInfo.LocalizedMOTD[`MOTD_AMMOCOST].Name$"</font>: <font color=\"#00FFFF\">"$Value$"</font>!\n";
+            break;
+        case `MOTD_XPMULT:
+            DynamicMOTDString $= "<font color=\"#81ABC0\">"$MainRepInfo.LocalizedMOTD[`MOTD_XPMULT].Name$"</font>: <font color=\"#00FFFF\">"$Value$"</font>!\n";
+            break;
+        case `MOTD_BOSSES:
+            for( i=0; i<KFGameClass.default.AIBossClassList.Length && i<8; i++ )
+            {
+                if( ((int(Value) >> (i+1)) & 1) == 1 )
+                    BossList $= (BossList != "" ? ", " : "") $ KFGameClass.default.AIBossClassList[i].static.GetLocalizedName();
+            }
+            
+            if( BossList != "" )
+                DynamicMOTDString $= "<font color=\"#81ABC0\">"$MainRepInfo.LocalizedMOTD[`MOTD_BOSSES].Name$"</font> [ <font color=\"#00FFFF\">" $ BossList $ "</font> ]\n";
+            break;
+        case `MOTD_PERKS:
+            for( i=0; i<PC.default.PerkList.Length && i<32; i++ )
+            {
+                if( ((int(Value) >> (i+1)) & 1) == 1 )
+                    PerkList $= (PerkList != "" ? ", " : "") $ class'KFPlayerController'.default.PerkList[i].PerkClass.default.PerkName;
+            }
+            
+            if( PerkList != "" )
+                DynamicMOTDString $= "<font color=\"#81ABC0\">"$MainRepInfo.LocalizedMOTD[`MOTD_PERKS].Name$"</font> [ <font color=\"#00FFFF\">" $ PerkList $ "</font> ]\n";
+            break;
+        case `MOTD_WEEKLIES:
+            EndlessGameClass = class<KFGameInfo_Endless>(KFGameClass);
+            if( EndlessGameClass != None )
+            {
+                if( int(Value) > 0 )
+                {
+                    for( i=0; i<EndlessGameClass.default.OutbreakEventClass.default.SetEvents.Length && i<8; i++ )
+                    {
+                        if( ((int(Value) >> (i+1)) & 1) == 1 )
+                        {
+                            WeeklyInfo = class'KFMission_LocalizedStrings'.static.GetWeeklyOutbreakInfoByIndex(i);
+                            OutbreakList $= (OutbreakList != "" ? ", " : "") $ WeeklyInfo.FriendlyName;
+                        }
+                    }
+                }
+                else OutbreakList = MainRepInfo.LocalizedMOTD[`MOTD_WEEKLIES].Extra;
+                
+                if( OutbreakList != "" )
+                    DynamicMOTDString $= "<font color=\"#81ABC0\">"$MainRepInfo.LocalizedMOTD[`MOTD_WEEKLIES].Name$"</font> [ <font color=\"#00FFFF\">" $ OutbreakList $ "</font> ]\n";
+            }
+            break;
+        case `MOTD_SPECIALWAVES:
+                if( int(Value) > 0 )
+                {
+                    for( i=0; i<AT_MAX && i<32; i++ )
+                    {
+                        if( ((int(Value) >> (i+1)) & 1) == 1 )
+                            SpecialWaveList $= (SpecialWaveList != "" ? ", " : "") $ KFGameClass.default.AIClassList[i].static.GetLocalizedName();
+                    }
+                }
+                else SpecialWaveList = MainRepInfo.LocalizedMOTD[`MOTD_SPECIALWAVES].Extra;
+                
+                if( SpecialWaveList != "" )
+                    DynamicMOTDString $= "<font color=\"#81ABC0\">"$MainRepInfo.LocalizedMOTD[`MOTD_SPECIALWAVES].Name$"</font> [ <font color=\"#00FFFF\">" $ SpecialWaveList $ "</font> ]\n";
+            break;
+        case `MOTD_VANILLAMODE:
+            DynamicMOTDString $= "<font color=\"#00FF00\"><b>"$MainRepInfo.LocalizedMOTD[`MOTD_VANILLAMODE].Name$"</b></font>\n";
+            break;
+        case `MOTD_DLCLOCK:
+            DynamicMOTDString $= "<font color=\"#00FF00\"><b>"$MainRepInfo.LocalizedMOTD[`MOTD_DLCLOCK].Name$"</b></font>\n";
+            break;
+        default:
+            ReceiveServerMOTD("", true);
+            break;
     }
 }
 
@@ -1121,13 +1448,36 @@ simulated function ClientNumberMsg( int Count, vector Pos, class<KFDamageType> T
         UKFPInteraction.AddNumberMsg(Count,Pos,Type,bIsHeadshot);
 }
 
+reliable client function OnMaxPlayersUpdated(PlayerReplicationInfo AdminPRI, byte PlayerCount)
+{
+    local string S;
+    
+    S = Repl(MaxPlayersString, "%p", AdminPRI.PlayerName);
+    S = Repl(S, "%b", PlayerCount);
+
+    WriteToChat(S, "FFFF00");
+}
+
+reliable client function OnPickupBroadcasted(PlayerReplicationInfo OwnedPRI, string WeaponName, string OwnerName, int SellPrice)
+{
+    local string S;
+
+    S = PickupBroadcastString;
+    S = "<font color=\"#FFFF00\" face=\"MIcon\">"$`GetMIconChar("alert-box")@"</font>" @ S;
+    
+    S = Repl(S, "%p", "<font color=\"#C00101\">"$OwnedPRI.PlayerName$"</font>");
+    S = Repl(S, "%o", "<font color=\"#01C001\">"$OwnerName$"</font>");
+    S = Repl(S, "%w", "<font color=\"#0160C0\">"$WeaponName$"</font>");
+    S = Repl(S, "%$", "<font color=\"#C0C001\">"$SellPrice$"</font>");
+    
+    WriteToChat(S, "FFFF00");
+}
+
 defaultproperties
 {
     bOnlyRelevantToOwner=true
     bAlwaysRelevant=false
     bAlwaysTick=true
-	bOnlyDirtyReplication=false
-	bSkipActorPropertyReplication=false
     
     NetPriority=4
 	NetUpdateFrequency=20

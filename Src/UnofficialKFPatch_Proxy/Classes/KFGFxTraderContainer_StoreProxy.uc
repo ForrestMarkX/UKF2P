@@ -41,7 +41,8 @@ stripped function context(KFGFxTraderContainer_Store.SetItemInfo) SetItemInfo(ou
     
 	SlotObject.SetBool("bCanAfford", bCanAfford);
 	SlotObject.SetBool("bCanCarry", bCanCarry);
-	SlotObject.SetBool("bDLCLocked", TraderItem.WeaponDef.default.SharedUnlockId != SCU_None && !class'KFUnlockManager'.static.IsSharedContentUnlocked(TraderItem.WeaponDef.default.SharedUnlockId));
+    if( !`GetURI().bShouldDisableTraderDLCLocking )
+        SlotObject.SetBool("bDLCLocked", TraderItem.WeaponDef.default.SharedUnlockId != SCU_None && !class'KFUnlockManager'.static.IsSharedContentUnlocked(TraderItem.WeaponDef.default.SharedUnlockId));
     if( `GetURI().bLTILoaded )
         SlotObject.SetBool("bRemoved", KFPC.GetPurchaseHelper().TraderItems.SaleItems.Find('WeaponDef', TraderItem.WeaponDef) == INDEX_NONE);
 	
@@ -101,4 +102,78 @@ stripped function context(KFGFxTraderContainer_Store.IsItemFiltered) bool IsItem
 	}
 
    	return false;
+}
+
+stripped function context(KFGFxTraderContainer_Store.RefreshWeaponListByPerk) RefreshWeaponListByPerk(byte FilterIndex, const out array<STraderItem> ItemList)
+{
+ 	local int i, SlotIndex;
+	local GFxObject ItemDataArray;
+	local array<STraderItem> OnPerkWeapons, SecondaryWeapons, OffPerkWeapons;
+	local class<KFPerk> TargetPerkClass;
+	local bool bDebug;
+    
+	if( FilterIndex == 255 || FilterIndex == INDEX_NONE )
+		return;
+    
+	if( KFPC != None )
+	{
+		if( FilterIndex < KFPC.PerkList.Length )
+			TargetPerkClass = KFPC.PerkList[FilterIndex].PerkClass;
+		else TargetPerkClass = None;
+
+		SlotIndex = 0;
+	    ItemDataArray = CreateArray();
+
+		for( i=0; i<ItemList.Length; i++ )
+		{			
+			if( IsItemFiltered(ItemList[i], bDebug) )
+				continue;
+			
+			if( ItemList[i].AssociatedPerkClasses.length > 0 && ItemList[i].AssociatedPerkClasses[0] != None && (FilterIndex >= KFPC.PerkList.Length || ItemList[i].AssociatedPerkClasses.Find(TargetPerkClass) == INDEX_NONE ) )
+				continue;
+
+			if( ItemList[i].AssociatedPerkClasses.length > 0 )
+			{
+				switch( ItemList[i].AssociatedPerkClasses.Find(TargetPerkClass) )
+				{
+					case 0:
+						if( OnPerkWeapons.length == 0 && MyTraderMenu.SelectedList == TL_Shop )
+						{
+							if( GetInt( "currentSelectedIndex" ) == 0 )
+								MyTraderMenu.SetTraderItemDetails(i);
+						}
+						OnPerkWeapons.AddItem(ItemList[i]);
+						break;
+					case 1:
+                        if( `GetURI().bShouldDisableCrossPerk )
+                            break;
+						SecondaryWeapons.AddItem(ItemList[i]);
+						break;
+					default:
+						OffPerkWeapons.AddItem(ItemList[i]);
+						break;
+				}
+			}
+		}
+
+		for( i=0; i<OnPerkWeapons.length; i++ )
+		{
+			SetItemInfo(ItemDataArray, OnPerkWeapons[i], SlotIndex);
+			SlotIndex++;	
+		}
+
+		for( i=0; i<SecondaryWeapons.length; i++ )
+		{
+			SetItemInfo(ItemDataArray, SecondaryWeapons[i], SlotIndex);
+			SlotIndex++;
+		}
+
+		for( i=0; i<OffPerkWeapons.length; i++ )
+		{
+			SetItemInfo(ItemDataArray, OffPerkWeapons[i], SlotIndex);
+			SlotIndex++;
+		}
+
+		SetObject("shopData", ItemDataArray);
+	}
 }
