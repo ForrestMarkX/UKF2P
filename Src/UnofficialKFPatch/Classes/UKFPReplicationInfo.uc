@@ -1310,6 +1310,34 @@ simulated function byte GetZEDSeasonalIndex()
     return SeasonalID;
 }
 
+final function SeasonalEventIndex GetSeasonalID(string ID)
+{
+    switch(Caps(ID))
+    {
+        case "SPRING":
+            return SEI_Spring;
+        case "SLIDESHOW":
+        case "SUMMERSLIDESHOW":
+        case "SUMMER SLIDESHOW":
+        case "SUMMER":
+            return SEI_Summer;
+        case "HALLOWEEN":
+        case "FALL":
+            return SEI_Fall;
+        case "XMAS":
+        case "CHRISTMAS":
+        case "WINTER":
+            return SEI_Winter;
+        case "NONE":
+        case "REGULAR":
+        case "DEFAULT":
+        default:
+             return SEI_None;
+    }
+    
+    return SEI_None;
+}
+
 simulated function KFCharacterInfoBase GetSeasonalCharacterArch(class<KFPawn_Monster> Monster)
 {
     local string ToLoad;
@@ -1318,7 +1346,7 @@ simulated function KFCharacterInfoBase GetSeasonalCharacterArch(class<KFPawn_Mon
     local int Index;
     
     ToLoad = Monster.default.MonsterArchPath;
-
+    
     if( !(bNoEventSkins || bServerEnforceVanilla) )
     {
         switch( GetZEDSeasonalIndex() % 10 )

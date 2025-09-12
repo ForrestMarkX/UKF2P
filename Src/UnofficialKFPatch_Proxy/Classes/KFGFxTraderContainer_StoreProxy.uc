@@ -43,9 +43,11 @@ stripped function context(KFGFxTraderContainer_Store.SetItemInfo) SetItemInfo(ou
 	SlotObject.SetBool("bCanCarry", bCanCarry);
     if( !`GetURI().bShouldDisableTraderDLCLocking )
         SlotObject.SetBool("bDLCLocked", TraderItem.WeaponDef.default.SharedUnlockId != SCU_None && !class'KFUnlockManager'.static.IsSharedContentUnlocked(TraderItem.WeaponDef.default.SharedUnlockId));
-    if( `GetURI().bLTILoaded )
+    else SlotObject.SetBool("bDLCLocked", false);
+    if( `GetURI().bLTILoaded && !`GetURI().bShouldDisableTraderLocking )
         SlotObject.SetBool("bRemoved", KFPC.GetPurchaseHelper().TraderItems.SaleItems.Find('WeaponDef', TraderItem.WeaponDef) == INDEX_NONE);
-	
+	else SlotObject.SetBool("bRemoved", false);
+    
     if( SlotObject.GetBool("bDLCLocked") || SlotObject.GetBool("bRemoved") )
     {
         SlotObject.SetBool("bCanAfford", false);
@@ -73,6 +75,14 @@ stripped function context(KFGFxTraderContainer_Store.IsItemFiltered) bool IsItem
 	{
 		if( bDebug )
 			`Log("Item is not sellable");
+		return true;
+	}
+	if( `GetURI().bShouldDisableTraderDLCLocking && (Item.WeaponDef.default.SharedUnlockId != SCU_None && !class'KFUnlockManager'.static.IsSharedContentUnlocked(Item.WeaponDef.default.SharedUnlockId)) )
+	{
+		if (bDebug)
+		{
+			`log("Item is not unlocked");
+		}
 		return true;
 	}
 	if( Item.WeaponDef.default.PlatformRestriction != PR_All && class'KFUnlockManager'.static.IsPlatformRestricted(Item.WeaponDef.default.PlatformRestriction) )

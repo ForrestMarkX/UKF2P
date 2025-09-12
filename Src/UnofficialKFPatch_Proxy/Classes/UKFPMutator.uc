@@ -158,8 +158,8 @@ final function SetupMutator(const string Options)
         if( i != INDEX_NONE )
         {
             if( KFGI.ParseOption(Options, "SeasonalSkinsIndex") != "" )
-                KFGI.SeasonalSkinsIndex = GetSeasonalID(RepInfo.MapTypes[i].Type);
-            else RepInfo.ForcedSeasonalID = GetSeasonalID(RepInfo.MapTypes[i].Type);
+                KFGI.SeasonalSkinsIndex = RepInfo.GetSeasonalID(RepInfo.MapTypes[i].Type);
+            RepInfo.ForcedSeasonalID = RepInfo.GetSeasonalID(RepInfo.MapTypes[i].Type);
         }
     }
 
@@ -385,33 +385,6 @@ final function SetupMutator(const string Options)
         RepInfo.ReplicatedEvent('bNoEventSkins');
         RepInfo.ReplicatedEvent('DynamicMOTD');
     }
-}
-
-final function SeasonalEventIndex GetSeasonalID(string ID)
-{
-    switch(Caps(ID))
-    {
-        case "NONE":
-        case "REGULAR":
-        case "DEFAULT":
-            return SEI_None;
-        case "SPRING":
-            return SEI_Spring;
-        case "SLIDESHOW":
-        case "SUMMERSLIDESHOW":
-        case "SUMMER SLIDESHOW":
-        case "SUMMER":
-            return SEI_Summer;
-        case "HALLOWEEN":
-        case "FALL":
-            return SEI_Fall;
-        case "XMAS":
-        case "CHRISTMAS":
-        case "WINTER":
-            return SEI_Winter;
-    }
-    
-    return SEI_None;
 }
 
 function ModifyZedTime( out float out_TimeSinceLastEvent, out float out_ZedTimeChance, out float out_Duration )
