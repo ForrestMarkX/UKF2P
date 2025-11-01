@@ -582,7 +582,7 @@ function Cleanup()
     KFPerk_FieldMedic.CouldBeZedToxicCloud = KFPerk_FieldMedicOriginal.CouldBeZedToxicCloud;
     KFPerk_FieldMedic.ModifyMagSizeAndNumber = KFPerk_FieldMedicOriginal.ModifyMagSizeAndNumber;
     KFPerk_Commando.ModifyMagSizeAndNumber = KFPerk_CommandoOriginal.ModifyMagSizeAndNumber;
-    Mutator.PreBeginPlay = MutatorOriginal.PreBeginPlay;
+    //Mutator.PreBeginPlay = MutatorOriginal.PreBeginPlay;
     KFAutoPurchaseHelper.CanUpgrade = KFAutoPurchaseHelperOriginal.CanUpgrade;
     KFPawn_ZedHansBase.PossessedBy = KFPawn_ZedHansBaseOriginal.PossessedBy;
     

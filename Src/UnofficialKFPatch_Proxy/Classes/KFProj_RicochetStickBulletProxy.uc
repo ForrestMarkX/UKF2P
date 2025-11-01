@@ -28,7 +28,9 @@ stripped simulated function context(KFProj_RicochetStickBullet.Stick) Stick(Stic
 	else if( Role == ROLE_Authority )
 	{
 		bStuck = true;
-		LifeSpan = `GetURI().CurrentPickupLifespan;
+        if( `GetURI().CurrentStickyProjectileLifespan > 0 )
+            LifeSpan = `GetURI().CurrentStickyProjectileLifespan;
+        else LifeSpan = LifeSpanAfterStick;
 	}
 
 	if( bStopAmbientSoundOnExplode )

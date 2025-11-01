@@ -69,7 +69,7 @@ var transient KFGameReplicationInfo_Endless KFGRIE;
 var transient OnlineSubsystemSteamworks OnlineSub;
 var transient array<ReplicationHelper> ChatArray;
 var transient float CurrentDoshKillMultiplier, CurrentSpawnRateMultiplier, CurrentWaveCountMultiplier, CurrentAmmoCostMultiplier;
-var transient int CurrentPickupLifespan;
+var transient int CurrentPickupLifespan, CurrentStickyProjectileLifespan, CurrentDoshPickupLifespan;
 var const private transient float XPMultiplier;
 var transient byte CurrentMaxMonsters, CurrentFakePlayers, SavedWaveNum, CurrentSeasonalIndex, CurrentMaxDoshSpamAmount;
 var transient string TravelMapName, CurrentMapName;
@@ -129,7 +129,7 @@ var array<FPlayerPickups> PlayerPickups;
 var array< class<KFWeapon> > LoadedWeaponClasses;
 var array<Object> ExternalObjs;
 
-var config int PickupLifespan, CurrentNetDriverIndex, iConfigVersion;
+var config int PickupLifespan, StickyProjectileLifespan, DoshPickupLifespan, CurrentNetDriverIndex, iConfigVersion;
 var config byte ForcedMaxPlayers, MaxMonsters, FakePlayers, MaxDoshSpamAmount;
 var config float PingSpamTime, DoshKillMultiplier, SpawnRateMultiplier, WaveCountMultiplier, AmmoCostMultiplier;
 
@@ -137,8 +137,8 @@ var config string AllowedBosses, AllowedOutbreaks, AllowedSpecialWaves, AllowedP
 var transient string CurrentAllowedBosses, CurrentAllowedOutbreaks, CurrentAllowedSpecialWaves, CurrentAllowedPerks;
 var string DefaultAllowedOutbreaks, DefaultAllowedSpecialWaves;
 
-var config bool bAllowOpenTraderCommand, bDisableZEDTime, bDisableMapRanking, bDisableTraderLocking, bDisableCustomLoadingScreen, bAllowDamagePopups, bUseEnhancedTraderMenu, bEnforceVanilla, bUseNormalSummerSCAnims, bAllowGamemodeVotes, bAttemptToLoadFHUD, bAttemptToLoadFHUDExt, bAttemptToLoadYAS, bAttemptToLoadAAL, bAttemptToLoadCVC, bAttemptToLoadLTI, bServerHidden, bNoEventZEDSkins, bNoEDARSpawns, bNoQPSpawns, bNoGasCrawlers, bNoRageSpawns, bNoPingsAllowed, bBroadcastPickups, bUseDynamicMOTD, bDisableTP, bDisallowHandChanges, bDropAllWepsOnDeath, bDisableGameConductor, bDisableCrossPerk, bDisableWeaponUpgrades, bDisableTraderDLCLocking;
-var transient bool bShouldUseDynamicMOTD, bUpdatedMOTD, bUsingOpenTraderCommand, bHasDisabledZEDTime, bHasDisabledRanking, bShouldDisableTraderLocking, bShouldDisableCustomLoadingScreen, LastHeadshot, bShouldAllowDamagePopups, bShouldUseEnhancedTraderMenu, bLTILoaded, CurrentNormalSummerSCAnims, bForceResetInterpActors, bDisallowHandSwap, bPlayingEmote, bHandledTravel, bServerIsHidden, bNoPings, bToBroadcastPickups, bServerDisableTP, bForceDisableEDARs, bForceDisableQPs, bForceDisableGasCrawlers, bForceDisableRageSpawns, bServerDropAllWepsOnDeath, bBypassGameConductor, bShouldDisableCrossPerk, bShouldDisableUpgrades, bShouldDisableTraderDLCLocking;
+var config bool bAllowOpenTraderCommand, bDisableZEDTime, bDisableMapRanking, bDisableTraderLocking, bDisableCustomLoadingScreen, bAllowDamagePopups, bUseEnhancedTraderMenu, bEnforceVanilla, bUseNormalSummerSCAnims, bAllowGamemodeVotes, bAttemptToLoadFHUD, bAttemptToLoadFHUDExt, bAttemptToLoadYAS, bAttemptToLoadAAL, bAttemptToLoadCVC, bAttemptToLoadLTI, bServerHidden, bNoEventZEDSkins, bNoEDARSpawns, bNoQPSpawns, bNoGasCrawlers, bNoRageSpawns, bNoPingsAllowed, bBroadcastPickups, bUseDynamicMOTD, bDisableTP, bDisallowHandChanges, bDropAllWepsOnDeath, bDisableGameConductor, bDisableCrossPerk, bDisableWeaponUpgrades, bDisableTraderDLCLocking, bDisablePickupSkinSystem;
+var transient bool bShouldUseDynamicMOTD, bUpdatedMOTD, bUsingOpenTraderCommand, bHasDisabledZEDTime, bHasDisabledRanking, bShouldDisableTraderLocking, bShouldDisableCustomLoadingScreen, LastHeadshot, bShouldAllowDamagePopups, bShouldUseEnhancedTraderMenu, bLTILoaded, CurrentNormalSummerSCAnims, bForceResetInterpActors, bDisallowHandSwap, bPlayingEmote, bHandledTravel, bServerIsHidden, bNoPings, bToBroadcastPickups, bServerDisableTP, bForceDisableEDARs, bForceDisableQPs, bForceDisableGasCrawlers, bForceDisableRageSpawns, bServerDropAllWepsOnDeath, bBypassGameConductor, bShouldDisableCrossPerk, bShouldDisableUpgrades, bShouldDisableTraderDLCLocking, bShouldDisablePickupSkinSystem;
 var transient repnotify bool bNoEventSkins, bServerEnforceVanilla;
 var transient byte RepMaxPlayers;
 
@@ -165,7 +165,7 @@ struct FDynamicMOTDInfo
 {
     var bool bYASLoaded, bAALLoaded, bCVCLoaded, bLTILoaded, bFHUDLoaded, bNoEventSkins, bNoPings, bToBroadcastPickups, bDisableTP, bDisallowHandSwap, bUseNormalSummerSCAnims, bEnforceVanilla, bDropAllWepsOnDeath, bNoEDARs, bNoQPSpawns, bNoGasCrawlers, bNoRageSpawns, bBypassGameConductor, bShouldUseEnhancedTraderMenu, bShouldDisableUpgrades, bShouldDisableCrossPerk, bShouldAllowDamagePopups, bHasDisabledZEDTime, bUsingOpenTraderCommand, bShouldDisableTraderDLCLocking;
     var byte CurrentMaxPlayers, CurrentMaxMonsters, CurrentFakePlayers, MaxDoshSpamAmount, BossData, OutbreakData, PerkData, SpecialWaveData;
-    var int CurrentPickupLifespan;
+    var int CurrentPickupLifespan, CurrentStickyProjectileLifespan, CurrentDoshPickupLifespan;
     var float CurrentDoshKillMultiplier, CurrentSpawnRateMultiplier, CurrentWaveCountMultiplier, CurrentAmmoCostMultiplier, XPMultiplier;
 };
 var FDynamicMOTDInfo DynamicMOTD;
@@ -180,7 +180,7 @@ var localized string EnabledString, DisabledString;
 replication
 {
     if( bNetInitial )
-        InitialWeeklyIndex, InitialSeasonalEventDate, CurrentForcedSeasonalEventDate, bServerEnforceVanilla, bServerDropAllWepsOnDeath, bLTILoaded, bShouldDisableUpgrades, bShouldDisableCrossPerk, bShouldDisableCustomLoadingScreen, bShouldDisableTraderLocking, bHasDisabledRanking, bShouldUseDynamicMOTD, bShouldDisableTraderDLCLocking;
+        InitialWeeklyIndex, InitialSeasonalEventDate, CurrentForcedSeasonalEventDate, bServerEnforceVanilla, bServerDropAllWepsOnDeath, bLTILoaded, bShouldDisableUpgrades, bShouldDisableCrossPerk, bShouldDisableCustomLoadingScreen, bShouldDisableTraderLocking, bHasDisabledRanking, bShouldUseDynamicMOTD, bShouldDisableTraderDLCLocking, bShouldDisablePickupSkinSystem;
     if( true )
         KFGRI, KFGRIE, bServerIsHidden, bNoEventSkins, bNoPings, bServerDisableTP, CurrentMapName, bDisallowHandSwap, CurrentMaxDoshSpamAmount, ForcedSeasonalID;
 }

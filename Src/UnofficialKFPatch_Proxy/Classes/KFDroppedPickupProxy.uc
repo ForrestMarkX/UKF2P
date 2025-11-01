@@ -18,8 +18,9 @@ stripped simulated function context(KFDroppedPickup.SetPickupMesh) SetPickupMesh
 			bUpgradedPickup = KFWeapon(Inventory).CurrentWeaponUpgradeIndex > 0;
 		}
 
-        Lifespan = FMax(`GetURI().CurrentPickupLifespan, 0.f);
-        SetTimer(Lifespan, false, 'TryFadeOut');
+        Lifespan = FMax(IsA('KFDroppedPickup_Cash') ? `GetURI().CurrentDoshPickupLifespan : `GetURI().CurrentPickupLifespan, 0.f);
+        if( Lifespan > 0.f )
+            SetTimer(Lifespan, false, 'TryFadeOut');
             
         AddPickupToList();
 	}
@@ -231,7 +232,7 @@ stripped final function context(KFDroppedPickup) ClientForceWeaponSkin(Pawn P, K
         return;
     
     UKFPRep = `GetURI();
-    if( UKFPRep == None )
+    if( UKFPRep == None || UKFPRep.bShouldDisablePickupSkinSystem )
         return;
         
     CRI = UKFPRep.GetPlayerChat(P.PlayerReplicationInfo);

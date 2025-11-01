@@ -614,6 +614,12 @@ function SetupDynamicMOTD()
         case `MOTD_PICKUPLIFE:
             ReceiveDynamicMOTD(CurrentMOTDIndex++, MainRepInfo.DynamicMOTD.CurrentPickupLifespan);
             break;
+        case `MOTD_PROJECTILELIFE:
+            ReceiveDynamicMOTD(CurrentMOTDIndex++, MainRepInfo.DynamicMOTD.CurrentStickyProjectileLifespan);
+            break;
+        case `MOTD_DOSHLIFE:
+            ReceiveDynamicMOTD(CurrentMOTDIndex++, MainRepInfo.DynamicMOTD.CurrentDoshPickupLifespan);
+            break;
         case `MOTD_DROPALLPICKUPS:
             ReceiveDynamicMOTD(CurrentMOTDIndex++, MainRepInfo.DynamicMOTD.bDropAllWepsOnDeath);
             break;
@@ -755,6 +761,12 @@ reliable client function ReceiveDynamicMOTD(byte Index, coerce float Value)
             break;
         case `MOTD_PICKUPLIFE:
             DynamicMOTDString $= "<font color=\"#81ABC0\">"$MainRepInfo.LocalizedMOTD[`MOTD_PICKUPLIFE].Name$"</font>: <font color=\"#00FFFF\">"$(Value > 0 ? string(Value) : Chr(0x221E))$"</font>!\n";
+            break;
+        case `MOTD_PROJECTILELIFE:
+            DynamicMOTDString $= "<font color=\"#81ABC0\">"$MainRepInfo.LocalizedMOTD[`MOTD_PROJECTILELIFE].Name$"</font>: <font color=\"#00FFFF\">"$(Value > 0 ? string(Value) : Chr(0x221E))$"</font>!\n";
+            break;
+        case `MOTD_DOSHLIFE:
+            DynamicMOTDString $= "<font color=\"#81ABC0\">"$MainRepInfo.LocalizedMOTD[`MOTD_DOSHLIFE].Name$"</font>: <font color=\"#00FFFF\">"$(Value > 0 ? string(Value) : Chr(0x221E))$"</font>!\n";
             break;
         case `MOTD_DROPALLPICKUPS:
             DynamicMOTDString $= "<font color=\"#81ABC0\">"$MainRepInfo.LocalizedMOTD[`MOTD_DROPALLPICKUPS].Name$"</font>: "$(Value == 0.f ? "<font color=\"#FF0000\">"$MainRepInfo.DisabledString$"</font>" : "<font color=\"#00FF00\">"$MainRepInfo.EnabledString$"</font>")$"!\n";

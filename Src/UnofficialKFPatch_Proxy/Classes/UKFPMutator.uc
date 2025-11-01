@@ -124,6 +124,8 @@ final function SetupMutator(const string Options)
         return;
 
     RepInfo.CurrentPickupLifespan = KFGI.GetIntOption(Options, "PickupLifespan", RepInfo.PickupLifespan);
+    RepInfo.CurrentStickyProjectileLifespan = KFGI.GetIntOption(Options, "StickyProjectileLifespan", RepInfo.StickyProjectileLifespan);
+    RepInfo.CurrentDoshPickupLifespan = KFGI.GetIntOption(Options, "DoshPickupLifespan", RepInfo.DoshPickupLifespan);
 	
 	MaxPlayers = KFGI.GetIntOption(Options, "MaxPlayers", RepInfo.ForcedMaxPlayers);
 	
@@ -219,6 +221,7 @@ final function SetupMutator(const string Options)
 	}
     RepInfo.PingSpamTime = KFGI.GetFloatOption(Options, "PingSpamTime", RepInfo.PingSpamTime);
     RepInfo.bShouldDisableTraderDLCLocking = bool(KFGI.GetIntOption(Options, "DisableTraderDLCLock", int(RepInfo.bDisableTraderDLCLocking)));
+    RepInfo.bShouldDisablePickupSkinSystem = bool(KFGI.GetIntOption(Options, "DisablePickupSkinSystem", int(RepInfo.bDisablePickupSkinSystem)));
     
     RepInfo.CurrentAllowedBosses = KFGI.ParseOption(Options, "BossList");
     if( RepInfo.CurrentAllowedBosses == "" )
@@ -261,6 +264,8 @@ final function SetupMutator(const string Options)
         RepInfo.DynamicMOTD.CurrentFakePlayers = RepInfo.CurrentFakePlayers;
         RepInfo.DynamicMOTD.MaxDoshSpamAmount = RepInfo.CurrentMaxDoshSpamAmount;
         RepInfo.DynamicMOTD.CurrentPickupLifespan = RepInfo.CurrentPickupLifespan;
+        RepInfo.DynamicMOTD.CurrentStickyProjectileLifespan = RepInfo.CurrentStickyProjectileLifespan;
+        RepInfo.DynamicMOTD.CurrentDoshPickupLifespan = RepInfo.CurrentDoshPickupLifespan;
         RepInfo.DynamicMOTD.bDisableTP = RepInfo.bServerDisableTP;
         RepInfo.DynamicMOTD.bDisallowHandSwap = RepInfo.bDisallowHandSwap;
         RepInfo.DynamicMOTD.bUseNormalSummerSCAnims = RepInfo.bUseNormalSummerSCAnims;
