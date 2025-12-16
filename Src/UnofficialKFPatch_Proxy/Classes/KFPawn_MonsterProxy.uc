@@ -9,6 +9,7 @@ stripped final simulated event context(KFPawn_Monster) PreBeginPlayEx()
 {
     local PhysicsAsset PhysAsset;
     local int i, Index;
+    local AnimSet ScrakeWalkAnim, ScrakeAttackAnim;
     
 	CheckShouldAlwaysBeRelevant();
 	DefaultCollisionRadius = CylinderComponent.default.CollisionRadius;
@@ -29,14 +30,33 @@ stripped final simulated event context(KFPawn_Monster) PreBeginPlayEx()
         if( CharacterMonsterArch == None )
             LastChanceLoad();
     }
+    
+    CharacterMonsterArch = new(self) class'KFCharacterInfo_Monster' (CharacterMonsterArch);
 
-	if( IsA('KFPawn_ZedScrake') && !`GetURI().CurrentNormalSummerSCAnims && CharacterMonsterArch != None )
+	if( IsA('KFPawn_ZedScrake') && CharacterMonsterArch != None && CharacterMonsterArch.GetPackageName() == 'SUMMER_ZED_ARCH' )
     {
-		CharacterMonsterArch.AnimSets.RemoveItem(AnimSet(DynamicLoadObject("SUMMER_ZED_Scrake_ANIM.SUMMER_Monkey_anim_Walk", class'AnimSet')));
-		CharacterMonsterArch.AnimSets.RemoveItem(AnimSet(DynamicLoadObject("SUMMER_ZED_Scrake_ANIM.SUMMER_Scrake_anim_Attacks", class'AnimSet')));
+        ScrakeWalkAnim = AnimSet(DynamicLoadObject("SUMMER_ZED_Scrake_ANIM.SUMMER_Monkey_anim_Walk", class'AnimSet'));
+        ScrakeAttackAnim = AnimSet(DynamicLoadObject("SUMMER_ZED_Scrake_ANIM.SUMMER_Scrake_anim_Attacks", class'AnimSet'));
+        
+        if( !`GetURI().CurrentNormalSummerSCAnims )
+        {
+            CharacterMonsterArch.AnimSets.RemoveItem(ScrakeWalkAnim);
+            CharacterMonsterArch.AnimSets.RemoveItem(ScrakeAttackAnim);
+        }
+        else
+        {
+            Index = CharacterMonsterArch.AnimSets.Find(ScrakeWalkAnim);
+            if( Index == INDEX_NONE )
+                CharacterMonsterArch.AnimSets.AddItem(ScrakeWalkAnim);
+                
+            Index = CharacterMonsterArch.AnimSets.Find(ScrakeAttackAnim);
+            if( Index == INDEX_NONE )
+                CharacterMonsterArch.AnimSets.AddItem(ScrakeAttackAnim);
+        }
     }
 	else if( (IsA('KFPawn_ZedGorefast') || IsA('KFPawn_ZedGorefastDualBlade')) && CharacterMonsterArch != None && CharacterMonsterArch.GetPackageName() == 'SUMMER_ZED_ARCH' )
     {
+        CharacterMonsterArch.PhysAsset = new(self) class'PhysicsAsset' (CharacterMonsterArch.PhysAsset);
         PhysAsset = CharacterMonsterArch.PhysAsset;
         for( i=0; i<PhysAsset.BodySetup.Length; i++ )
         {

@@ -207,50 +207,17 @@ stripped simulated function context(KFPlayerController.GetAllowSeasonalSkins) bo
 
 stripped simulated event context(KFPlayerController.GetSeasonalStateName) name GetSeasonalStateName()
 {
-	local int EventId, MapModifiedEventId;
-	local KFMapInfo KFMI;
-	local KFGameReplicationInfo KFGRI;
-    
-    if( `GetURI().bNoEventSkins || `GetURI().GetEnforceVanilla() )
-    {
-        `Log("GetSeasonalStateName: No Event");
-        return 'No_Event';
-    }
-
-	KFGRI = KFGameReplicationInfo(WorldInfo.GRI);
-	EventId = class'KFGameEngine'.static.GetSeasonalEventIDForZedSkins();
-	MapModifiedEventId = SEI_None;
-
-	KFMI = KFMapInfo(WorldInfo.GetMapInfo());
-	if( KFMI != None )
-		KFMI.ModifySeasonalEventId(MapModifiedEventId);
-        
-	bAllowSeasonalSkins = GetAllowSeasonalSkins();
-	if( MapModifiedEventId == SEI_None )
-	{
-		if( !bAllowSeasonalSkins )
-			EventId = SEI_None;
-        else if( KFGRI != None && KFGRI.SeasonalSkinsIndex != -1 )
-            EventId = KFGRI.SeasonalSkinsIndex;
-	}
-	else EventId = MapModifiedEventId;
-
-	switch( EventId % 10 )
+	switch( `GetURI().GetZEDSeasonalIndex() % 10 )
 	{
 		case SEI_Summer:
-			`Log("GetSeasonalStateName: Summer");
 			return 'Summer_Sideshow';
 		case SEI_Fall:
-			`Log("GetSeasonalStateName: Fall");
 			return 'Fall';
 		case SEI_Winter:
-			`Log("GetSeasonalStateName: Winter");
 			return 'Winter';
 		case SEI_Spring:
-			`Log("GetSeasonalStateName: Spring");
 			return 'Spring';
 		default:
-			`Log("GetSeasonalStateName: No Event");
 			return 'No_Event';
 	}
 
