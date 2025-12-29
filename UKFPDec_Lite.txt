@@ -1,0 +1,17 @@
+This mod is a lite version of Unofficial Killing Floor 2 Patch, the benefits of this mod are that it does not need to be downloaded by clients but is limited to serverside only features.
+
+[b]Check the guide for what options are avaliable with this version![/b]
+
+[h1]Main Mod[/h1]
+https://steamcommunity.com/sharedfiles/filedetails/?id=2875147606
+
+[h1]Configuration & Options[/h1]
+[url=https://steamcommunity.com/sharedfiles/filedetails/?id=2875577642][img]https://i.imgur.com/iuMQ8nK.png[/img][/url] 
+
+[h1]Mutator[/h1]
+[code]
+UnofficialKFPatch_Lite.UKFPMutator
+[/code]
+
+[h1]Epic Game Store Compatiblilty[/h1]
+https://www.dropbox.com/s/dik790c2uxdiig6/UKFP_Lite_EGS.7z?dl=1

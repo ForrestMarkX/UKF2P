@@ -182,6 +182,8 @@ final function SetupMutator(const string Options)
     RepInfo.bForceDisableQPs = bool(KFGI.GetIntOption(Options, NoQPCommandName, int(RepInfo.bNoQPSpawns)));
     RepInfo.bForceDisableGasCrawlers = bool(KFGI.GetIntOption(Options, NoGasCrawlerCommandName, int(RepInfo.bNoGasCrawlers)));
     RepInfo.bForceDisableRageSpawns = bool(KFGI.GetIntOption(Options, NoRageSpawnCommandName, int(RepInfo.bNoRageSpawns)));
+    RepInfo.bForceDisableGorefiends = bool(KFGI.GetIntOption(Options, "NoGorefiends", int(RepInfo.bNoGorefiends)));
+    RepInfo.bForceDisableRioters = bool(KFGI.GetIntOption(Options, "NoRioters", int(RepInfo.bNoRioters)));
     RepInfo.bDisallowHandSwap = bool(KFGI.GetIntOption(Options, HandCommandName, int(RepInfo.bDisallowHandChanges)));
     RepInfo.bShouldUseEnhancedTraderMenu = bool(KFGI.GetIntOption(Options, "UseEnhancedTraderMenu", int(RepInfo.bUseEnhancedTraderMenu)));
     RepInfo.CurrentMaxMonsters = KFGI.GetIntOption(Options, "MaxMonsters", RepInfo.MaxMonsters);
@@ -272,6 +274,8 @@ final function SetupMutator(const string Options)
         RepInfo.DynamicMOTD.bDropAllWepsOnDeath = RepInfo.bServerDropAllWepsOnDeath;
         RepInfo.DynamicMOTD.bNoEDARs = RepInfo.bForceDisableEDARs;
         RepInfo.DynamicMOTD.bNoRageSpawns = RepInfo.bForceDisableRageSpawns;
+        RepInfo.DynamicMOTD.bNoGorefiends = RepInfo.bForceDisableGorefiends;
+        RepInfo.DynamicMOTD.bNoRioters = RepInfo.bForceDisableRioters;
         RepInfo.DynamicMOTD.bBypassGameConductor = RepInfo.bBypassGameConductor;
         RepInfo.DynamicMOTD.bShouldUseEnhancedTraderMenu = RepInfo.bShouldUseEnhancedTraderMenu;
         RepInfo.DynamicMOTD.bShouldAllowDamagePopups = RepInfo.bShouldAllowDamagePopups;

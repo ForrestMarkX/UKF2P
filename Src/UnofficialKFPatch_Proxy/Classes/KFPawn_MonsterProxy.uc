@@ -134,6 +134,10 @@ stripped function context(KFPawn_Monster.GetAIPawnClassToSpawn) class<KFPawn_Mon
 
     if( `GetURI().bForceDisableEDARs && (ClassIsChildOf(default.Class, class'KFPawn_ZedHusk') || ClassIsChildOf(default.Class, class'KFPawn_ZedStalker')) )
         return default.Class;
+    else if( `GetURI().bForceDisableGorefiends && ClassIsChildOf(default.Class, class'KFPawn_ZedGorefast') && !ClassIsChildOf(default.Class, class'KFPawn_ZedGorefastDualBlade') )
+        return default.Class;
+    else if( `GetURI().bForceDisableRioters && ClassIsChildOf(default.Class, class'KFPawn_ZedClot_Alpha') && !ClassIsChildOf(default.Class, class'KFPawn_ZedClot_AlphaKing') )
+        return default.Class;
         
     if( KFGameInfo(WI.Game) != None && `GetURI().bForceDisableQPs && ClassIsChildOf(default.Class, class'KFPawn_ZedFleshpoundMini') && !KFGameReplicationInfo(WI.GRI).IsBossWave() )
         return KFGameInfo(WI.Game).GetAISpawnType(AT_Scrake);

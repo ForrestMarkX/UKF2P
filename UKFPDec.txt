@@ -5,7 +5,7 @@
 [olist]
 [*]Subscribe to this Workshop
 [*]Open the console with ~ or F3
-[*]Type <MapName>?Mutator=UnofficialKFPatch.UKFPMutator
+[*]Type Open <MapName>?Mutator=UnofficialKFPatch.UKFPMutator
 [*]Add any options you wish to the command line (Listed in the guide)
 [/olist]
 
@@ -43,6 +43,7 @@
 [*]Fixed two broken static meshes on KF-HellmarkStation that were blocking a entrance
 [*]Fixed most Descent maps being broken in Endless
 [*]Fixed crashing caused by a bad GC setting
+[*]Fixed custom weapon support for perks that change mag size
 [/list]
 
 [h1]Additions[/h1]
@@ -88,6 +89,10 @@
 [*]Allow admins to setup multi-gamemode voting
 [*]Allow players to change what bob style to use for their weapon
 [*]Allow setting if a player will drop all weapons on death or not
+[*]Allow making the server harder through various gametype configs
+[*]Allow setting any difficulty for Versus and Weeklies
+[*]Allow setting what weeklies and zed waves are allowed in Endless
+[*]Allow players to see how much damage they are doing to ZEDs
 [/list]
 
 [h1]Mutator[/h1]
@@ -95,10 +100,21 @@
 UnofficialKFPatch.UKFPMutator
 [/code]
 
+[h1]Lite Version[/h1]
+https://steamcommunity.com/sharedfiles/filedetails/?id=2966106996
+
+[h1]Epic Game Store Compatiblilty[/h1]
+https://www.dropbox.com/s/krx3larsyxgiv9u/UKFP_EGS.7z?dl=1
+
 [h1]Source[/h1]
 [b]This source code can not be compiled by anyone but myself, this is simply here for those who wish to add the fixes themselves through other channels or as a means of learning how some fixes were performed.
 The hacker points of entry fixes have been removed and the whitelist bypass method has also been removed as per instruction[/b]
 https://github.com/ForrestMarkX/UKF2P
+
+[h1]Donations[/h1]
+Due to me losing my job, I am forced to accept donations for this mod until a time in which I can find a proper passive source of income to pay for my bills. This link will be removed once I find a new job. Feel free to donate any amount, and as a disclaimer you do not need to donate any amount for any features present within this mod.
+
+https://www.paypal.com/donate/?hosted_button_id=Y78D6KQSL7RFA
 
 [h1]Credits[/h1]
 [code]

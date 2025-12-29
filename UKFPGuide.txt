@@ -35,40 +35,131 @@ Congrats you just posted a MIcon to chat
 
 [h1]Options[/h1]
 [code]
-?MaxPlayers=<Int> - Allows setting the max players
-?PickupLifespan=<Float> - Allows setting the pickup lifespan
+?MaxPlayers=<Number> - Allows setting the max players [b]<Lite Compatible>[/b]
+?PickupLifespan=<Decimal Number> - Allows setting the pickup lifespan (0 = Unlimited) [b]<Lite Compatible>[/b]
+?StickyProjectileLifespan=<Decimal Number> - Allows setting the sticky projectile lifespan (0 = Unlimited) (Mostly things like blades from Eviscerator)
+?DoshPickupLifespan=<Decimal Number> - Allows setting the dosh pickup lifespan (0 = Unlimited)
 ?LoadFHUD=(0/1) - Load Friendly HUD
+?LoadFHUDExt=(0/1) - Load Friendly HUD Extensions [Does not require Friendly HUD] [Only load this if you want Sentinels to draw on the FHUD and players to have avatars next to their name!]
 ?LoadYAS=(0/1) - Load Yet Another Scoreboard
 ?LoadAAL=(0/1) - Load Admin Auto Login
 ?LoadCVC=(0/1) - Load Controlled Vote Collector
-?HideServer=(0/1) - Hide your server from the server list
+?LoadLTI=(0/1) - Load Looted Trader Inventory
+?HideServer=(0/1) - Hide your server from the server list [b]<Lite Compatible>[/b]
 ?NoEventSkins=(0/1) - Force normal ZEDs
-?NoEDARs=(0/1) - Turn EDAR spawns on or off
+?NoEDARs=(0/1) - Turn EDAR spawns on or off [b]<Lite Compatible>[/b]
+?NoQPs=(0/1) - Turn QPs spawns on or off (If off they are replaced with Scrakes) (Does not affect KFP minion spawns) [b]<Lite Compatible>[/b]
+?NoGasCrawlers=(0/1) - Turn Gas Crawlers on or off (Will be replaced with Stalkers) [b]<Lite Compatible>[/b]
+?NoGorefiends=(0/1) - Turn Gorefiends on or off
+?NoRioters=(0/1) - Turn Rioters on or off
+?NoRageSpawns=(0/1) - Don't allow FPs or QPs to spawn raged (Does not affect KFP) [b]<Lite Compatible>[/b]
 ?NoPings=(0/1) - Disables the players ability to ping
-?BroadcastPickups=(0/1) - Enable broadcasting when someone picks up other players weapons
-?UseDynamicMOTD=(0/1) - Enable showing dynamic settings in the MOTD
-?MaxMonsters=<Byte> - Sets the max monsters to this value (Can't go lower than 32)
-?FakePlayers=<Byte> - Sets faked players value (Can't go lower than the current living players)
+?BroadcastPickups=(0/1) - Enable broadcasting when someone picks up other players weapons [b]<Lite Compatible>[/b]
+?UnsuppressLogs=(0/1) - Unsuppress the spam logs DevNet, DevOnline, Log [b]<Lite Compatible>[/b]
+?UseDynamicMOTD=(0/1) - Enable showing dynamic settings in the MOTD [b]<Lite Compatible>[/b]
+?MaxMonsters=(0-255) - Sets the max monsters to this value (Can't go lower than 32) [b]<Lite Compatible>[/b]
+?FakePlayers=(0-255) - Sets faked players value (Can't go lower than the current living players) [b]<Lite Compatible>[/b]
 ?NoThirdperson=(0/1) - Allow/Disallow players to enter thirdperson
 ?NoHandChanges=(0/1) - Don't allow players to change their hand position
+?UseEnhancedTraderMenu=(0/1) - Turns a version of the trader menu that shows better stats and upgrades on or off
 ?CurrentWeekly=(0 - 19) - Sets the current weekly outbreak
 ?AllowGamemodeVotes=(0/1) - Allow voting for more than 1 gamemode (Can be configured from WebAdmin)
 ?CurrentSeasonalEvent=(0 - 17) - Sets the current seasonal event
 ?UseNormalSummerSCAnims=(0/1) - Disables the Summer Scrake change
 ?EnforceVanilla=(0/1) - Enforces Vanilla Mode (Read what this changes in the Vanilla Mode section)
-?DropAllWepsOnDeath=(0/1) - Sets if players drop all weapons on death
-?ServerName=<String> - Allows setting the server name from the commandline
-?PingSpamTime=<Float> - Sets how long a player is banned from pings when spamming (Set to -1 to disable the system)
+?DropAllWepsOnDeath=(0/1) - Sets if players drop all weapons on death [b]<Lite Compatible>[/b]
+?DisableGameConductor=(0/1) - Disable the game conducter and have the game at max difficulty at all times [b]<Lite Compatible>[/b]
+?ServerName=<Text> - Allows setting the server name from the commandline [b]<Lite Compatible>[/b]
+?PingSpamTime=<Decimal Number> - Sets how long a player is banned from pings when spamming (Set to -1 to disable the system)
+?MaxDoshSpam=(0-255) - Sets the max amount of dosh a player can throw before getting a delay [b]<Lite Compatible>[/b]
+?DoshKillMultiplier=<Decimal Number> - Set a multiplier for dosh earning (Can't go above 1.0) (Rounded to two decimal places for replication compression) [b]<Lite Compatible>[/b]
+?SpawnRateMultiplier=<Decimal Number> - Set a multiplier for how fast ZEDs spawn (Can't go above 1.0) (Rounded to two decimal places for replication compression) [b]<Lite Compatible>[/b]
+?WaveCountMultiplier=<Decimal Number> - Set a multiplier for how many ZEDs are in the wave (Can't go below 1.0) (Rounded to two decimal places for replication compression) (Max value of 655.35) [b]<Lite Compatible>[/b]
+?AmmoCostMultiplier=<Decimal Number> - Set a multiplier for how much ammo costs (Can't go below 1.0) (Does nothing if the weekly gamemode is used) (Rounded to two decimal places for replication compression) (Max value of 655.35)
+?BossList=H,P,K,A,M - Set what boss(s) can and can't spawn (Does not affect forced map spawns) [b]<Lite Compatible>[/b]
+?Outbreaks=B,TT,BZ,P,UU,BK - Set what outbreak(s) are allowed in Endless (If changed from the default forces HOE+ and allows special/outbreaks from wave 1) [b]<Lite Compatible>[/b]
+?SpecialWaves=CL,CS,C,S,SR,H,SC,CA,GF,B,FP - Set what All ZED Waves are allowed in Endless (If changed from the default forces HOE+ and allows special/outbreaks from wave 1) [] [b]<Lite Compatible>[/b]
+?Perks=BZ,CO,SU,FM,DO,FB,GS,SS,SW,SV - What perks are allowed to be used (Does nothing if the weekly gamemode is used) [b]<Lite Compatible>[/b]
+?AllowDamagePopups=(0/1) - Allows players to see and configure a damage popup system when they damage ZEDs
+?DisableCustomLoadingScreen=(0/1) - Disables the custom loading screen
+?DisableTraderLocking=(0/1) - Disables the system used for setting weapons in the trader to DLC/Locked (For use with mutators that replace the trader list, such as CTI and TIM)
+?DisableMapRanking=(0/1) - Disables the map ranking system if you use ?AllowGamemodeVotes=1
+?DisableZEDTime=(0/1) - Turns ZED Time on or off [b]<Lite Compatible>[/b]
+?AllowOpenTraderCommand=(0/1) - Allows player to use !ot in chat to open the trader anywhere during trader time [b]<Lite Compatible>[/b]
+?XPMultiplier=<Decimal Number> - Sets the current XP multiplier (Clamped between 0.1 and 2) [b]<Lite Compatible>[/b]
+?DisableCrossPerk=(0/1) - Disables all weapon crossperking
+?DisableWeaponUpgrades=(0/1) - Disables all weapon upgrades
+?AllowMapSpecificSeasonalZEDs=(0/1) - Enable map specific seasonal ZEDs, this will cause the specific map to force the seasonal zeds listed in the array called MapTypes inside of KFUnofficialPatch.ini (Overriden by ?AllowSeasonalSkins)
+?DisableTraderDLCLock=(0/1) - Disables the system to lock weapons that you do not have the DLC for [Use this if you are using Zedternal or any other mod that extends DLC weapons]
+?DisablePickupSkinSystem=(0/1) - Disables the system that makes weapons that are picked up have the skin of the dropped weapon
+[/code]
+
+[h1]Boss Options[/h1]
+[code]
+H = Hans
+P = Patriarch
+K = King FP
+A = Abomination
+M = Matriarch
+[/code]
+
+[h1]Perk Options[/h1]
+[code]
+BZ = Berzerker
+CO = Commando
+SU = Support
+FM = Field Medic
+DO = Demolitionist
+FB = Firebug
+GS = Gunslinger
+SS = Sharpshooter
+SW = SWAT
+SV = Survivalist
+[/code]
+
+[h1]Outbreak Options[/h1]
+[code]
+B = Boom
+TT = Tiny Terror
+BZ = Bobble ZED
+P = Poundemonium
+UU = Up, Up and Decay
+BK = Beefcake
+[/code]
+
+[h1]Special Wave Options[/h1]
+[code]
+CL = Cyst
+CS = Slasher
+CA = Alpha Clot
+C = Crawler
+GF = Gorefast
+S = Stalker
+SC = Scrake
+FP = Fleshpound
+QP = Quarter Pound
+B = Bloat
+SR = Siren
+H = Husk
+CR = Rioter
+GC = Gas Crawler
+GFI = Gorefiend
+EMP = EDAR EMP
+LSR = EDAR Laser
+RCT = EDAR Rocket
 [/code]
 
 [h1]Chat Commands[/h1]
 [code]
 !tfc - Toggles force draw crosshair
 !tc - Toggles crosshair
-!join - Join the game from spectate
-!spec - Leave the game and go to spectator
+!join - Join the game from spectate [b]<Lite Compatible>[/b]
+!spec - Leave the game and go to spectator [b]<Lite Compatible>[/b]
 !tm - Same as doing ThrowMoney
 !fav - Adds the server to your favorites (Does not work on hidden servers)
+!dp - Toggle if players can or can not pickup your weapons [b]<Lite Compatible>[/b]
+!dlk - Toggles if you can see if another player kills a large ZED [b]<Lite Compatible>[/b]
+!cs <0-64> - Changes the max player slots [b]<Lite Compatible>[/b] [b]<ADMIN ONLY>[/b]
 [/code]
 
 [h1]Console Commands[/h1]
@@ -93,6 +184,7 @@ SetWeaponHand (0/1/2 - l/r/c - left/right/center) - Changes between what weapon 
 SetBobStyle (0/1/2/3/4/5/6/7) - Changes between what weapon hand you want
 SetLargeKillTicker (0/1) - Enable/Disable large ZED kill ticker
 SetNoHRG (0/1) - Allows changing if HRG weapons appear in the trader or not
+SetDisableDamagePopups (0/1) - Enable/Disable damage popups if the server has them enabled
 [/code]
 
 [h1]Vanilla Mode[/h1]
@@ -105,6 +197,30 @@ SetNoHRG (0/1) - Allows changing if HRG weapons appear in the trader or not
 [*]Disallow players from entering third person
 [*]Disallow players from dropping all weapons on death
 [*]Disallow players from using Pings
+[/list]
+
+[h1]UKFP Lite[/h1]
+[b]Features[/b]
+[list]
+[*]Clients do not need to download the file
+[*]Only certain features are supported [The options above will have a Lite postfix if supported]
+[/list]
+
+[b]Fixes[/b]
+[list]
+[*]Weapons that fall out of bounds are teleported to the player or trader
+[*]Fixed many points of entry for hackers
+[*]Fixed tickrate at lobby with players
+[*]Fixed Steamworkshop Downloader not being added automatically
+[*]Fixed PRIs replicating data slowly (Health and other variables are recieved much faster)
+[*]Fixed crawlers launching ZEDs by walking under them
+[*]Fixed ZEDs targeting the wrong players on spawn
+[*]Fixed two broken static meshes on KF-HellmarkStation that were blocking a entrance
+[*]Fixed most Descent maps being broken in Endless
+[*]Fixed players being able to crash the server by throwing huge amounts of dosh at once
+[*]Fixed custom gamemodes showing as ALL in the server browser
+[*]Fixed KFMutatorSummary not being generated for loaded mutators
+[*]Allow server owners to set a Dynamic MOTD that shows what settings they have set [Does nothing if a MOTD is already set!]
 [/list]
 
 [h1]Original Map Locations[/h1]

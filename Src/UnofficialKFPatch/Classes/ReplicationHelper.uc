@@ -686,6 +686,12 @@ function SetupDynamicMOTD()
         case `MOTD_DLCLOCK:
             ReceiveDynamicMOTD(CurrentMOTDIndex++, MainRepInfo.DynamicMOTD.bShouldDisableTraderDLCLocking);
             break;
+        case `MOTD_GOREFIENDS:
+            ReceiveDynamicMOTD(CurrentMOTDIndex++, MainRepInfo.DynamicMOTD.bNoGorefiends);
+            break;
+        case `MOTD_RIOTERS:
+            ReceiveDynamicMOTD(CurrentMOTDIndex++, MainRepInfo.DynamicMOTD.bNoRioters);
+            break;
         default:
             ReceiveDynamicMOTD(CurrentMOTDIndex, 0);
             return;
@@ -785,6 +791,12 @@ reliable client function ReceiveDynamicMOTD(byte Index, coerce float Value)
             break;
         case `MOTD_GASCRAWLERS:
             DynamicMOTDString $= "<font color=\"#81ABC0\">"$MainRepInfo.LocalizedMOTD[`MOTD_GASCRAWLERS].Name$"</font>: "$(Value == 1.f ? "<font color=\"#FF0000\">"$MainRepInfo.DisabledString$"</font>" : "<font color=\"#00FF00\">"$MainRepInfo.EnabledString$"</font>")$"!\n";
+            break;
+        case `MOTD_GOREFIENDS:
+            DynamicMOTDString $= "<font color=\"#81ABC0\">"$MainRepInfo.LocalizedMOTD[`MOTD_GOREFIENDS].Name$"</font>: "$(Value == 1.f ? "<font color=\"#FF0000\">"$MainRepInfo.DisabledString$"</font>" : "<font color=\"#00FF00\">"$MainRepInfo.EnabledString$"</font>")$"!\n";
+            break;
+        case `MOTD_RIOTERS:
+            DynamicMOTDString $= "<font color=\"#81ABC0\">"$MainRepInfo.LocalizedMOTD[`MOTD_RIOTERS].Name$"</font>: "$(Value == 1.f ? "<font color=\"#FF0000\">"$MainRepInfo.DisabledString$"</font>" : "<font color=\"#00FF00\">"$MainRepInfo.EnabledString$"</font>")$"!\n";
             break;
         case `MOTD_GAMECONDUCTOR:
             DynamicMOTDString $= "<font color=\"#81ABC0\">"$MainRepInfo.LocalizedMOTD[`MOTD_GAMECONDUCTOR].Name$"</font>: "$(Value == 1.f ? "<font color=\"#FF0000\">"$MainRepInfo.DisabledString$"</font>" : "<font color=\"#00FF00\">"$MainRepInfo.EnabledString$"</font>")$"!\n";
