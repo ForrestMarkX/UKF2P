@@ -1285,10 +1285,8 @@ final function bool ProcessChatMessage(string Msg, PlayerController Sender, opti
         KFGI.BroadcastHandler.BroadcastText(KFPC.PlayerReplicationInfo, KFPC, "Showing Large Kills in the kill feed was set to"@(PlayerConfigs[Index].bEnableLargeKills ? "true" : "false")$".");
         return true;
     }
-    else if( Msg ~= "ot" )
+    else if( Msg ~= "ot" && bUsingOpenTraderCommand && !KFGI.IsWaveActive() )
     {
-        if( !bUsingOpenTraderCommand || KFGI.IsWaveActive() )
-            return true;
         KFPC.ServerSetEnablePurchases(true);
         KFPC.ClientOpenTraderMenu(true);
         return true;
